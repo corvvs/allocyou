@@ -36,7 +36,7 @@ void	*_yk_allocate_arena(size_t n) {
 	// 確保できたら先頭にブロックヘッダを詰める
 	t_block_header	*header = mapped;
 	header->blocks = n;
-	header->ptr = header;
+	header->ptr = NULL;
 	return mapped;
 }
 
@@ -44,24 +44,26 @@ void	*_yk_allocate_arena(size_t n) {
 // BLOCK_UNIT_SIZE をかけるとバイトサイズになる.
 #define MMAP_UNIT ((size_t)1048576)
 
+t_block_header	*g_arena;
+
 // n バイト**以上**の領域を確保して返す.
 void	*_yk_malloc(size_t n) {
-	static	t_block_header	*arena;
-
-	if (arena == NULL) {
+	dprintf(STDERR_FILENO, "** malloc: %zu **\n", n);
+	if (g_arena == NULL) {
 		dprintf(STDERR_FILENO, "allocating arena...\n");
-		arena = _yk_allocate_arena(MMAP_UNIT);
+		g_arena = _yk_allocate_arena(MMAP_UNIT);
 	}
-	if (arena == NULL) {
-		// arena 確保失敗
+	if (g_arena == NULL) {
+		// g_arena 確保失敗
 		return NULL;
 	}
-	dprintf(STDERR_FILENO, "arena head: (%zu, %p) -> %p\n", arena->blocks, arena, arena->ptr);
+	dprintf(STDERR_FILENO, "g_arena head: (%zu, %p) -> %p\n", g_arena->blocks, g_arena, g_arena->ptr);
 	// 要求されるサイズ以上のブロックセクションが空いていないかどうか探す
-	t_block_header	*head = arena;
+	t_block_header	*head = g_arena;
 	t_block_header	*prev = NULL;
 	size_t	blocks_needed = QUANTIZE(n, BLOCK_UNIT_SIZE) / BLOCK_UNIT_SIZE;
-	while (head) {
+	dprintf(STDERR_FILENO, "blocks_needed = %zu\n", blocks_needed);
+	while (head != NULL) {
 		if (head->blocks >= blocks_needed) {
 			// 適合するブロックがあった -> 後処理を行う
 			// ブロックヘッダの次のブロックを返す
@@ -78,25 +80,88 @@ void	*_yk_malloc(size_t n) {
 				// -> rest_blocks = head->blocks - (blocks_needed + 1)
 				new_head->blocks = head->blocks - (blocks_needed + 1);
 				new_head->ptr = head->ptr;
-				head = new_head;
 				dprintf(STDERR_FILENO, "shorten block: (%zu, %p) -> (%zu, %p)\n", head->blocks, head, new_head->blocks, new_head);
+				head->blocks = blocks_needed;
+				head = new_head;
 			}
 			if (prev) {
 				prev->ptr = head;
 			} else {
-				arena = head;
+				g_arena = head;
 			}
 			dprintf(STDERR_FILENO, "returning block: (%zu, %p)\n", blocks_needed, rv);
+			dprintf(STDERR_FILENO, "** malloc end **\n");
 			return rv;
 		}
 		prev = head;
 		head = head->ptr;
-		if (head == arena) {
-			// 適合するブロックセクションがなかった
-			break;
+	}
+	// 適合するブロックセクションがなかった
+	return NULL;
+}
+
+
+// addr が malloc された領域ならば解放する.
+void	_yk_free(void *addr) {
+	if (addr == NULL) {
+		return;
+	}
+	dprintf(STDERR_FILENO, "** free: %p **\n", addr);
+	t_block_header *head = addr;
+	--head;
+	dprintf(STDERR_FILENO, "head: %p\n", head);
+	// addr が malloc された領域なら, addr から sizeof(t_block_header) だけ下がったところにブロックヘッダがあるはず.
+	t_block_header *prev_unused = NULL;
+	t_block_header *curr_unused = g_arena;
+	while (curr_unused != NULL && curr_unused < head) {
+		prev_unused = curr_unused;
+		curr_unused = curr_unused->ptr;
+	}
+	// assertion:
+	// (!prev_unused || prev_unused < addr) && addr <= curr_unused
+	if (head == curr_unused) {
+		// head が curr_unused と一致している -> なんかおかしい
+		dprintf(STDERR_FILENO, "SOMETHING WRONG: head is equal to free-block-header: %p\n", head);
+		return;
+	}
+	if (prev_unused != NULL && head <= (prev_unused + prev_unused->blocks)) {
+		// head が前のブロックセクションの中にあるっぽい -> なんかおかしい
+		dprintf(STDERR_FILENO, "SOMETHING WRONG: head seems to be within previous block-section: %p\n", head);
+		return;
+	}
+	// curr_unused があるなら, それは head より大きい最小の(=右隣の)ブロックヘッダ.
+	if (curr_unused) {
+		if ((head + head->blocks + 1) == curr_unused) {
+			// head と curr_unused がくっついている -> 統合する
+			dprintf(STDERR_FILENO, "head(%zu, %p) + curr_unused(%zu, %p)\n", head->blocks, head, curr_unused->blocks, curr_unused);
+			head->blocks += curr_unused->blocks + 1;
+			head->ptr = curr_unused->ptr;
+			curr_unused->blocks = 0;
+			curr_unused->ptr = 0;
+			dprintf(STDERR_FILENO, "-> head(%zu, %p)\n", head->blocks, head);
+		} else {
+			head->ptr = curr_unused;
 		}
 	}
-	return NULL;
+	// prev_unused があるなら, それは head より小さい最大の(=左隣の)ブロックヘッダ.
+	if (prev_unused) {
+		if (prev_unused + (prev_unused->blocks + 1) == head) {
+			// prev_unused と head がくっついている -> 統合する
+			dprintf(STDERR_FILENO, "prev_unused(%zu, %p) + head(%zu, %p)\n", prev_unused->blocks, prev_unused, head->blocks, head);
+			prev_unused->blocks += head->blocks + 1;
+			prev_unused->ptr = head->ptr;
+			dprintf(STDERR_FILENO, "-> prev_unused(%zu, %p)\n", prev_unused->blocks, prev_unused);
+			head->blocks = 0;
+			head->ptr = 0;
+			head = prev_unused;
+		} else {
+			prev_unused->ptr = head;
+		}
+	} else {
+		// prev_unused がない -> head が最小のブロックヘッダ
+		g_arena = head;
+	}
+	dprintf(STDERR_FILENO, "** free end **\n");
 }
 
 int main() {
@@ -106,16 +171,22 @@ int main() {
 	OUT_VAR_SIZE_T(BLOCK_UNIT_SIZE);
 	OUT_VAR_SIZE_T(MMAP_UNIT);
 
-	{
-		char *str = _yk_malloc(11);
-		strcpy(str, "helloworld");
-		printf("%s\n", str);
-	}
-	{
-		char *str = _yk_malloc(16);
-		strcpy(str, "helloworld");
-		printf("%s\n", str);
-	}
+
+	char *s0 = NULL;
+	char *s1 = NULL;
+	char *s2 = NULL;
+	char *s3 = NULL;
+	s0 = _yk_malloc(1);
+	s1 = _yk_malloc(2);
+	s2 = _yk_malloc(3);
+	s3 = _yk_malloc(4);
+
+	printf("%p %p %p %p\n", s0, s1, s2, s3);
+
+	_yk_free(s0);
+	_yk_free(s3);
+	_yk_free(s1);
+	_yk_free(s2);
 
 	// void *mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset);
 	// - addr: マッピング領域の開始点を決めるために使われるアドレス
