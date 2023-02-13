@@ -1,6 +1,10 @@
 #include "common.h"
 
 
+#define DEBUGSTR(format) dprintf(STDERR_FILENO, "[%s:%d %s] " format, __FILE__, __LINE__, __func__)
+#define DEBUGOUT(format, ...) dprintf(STDERR_FILENO, "[%s:%d %s] " format, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define DEBUGWARN(format, ...) dprintf(STDERR_FILENO, "[%s:%d %s] " format, __FILE__, __LINE__, __func__, __VA_ARGS__)
+
 // quantize a by b
 // least-greater-than multiple
 // a 以上で最小の b の倍数を返す
@@ -13,7 +17,7 @@
  * 「一続きのブロックのあつまり」という意味で ブロックセクション と呼ぶ.
  */
 typedef struct s_block_header {
-  struct s_block_header   *ptr; // 次のブロックヘッダへのポインタ
+  struct s_block_header   *next; // 次のブロックヘッダへのポインタ
   size_t                   blocks; // このブロックセクションの長さ
 } t_block_header;
 
@@ -36,7 +40,7 @@ void	*_yk_allocate_arena(size_t n) {
 	// 確保できたら先頭にブロックヘッダを詰める
 	t_block_header	*header = mapped;
 	header->blocks = n;
-	header->ptr = NULL;
+	header->next = NULL;
 	return mapped;
 }
 
@@ -45,24 +49,35 @@ void	*_yk_allocate_arena(size_t n) {
 #define MMAP_UNIT ((size_t)1048576)
 
 t_block_header	*g_arena;
+t_block_header	*g_allocated;
+
+// void	insert_item(t_block_header **list, t_block_header *item) {
+// 	if (list == NULL) {
+// 		dprintf(STDERR_FILENO, "SOMETHING WRONG: list is null");
+// 		return;
+// 	}
+// 	if (*list) {
+
+// 	}
+// }
 
 // n バイト**以上**の領域を確保して返す.
 void	*_yk_malloc(size_t n) {
-	dprintf(STDERR_FILENO, "** malloc: %zu **\n", n);
+	DEBUGOUT("** malloc: %zu **\n", n);
 	if (g_arena == NULL) {
-		dprintf(STDERR_FILENO, "allocating arena...\n");
+		DEBUGSTR("allocating arena...\n");
 		g_arena = _yk_allocate_arena(MMAP_UNIT);
 	}
 	if (g_arena == NULL) {
 		// g_arena 確保失敗
 		return NULL;
 	}
-	dprintf(STDERR_FILENO, "g_arena head: (%zu, %p) -> %p\n", g_arena->blocks, g_arena, g_arena->ptr);
+	DEBUGOUT("g_arena head: (%zu, %p) -> %p\n", g_arena->blocks, g_arena, g_arena->next);
 	// 要求されるサイズ以上のブロックセクションが空いていないかどうか探す
 	t_block_header	*head = g_arena;
 	t_block_header	*prev = NULL;
 	size_t	blocks_needed = QUANTIZE(n, BLOCK_UNIT_SIZE) / BLOCK_UNIT_SIZE;
-	dprintf(STDERR_FILENO, "blocks_needed = %zu\n", blocks_needed);
+	DEBUGOUT("blocks_needed = %zu\n", blocks_needed);
 	while (head != NULL) {
 		if (head->blocks >= blocks_needed) {
 			// 適合するブロックがあった -> 後処理を行う
@@ -70,31 +85,31 @@ void	*_yk_malloc(size_t n) {
 			void	*rv = head + 1;
 			// 見つかったブロックセクションのうち, 最初の blocks_needed 個を除去する
 			// head->blocks がちょうど blocks_needed と一致しているかどうかで場合分け
-			if (head->blocks == blocks_needed) {
+			if (head->blocks <= blocks_needed + 1) {
 				// -> 見つかったブロックセクションを丸ごと使い尽くす
-				dprintf(STDERR_FILENO, "exhausted block-section: (%zu, %p)\n", head->blocks, head);
+				DEBUGOUT("exhausted block-section: (%zu, %p)\n", head->blocks, head);
 			} else {
 				// -> 見つかったブロックセクションの一部が残る
 				t_block_header	*new_head = head + blocks_needed + 1;
 				// head->blocks + 1 = (blocks_needed + 1) + (rest_blocks + 1)
 				// -> rest_blocks = head->blocks - (blocks_needed + 1)
 				new_head->blocks = head->blocks - (blocks_needed + 1);
-				new_head->ptr = head->ptr;
-				dprintf(STDERR_FILENO, "shorten block: (%zu, %p) -> (%zu, %p)\n", head->blocks, head, new_head->blocks, new_head);
+				new_head->next = head->next;
+				DEBUGOUT("shorten block: (%zu, %p) -> (%zu, %p)\n", head->blocks, head, new_head->blocks, new_head);
 				head->blocks = blocks_needed;
 				head = new_head;
 			}
 			if (prev) {
-				prev->ptr = head;
+				prev->next = head;
 			} else {
 				g_arena = head;
 			}
-			dprintf(STDERR_FILENO, "returning block: (%zu, %p)\n", blocks_needed, rv);
-			dprintf(STDERR_FILENO, "** malloc end **\n");
+			DEBUGOUT("returning block: (%zu, %p)\n", blocks_needed, rv);
+			DEBUGSTR("** malloc end **\n");
 			return rv;
 		}
 		prev = head;
-		head = head->ptr;
+		head = head->next;
 	}
 	// 適合するブロックセクションがなかった
 	return NULL;
@@ -106,62 +121,62 @@ void	_yk_free(void *addr) {
 	if (addr == NULL) {
 		return;
 	}
-	dprintf(STDERR_FILENO, "** free: %p **\n", addr);
+	DEBUGOUT("** free: %p **\n", addr);
 	t_block_header *head = addr;
 	--head;
-	dprintf(STDERR_FILENO, "head: %p\n", head);
+	DEBUGOUT("head: %p\n", head);
 	// addr が malloc された領域なら, addr から sizeof(t_block_header) だけ下がったところにブロックヘッダがあるはず.
 	t_block_header *prev_unused = NULL;
 	t_block_header *curr_unused = g_arena;
 	while (curr_unused != NULL && curr_unused < head) {
 		prev_unused = curr_unused;
-		curr_unused = curr_unused->ptr;
+		curr_unused = curr_unused->next;
 	}
 	// assertion:
 	// (!prev_unused || prev_unused < addr) && addr <= curr_unused
 	if (head == curr_unused) {
 		// head が curr_unused と一致している -> なんかおかしい
-		dprintf(STDERR_FILENO, "SOMETHING WRONG: head is equal to free-block-header: %p\n", head);
+		DEBUGOUT("SOMETHING WRONG: head is equal to free-block-header: %p\n", head);
 		return;
 	}
 	if (prev_unused != NULL && head <= (prev_unused + prev_unused->blocks)) {
 		// head が前のブロックセクションの中にあるっぽい -> なんかおかしい
-		dprintf(STDERR_FILENO, "SOMETHING WRONG: head seems to be within previous block-section: %p\n", head);
+		DEBUGOUT("SOMETHING WRONG: head seems to be within previous block-section: %p\n", head);
 		return;
 	}
 	// curr_unused があるなら, それは head より大きい最小の(=右隣の)ブロックヘッダ.
 	if (curr_unused) {
 		if ((head + head->blocks + 1) == curr_unused) {
 			// head と curr_unused がくっついている -> 統合する
-			dprintf(STDERR_FILENO, "head(%zu, %p) + curr_unused(%zu, %p)\n", head->blocks, head, curr_unused->blocks, curr_unused);
+			DEBUGOUT("head(%zu, %p) + curr_unused(%zu, %p)\n", head->blocks, head, curr_unused->blocks, curr_unused);
 			head->blocks += curr_unused->blocks + 1;
-			head->ptr = curr_unused->ptr;
+			head->next = curr_unused->next;
 			curr_unused->blocks = 0;
-			curr_unused->ptr = 0;
-			dprintf(STDERR_FILENO, "-> head(%zu, %p)\n", head->blocks, head);
+			curr_unused->next = 0;
+			DEBUGOUT("-> head(%zu, %p)\n", head->blocks, head);
 		} else {
-			head->ptr = curr_unused;
+			head->next = curr_unused;
 		}
 	}
 	// prev_unused があるなら, それは head より小さい最大の(=左隣の)ブロックヘッダ.
 	if (prev_unused) {
 		if (prev_unused + (prev_unused->blocks + 1) == head) {
 			// prev_unused と head がくっついている -> 統合する
-			dprintf(STDERR_FILENO, "prev_unused(%zu, %p) + head(%zu, %p)\n", prev_unused->blocks, prev_unused, head->blocks, head);
+			DEBUGOUT("prev_unused(%zu, %p) + head(%zu, %p)\n", prev_unused->blocks, prev_unused, head->blocks, head);
 			prev_unused->blocks += head->blocks + 1;
-			prev_unused->ptr = head->ptr;
-			dprintf(STDERR_FILENO, "-> prev_unused(%zu, %p)\n", prev_unused->blocks, prev_unused);
+			prev_unused->next = head->next;
+			DEBUGOUT("-> prev_unused(%zu, %p)\n", prev_unused->blocks, prev_unused);
 			head->blocks = 0;
-			head->ptr = 0;
+			head->next = 0;
 			head = prev_unused;
 		} else {
-			prev_unused->ptr = head;
+			prev_unused->next = head;
 		}
 	} else {
 		// prev_unused がない -> head が最小のブロックヘッダ
 		g_arena = head;
 	}
-	dprintf(STDERR_FILENO, "** free end **\n");
+	DEBUGSTR("** free end **\n");
 }
 
 int main() {
