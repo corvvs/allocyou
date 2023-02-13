@@ -5,6 +5,10 @@
 #define DEBUGOUT(format, ...) dprintf(STDERR_FILENO, "[%s:%d %s] " format, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define DEBUGWARN(format, ...) dprintf(STDERR_FILENO, "[%s:%d %s] " format, __FILE__, __LINE__, __func__, __VA_ARGS__)
 
+#define TX_GRN "\e[32m"
+#define TX_BLU "\e[32m"
+#define TX_RST "\e[0m"
+
 // quantize a by b
 // least-greater-than multiple
 // a 以上で最小の b の倍数を返す
@@ -51,15 +55,61 @@ void	*_yk_allocate_arena(size_t n) {
 t_block_header	*g_arena;
 t_block_header	*g_allocated;
 
-// void	insert_item(t_block_header **list, t_block_header *item) {
-// 	if (list == NULL) {
-// 		dprintf(STDERR_FILENO, "SOMETHING WRONG: list is null");
-// 		return;
-// 	}
-// 	if (*list) {
+void	insert_item(t_block_header **list, t_block_header *item) {
+	if (list == NULL) {
+		DEBUGSTR("SOMETHING WRONG: list is null");
+		return;
+	}
+	if (*list == NULL) {
+		*list = item;
+		item->next = NULL;
+		DEBUGSTR("item is front");
+		return;
+	}
+	t_block_header	*curr = *list;
+	t_block_header	*prev = NULL;
+	while (curr != NULL && curr <= item) {
+		prev = curr;
+		curr = curr->next;
+	}
+	if (curr != NULL) {
+		item->next = curr;
+	}
+	if (prev != NULL) {
+		prev->next = item;
+	} else {
+		*list = item;
+	}
+}
 
-// 	}
-// }
+void	remove_item(t_block_header **list, t_block_header *item) {
+	if (list == NULL) {
+		DEBUGSTR("SOMETHING WRONG: list is null");
+		return;
+	}
+	t_block_header	*curr = *list;
+	t_block_header	*prev = NULL;
+	while (curr != NULL && curr != item) {
+		prev = curr;
+		curr = curr->next;
+	}
+	if (curr != NULL) {
+		if (prev == NULL) {
+			*list = curr->next;
+		} else {
+			prev->next = item->next;
+		}
+		curr->next = NULL;
+	}
+}
+
+void	show_list(t_block_header *list) {
+	while (list != NULL) {
+		dprintf(STDERR_FILENO, "%s[%04lx:%zu]%s", TX_GRN, (uintptr_t)list % (BLOCK_UNIT_SIZE * BLOCK_UNIT_SIZE * BLOCK_UNIT_SIZE), list->blocks, TX_RST);
+		list = list->next;
+	}
+	dprintf(STDERR_FILENO, "\n");
+}
 
 // n バイト**以上**の領域を確保して返す.
 void	*_yk_malloc(size_t n) {
@@ -82,15 +132,18 @@ void	*_yk_malloc(size_t n) {
 		if (head->blocks >= blocks_needed) {
 			// 適合するブロックがあった -> 後処理を行う
 			// ブロックヘッダの次のブロックを返す
-			void	*rv = head + 1;
+			t_block_header	*rv = head + 1;
+
 			// 見つかったブロックセクションのうち, 最初の blocks_needed 個を除去する
 			// head->blocks がちょうど blocks_needed と一致しているかどうかで場合分け
 			if (head->blocks <= blocks_needed + 1) {
 				// -> 見つかったブロックセクションを丸ごと使い尽くす
 				DEBUGOUT("exhausted block-section: (%zu, %p)\n", head->blocks, head);
+				head = head->next;
 			} else {
 				// -> 見つかったブロックセクションの一部が残る
 				t_block_header	*new_head = head + blocks_needed + 1;
+
 				// head->blocks + 1 = (blocks_needed + 1) + (rest_blocks + 1)
 				// -> rest_blocks = head->blocks - (blocks_needed + 1)
 				new_head->blocks = head->blocks - (blocks_needed + 1);
@@ -105,6 +158,7 @@ void	*_yk_malloc(size_t n) {
 				g_arena = head;
 			}
 			DEBUGOUT("returning block: (%zu, %p)\n", blocks_needed, rv);
+			insert_item(&g_allocated, (rv - 1));
 			DEBUGSTR("** malloc end **\n");
 			return rv;
 		}
@@ -112,6 +166,7 @@ void	*_yk_malloc(size_t n) {
 		head = head->next;
 	}
 	// 適合するブロックセクションがなかった
+	DEBUGSTR("NO ENOUGH BLOCKS");
 	return NULL;
 }
 
@@ -119,6 +174,7 @@ void	*_yk_malloc(size_t n) {
 // addr が malloc された領域ならば解放する.
 void	_yk_free(void *addr) {
 	if (addr == NULL) {
+		DEBUGSTR("freeing NULL\n");
 		return;
 	}
 	DEBUGOUT("** free: %p **\n", addr);
@@ -136,14 +192,15 @@ void	_yk_free(void *addr) {
 	// (!prev_unused || prev_unused < addr) && addr <= curr_unused
 	if (head == curr_unused) {
 		// head が curr_unused と一致している -> なんかおかしい
-		DEBUGOUT("SOMETHING WRONG: head is equal to free-block-header: %p\n", head);
+		DEBUGWARN("SOMETHING WRONG: head is equal to free-block-header: %p\n", head);
 		return;
 	}
 	if (prev_unused != NULL && head <= (prev_unused + prev_unused->blocks)) {
 		// head が前のブロックセクションの中にあるっぽい -> なんかおかしい
-		DEBUGOUT("SOMETHING WRONG: head seems to be within previous block-section: %p\n", head);
+		DEBUGWARN("SOMETHING WRONG: head seems to be within previous block-section: %p\n", head);
 		return;
 	}
+	remove_item(&g_allocated, head);
 	// curr_unused があるなら, それは head より大きい最小の(=右隣の)ブロックヘッダ.
 	if (curr_unused) {
 		if ((head + head->blocks + 1) == curr_unused) {
@@ -179,6 +236,13 @@ void	_yk_free(void *addr) {
 	DEBUGSTR("** free end **\n");
 }
 
+void print_state() {
+	DEBUGSTR("allocated: "); show_list(g_allocated);
+	DEBUGSTR("free:      "); show_list(g_arena);
+}
+
+#define PRINT_STATE_AFTER(proc) proc; DEBUGSTR("DA: " #proc "\n"); print_state();
+
 int main() {
 	setvbuf(stdout, NULL, _IONBF, 0);
 	int page_size = getpagesize();
@@ -187,21 +251,21 @@ int main() {
 	OUT_VAR_SIZE_T(MMAP_UNIT);
 
 
-	char *s0 = NULL;
-	char *s1 = NULL;
-	char *s2 = NULL;
-	char *s3 = NULL;
-	s0 = _yk_malloc(1);
-	s1 = _yk_malloc(2);
-	s2 = _yk_malloc(3);
-	s3 = _yk_malloc(4);
-
-	printf("%p %p %p %p\n", s0, s1, s2, s3);
-
-	_yk_free(s0);
-	_yk_free(s3);
-	_yk_free(s1);
-	_yk_free(s2);
+	print_state();
+	PRINT_STATE_AFTER(char *a = _yk_malloc(1));
+	PRINT_STATE_AFTER(char *b = _yk_malloc(20));
+	PRINT_STATE_AFTER(char *c = _yk_malloc(50));
+	PRINT_STATE_AFTER(_yk_free(b));
+	PRINT_STATE_AFTER(_yk_free(a));
+	PRINT_STATE_AFTER(char *d = _yk_malloc(72));
+	PRINT_STATE_AFTER(char *e = _yk_malloc(1));
+	PRINT_STATE_AFTER(char *f = _yk_malloc(1));
+	PRINT_STATE_AFTER(char *g = _yk_malloc(123456789));
+	PRINT_STATE_AFTER(_yk_free(c));
+	PRINT_STATE_AFTER(_yk_free(e));
+	PRINT_STATE_AFTER(_yk_free(g));
+	PRINT_STATE_AFTER(_yk_free(f));
+	PRINT_STATE_AFTER(_yk_free(d));
 
 	// void *mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset);
 	// - addr: マッピング領域の開始点を決めるために使われるアドレス
