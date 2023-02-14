@@ -15,15 +15,29 @@
 // b > 0 を仮定している
 #define QUANTIZE(a, b) (a ? ((a - 1) / b + 1) * b : b)
 
+// t_block_header の next から実際のアドレスを取り出す
+// (下位3ビットを0にするだけ)
+#define ADDRESS(ptr) ((void *)((uintptr_t)ptr / 8 * 8))
+#define FLAGS(ptr) ((void *)((uintptr_t)ptr % 8))
+#define COPYFLAGS(dst, src) ((void *)((uintptr_t)ADDRESS(dst) | (uintptr_t)FLAGS(src)))
+#define GET_IS_LARGE(ptr) (!!((uintptr_t)ptr & 1))
+#define SET_IS_LARGE(ptr, flag) ((void*)(((uintptr_t)ptr ^ 1) | !!flag))
+
 /**
  * ブロックヘッダ
  * ブロックヘッダの先頭から (blocks + 1) * BLOCK_UNIT_SIZE バイト分の領域を
  * 「一続きのブロックのあつまり」という意味で ブロックセクション と呼ぶ.
  */
 typedef struct s_block_header {
-  struct s_block_header   *next; // 次のブロックヘッダへのポインタ
-  size_t                   blocks; // このブロックセクションの長さ
+	struct s_block_header*	next; // 次のブロックヘッダへのポインタ
+	size_t					blocks; // このブロックセクションの長さ
 } t_block_header;
+
+typedef struct s_yo_malloc_root {
+	t_block_header*	frees;
+	t_block_header*	allocated;
+	t_block_header* large;
+}	t_yo_malloc_root;
 
 // 1ブロックのサイズ
 // 16Bであると思っておく
@@ -54,8 +68,7 @@ void	*_yo_allocate_bunch(size_t n) {
 #define MMAP_UNIT ((size_t)1048576)
 #define MMAP_BUNCH_SIZE (MMAP_UNIT * BLOCK_UNIT_SIZE)
 
-t_block_header	*g_arena;
-t_block_header	*g_allocated;
+t_yo_malloc_root	g_root;
 
 void	insert_item(t_block_header **list, t_block_header *item) {
 	if (list == NULL) {
@@ -72,10 +85,10 @@ void	insert_item(t_block_header **list, t_block_header *item) {
 	t_block_header	*prev = NULL;
 	while (curr != NULL && curr <= item) {
 		prev = curr;
-		curr = curr->next;
+		curr = ADDRESS(curr->next);
 	}
 	if (curr != NULL) {
-		item->next = curr;
+		item->next = COPYFLAGS(curr, item->next);
 	}
 	if (prev != NULL) {
 		prev->next = item;
@@ -93,11 +106,11 @@ void	remove_item(t_block_header **list, t_block_header *item) {
 	t_block_header	*prev = NULL;
 	while (curr != NULL && curr != item) {
 		prev = curr;
-		curr = curr->next;
+		curr = ADDRESS(curr->next);
 	}
 	if (curr != NULL) {
 		if (prev == NULL) {
-			*list = curr->next;
+			*list = ADDRESS(curr->next);
 		} else {
 			prev->next = item->next;
 		}
@@ -106,11 +119,28 @@ void	remove_item(t_block_header **list, t_block_header *item) {
 }
 
 void	show_list(t_block_header *list) {
+	if (list == NULL) {
+		dprintf(STDERR_FILENO, "%s[nothing]%s\n", TX_GRN, TX_RST);
+		return;
+	}
 	while (list != NULL) {
 		dprintf(STDERR_FILENO, "%s[%012lx:%zu]%s", TX_GRN, (uintptr_t)list % (BLOCK_UNIT_SIZE << 24), list->blocks, TX_RST);
-		list = list->next;
+		list = ADDRESS(list->next);
 	}
 	dprintf(STDERR_FILENO, "\n");
+}
+
+void	_yo_large_free(t_block_header *head) {
+	DEBUGOUT("** %p, block: %zu **\n", head, head->blocks);
+	remove_item(&g_root.large, head);
+	size_t bytes = (head->blocks + 1) * BLOCK_UNIT_SIZE;
+	DEBUGOUT("bytes = %zu\n", bytes);
+	if (munmap(head, bytes) < 0) {
+		// failed
+		DEBUGOUT("FAILED: errno = %d, %s\n", errno, strerror(errno));
+		return;
+	}
+	return;
 }
 
 // addr が malloc された領域ならば解放する.
@@ -119,16 +149,22 @@ void	_yo_free(void *addr) {
 		DEBUGSTR("freeing NULL\n");
 		return;
 	}
-	DEBUGOUT("** free: %p **\n", addr);
+	DEBUGOUT("** %p **\n", addr);
 	t_block_header *head = addr;
 	--head;
-	DEBUGOUT("head: %p\n", head);
+	DEBUGOUT("head: %p, next: %p\n", head, head->next);
+	if (GET_IS_LARGE(head->next)) {
+		// ラージセクション -> munmapする
+		_yo_large_free(head);
+		return;
+	}
+
 	// addr が malloc された領域なら, addr から sizeof(t_block_header) だけ下がったところにブロックヘッダがあるはず.
 	t_block_header *prev_unused = NULL;
-	t_block_header *curr_unused = g_arena;
+	t_block_header *curr_unused = g_root.frees;
 	while (curr_unused != NULL && curr_unused < head) {
 		prev_unused = curr_unused;
-		curr_unused = curr_unused->next;
+		curr_unused = ADDRESS(curr_unused->next);
 	}
 	// assertion:
 	// (!prev_unused || prev_unused < addr) && addr <= curr_unused
@@ -142,7 +178,7 @@ void	_yo_free(void *addr) {
 		DEBUGWARN("SOMETHING WRONG: head seems to be within previous block-section: %p\n", head);
 		return;
 	}
-	remove_item(&g_allocated, head);
+	remove_item(&g_root.allocated, head);
 	// curr_unused があるなら, それは head より大きい最小の(=右隣の)ブロックヘッダ.
 	DEBUGOUT("curr_unused = %p\n", curr_unused);
 	if (curr_unused) {
@@ -150,7 +186,7 @@ void	_yo_free(void *addr) {
 			// head と curr_unused がくっついている -> 統合する
 			DEBUGOUT("head(%zu, %p) + curr_unused(%zu, %p)\n", head->blocks, head, curr_unused->blocks, curr_unused);
 			head->blocks += curr_unused->blocks + 1;
-			head->next = curr_unused->next;
+			head->next = ADDRESS(curr_unused->next);
 			curr_unused->blocks = 0;
 			curr_unused->next = 0;
 			DEBUGOUT("-> head(%zu, %p)\n", head->blocks, head);
@@ -166,7 +202,7 @@ void	_yo_free(void *addr) {
 			// prev_unused と head がくっついている -> 統合する
 			DEBUGOUT("prev_unused(%zu, %p) + head(%zu, %p)\n", prev_unused->blocks, prev_unused, head->blocks, head);
 			prev_unused->blocks += head->blocks + 1;
-			prev_unused->next = head->next;
+			prev_unused->next = ADDRESS(head->next);
 			DEBUGOUT("-> prev_unused(%zu, %p)\n", prev_unused->blocks, prev_unused);
 			head->blocks = 0;
 			head->next = 0;
@@ -176,9 +212,22 @@ void	_yo_free(void *addr) {
 		}
 	} else {
 		// prev_unused がない -> head が最小のブロックヘッダ
-		g_arena = head;
+		g_root.frees = head;
 	}
 	DEBUGSTR("** free end **\n");
+}
+
+void	*_yo_large_malloc(size_t n) {
+	size_t	blocks_needed = QUANTIZE(n, BLOCK_UNIT_SIZE) / BLOCK_UNIT_SIZE;
+	DEBUGOUT("** malloc: B:%zu, blocks: %zu **\n", n, blocks_needed);
+	t_block_header	*head = _yo_allocate_bunch(blocks_needed);
+	if (head == NULL) {
+		return NULL;
+	}
+	head->blocks = blocks_needed;
+	head->next = SET_IS_LARGE(NULL, 1);
+	insert_item(&g_root.large, head);
+	return head + 1;
 }
 
 // n バイト**以上**の領域を確保して返す.
@@ -187,22 +236,22 @@ void	*_yo_malloc(size_t n) {
 	DEBUGOUT("** malloc: B:%zu, blocks: %zu **\n", n, blocks_needed);
 	if (blocks_needed >= MMAP_UNIT) {
 		// 要求サイズが1つのバンチに収まらない
-		// -> 専用のバンチを mmap する
+		// -> 専用のバンチを mmap して返す
 		DEBUGWARN("required size %zu(B) is greater than bunch size %zu(B)\n", n, MMAP_BUNCH_SIZE);
-		return NULL;
+		return _yo_large_malloc(n);
 	}
 	
-	if (g_arena == NULL) {
+	if (g_root.frees == NULL) {
 		DEBUGSTR("allocating arena...\n");
-		g_arena = _yo_allocate_bunch(MMAP_UNIT);
+		g_root.frees = _yo_allocate_bunch(MMAP_UNIT);
 	}
-	if (g_arena == NULL) {
-		// g_arena 確保失敗
+	if (g_root.frees == NULL) {
+		// g_root.frees 確保失敗
 		return NULL;
 	}
-	DEBUGOUT("g_arena head: (%zu, %p) -> %p\n", g_arena->blocks, g_arena, g_arena->next);
+	DEBUGOUT("g_root.frees head: (%zu, %p) -> %p\n", g_root.frees->blocks, g_root.frees, g_root.frees->next);
 	// 要求されるサイズ以上のブロックセクションが空いていないかどうか探す
-	t_block_header	*head = g_arena;
+	t_block_header	*head = g_root.frees;
 	t_block_header	*prev = NULL;
 	DEBUGOUT("blocks_needed = %zu\n", blocks_needed);
 	while (head != NULL) {
@@ -216,7 +265,7 @@ void	*_yo_malloc(size_t n) {
 			if (head->blocks <= blocks_needed + 1) {
 				// -> 見つかったブロックセクションを丸ごと使い尽くす
 				DEBUGOUT("exhausted block-section: (%zu, %p)\n", head->blocks, head);
-				head = head->next;
+				head = ADDRESS(head->next);
 			} else {
 				// -> 見つかったブロックセクションの一部が残る
 				t_block_header	*new_head = head + blocks_needed + 1;
@@ -224,7 +273,7 @@ void	*_yo_malloc(size_t n) {
 				// head->blocks + 1 = (blocks_needed + 1) + (rest_blocks + 1)
 				// -> rest_blocks = head->blocks - (blocks_needed + 1)
 				new_head->blocks = head->blocks - (blocks_needed + 1);
-				new_head->next = head->next;
+				new_head->next = ADDRESS(head->next);
 				DEBUGOUT("shorten block: (%zu, %p) -> (%zu, %p)\n", head->blocks, head, new_head->blocks, new_head);
 				head->blocks = blocks_needed;
 				head = new_head;
@@ -232,15 +281,15 @@ void	*_yo_malloc(size_t n) {
 			if (prev) {
 				prev->next = head;
 			} else {
-				g_arena = head;
+				g_root.frees = head;
 			}
 			DEBUGOUT("returning block: (%zu, %p)\n", blocks_needed, rv);
-			insert_item(&g_allocated, (rv - 1));
+			insert_item(&g_root.allocated, (rv - 1));
 			DEBUGSTR("** malloc end **\n");
 			return rv;
 		}
 		prev = head;
-		head = head->next;
+		head = ADDRESS(head->next);
 	}
 	// 適合するブロックセクションがなかった
 	DEBUGSTR("NO ENOUGH BLOCKS\n");
@@ -254,8 +303,9 @@ void	*_yo_malloc(size_t n) {
 }
 
 void print_state() {
-	DEBUGSTR("allocated: "); show_list(g_allocated);
-	DEBUGSTR("free:      "); show_list(g_arena);
+	DEBUGSTR("allocated: "); show_list(g_root.allocated);
+	DEBUGSTR("free:      "); show_list(g_root.frees);
+	DEBUGSTR("large:     "); show_list(g_root.large);
 }
 
 #define PRINT_STATE_AFTER(proc) proc; DEBUGSTR("DA: " #proc "\n"); print_state();
@@ -303,6 +353,19 @@ void	test3() {
 	PRINT_STATE_AFTER(_yo_free(b));
 }
 
+void	test4() {
+	size_t n = 123456789;
+	PRINT_STATE_AFTER(char *a = _yo_malloc(n));
+	PRINT_STATE_AFTER(char *b = _yo_malloc(n));
+	memset(a, 'a', n);
+	memset(b, 'b', n);
+	a[n] = 0;
+	b[n] = 0;
+	printf("%c %c\n", a[n - 1], b[n - 1]);
+	PRINT_STATE_AFTER(_yo_free(b));
+	PRINT_STATE_AFTER(_yo_free(a));
+}
+
 int main() {
 	setvbuf(stdout, NULL, _IONBF, 0);
 	int page_size = getpagesize();
@@ -312,7 +375,8 @@ int main() {
 
 	// test1();
 	// test2();
-	test3();
+	// test3();
+	test4();
 
 	// void *mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset);
 	// - addr: マッピング領域の開始点を決めるために使われるアドレス
