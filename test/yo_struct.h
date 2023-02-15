@@ -7,12 +7,18 @@
 /**
  * ブロックヘッダ
  * ブロックヘッダの先頭から (blocks + 1) * BLOCK_UNIT_SIZE バイト分の領域を
- * 「一続きのブロックのあつまり」という意味で ブロックセクション と呼ぶ.
+ * 「一続きのブロックのあつまり」という意味で チャンク と呼ぶ.
  */
 typedef struct s_block_header {
-	struct s_block_header*	next; // 次のブロックヘッダへのポインタ
-	size_t					blocks; // このブロックセクションの長さ
+	// 次のブロックヘッダへのポインタ
+	// next の下3ビットはアドレスでない情報に使うので,
+	// next をアドレスとして用いる場合は下3ビットを落とすこと(ADDRESSマクロを使う)
+	struct s_block_header*	next;
+
+	// このチャンクの長さ
+	size_t					blocks;
 } t_block_header;
+
 
 typedef struct s_yo_malloc_root {
 	t_block_header*	frees;

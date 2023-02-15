@@ -12,11 +12,11 @@
 
 t_yo_malloc_root	g_root;
 
-void	*_yo_allocate_bunch(size_t n);
+void	*_yo_allocate_heap(size_t n);
 void	insert_item(t_block_header **list, t_block_header *item);
 void	remove_item(t_block_header **list, t_block_header *item);
 void	show_list(t_block_header *list);
-void	_yo_large_free(t_block_header *head);
+void	_yo_free_large_chunk(t_block_header *head);
 void*	_yo_large_malloc(size_t n);
 
 #endif

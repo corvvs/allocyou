@@ -7,14 +7,14 @@ void	yo_free(void *addr) {
 		return;
 	}
 
-	DEBUGOUT("** %p **\n", addr);
+	DEBUGOUT("** addr: %p **\n", addr);
 	t_block_header *head = addr;
 	--head;
 	DEBUGOUT("head: %p, next: %p\n", head, head->next);
 
 	if (GET_IS_LARGE(head->next)) {
 		// ラージセクション -> munmapする
-		_yo_large_free(head);
+		_yo_free_large_chunk(head);
 		return;
 	}
 
@@ -33,8 +33,8 @@ void	yo_free(void *addr) {
 		return;
 	}
 	if (prev_unused != NULL && head <= (prev_unused + prev_unused->blocks)) {
-		// head が前のブロックセクションの中にあるっぽい -> なんかおかしい
-		DEBUGWARN("SOMETHING WRONG: head seems to be within previous block-section: %p\n", head);
+		// head が前のチャンクの中にあるっぽい -> なんかおかしい
+		DEBUGWARN("SOMETHING WRONG: head seems to be within previous chunk: %p\n", head);
 		return;
 	}
 	remove_item(&g_root.allocated, head);
@@ -83,42 +83,42 @@ void	*yo_malloc(size_t n) {
 	size_t mmap_unit = QUANTIZE(getpagesize(), BLOCK_UNIT_SIZE);
 
 	size_t	blocks_needed = QUANTIZE(n, BLOCK_UNIT_SIZE) / BLOCK_UNIT_SIZE;
-	DEBUGOUT("** malloc: B:%zu, blocks: %zu **, mmap_unit: %zu\n", n, blocks_needed, mmap_unit);
+	DEBUGOUT("** bytes: %zu, blocks: %zu **, mmap_unit: %zu\n", n, blocks_needed, mmap_unit);
 
 	if (blocks_needed >= mmap_unit) {
 		// 要求サイズが1つのバンチに収まらない
 		// -> 専用のバンチを mmap して返す
-		DEBUGWARN("required size %zu(B) is greater than bunch size %zu(B)\n", n, mmap_unit * BLOCK_UNIT_SIZE);
+		DEBUGWARN("required size %zu(B) is greater than heap size %zu(B)\n", n, mmap_unit * BLOCK_UNIT_SIZE);
 		return _yo_large_malloc(n);
 	}
 	
 	if (g_root.frees == NULL) {
 		DEBUGSTR("allocating arena...\n");
-		g_root.frees = _yo_allocate_bunch(mmap_unit);
+		g_root.frees = _yo_allocate_heap(mmap_unit);
 	}
 	if (g_root.frees == NULL) {
 		// g_root.frees 確保失敗
 		return NULL;
 	}
 	DEBUGOUT("g_root.frees head: (%zu, %p) -> %p\n", g_root.frees->blocks, g_root.frees, g_root.frees->next);
-	// 要求されるサイズ以上のブロックセクションが空いていないかどうか探す
+	// 要求されるサイズ以上のチャンクが空いていないかどうか探す
 	t_block_header	*head = g_root.frees;
 	t_block_header	*prev = NULL;
 	DEBUGOUT("blocks_needed = %zu\n", blocks_needed);
 	while (head != NULL) {
 		if (head->blocks >= blocks_needed) {
-			// 適合するブロックがあった -> 後処理を行う
+			// 適合するチャンクがあった -> 後処理を行う
 			// ブロックヘッダの次のブロックを返す
 			t_block_header	*rv = head + 1;
 
-			// 見つかったブロックセクションのうち, 最初の blocks_needed 個を除去する
+			// 見つかったチャンクのうち, 最初の blocks_needed 個を除去する
 			// head->blocks がちょうど blocks_needed と一致しているかどうかで場合分け
 			if (head->blocks <= blocks_needed + 1) {
-				// -> 見つかったブロックセクションを丸ごと使い尽くす
-				DEBUGOUT("exhausted block-section: (%zu, %p)\n", head->blocks, head);
+				// -> 見つかったチャンクを丸ごと使い尽くす
+				DEBUGOUT("exhausted chunk: (%zu, %p)\n", head->blocks, head);
 				head = ADDRESS(head->next);
 			} else {
-				// -> 見つかったブロックセクションの一部が残る
+				// -> 見つかったチャンクの一部が残る
 				t_block_header	*new_head = head + blocks_needed + 1;
 
 				// head->blocks + 1 = (blocks_needed + 1) + (rest_blocks + 1)
@@ -142,14 +142,14 @@ void	*yo_malloc(size_t n) {
 		prev = head;
 		head = ADDRESS(head->next);
 	}
-	// 適合するブロックセクションがなかった
-	DEBUGSTR("NO ENOUGH BLOCKS\n");
-	t_block_header	*new_bunch = _yo_allocate_bunch(mmap_unit);
-	if (new_bunch == NULL) {
+	// 適合するチャンクがなかった
+	DEBUGSTR("NO ENOUGH BLOCKS -> extend current zone\n");
+	t_block_header	*new_heap = _yo_allocate_heap(mmap_unit);
+	if (new_heap == NULL) {
 		return NULL;
 	}
-	DEBUGOUT("new_bunch = %p\n", new_bunch);
-	yo_free(new_bunch + 1);
+	DEBUGOUT("new_heap = %p\n", new_heap);
+	yo_free(new_heap + 1);
 	return NULL;
 }
 
