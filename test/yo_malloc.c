@@ -151,10 +151,11 @@ void*	yo_malloc(size_t n) {
 }
 
 void*	yo_realloc(void *addr, size_t n) {
-	DEBUGOUT("** addr: %p, size: %zu **", addr, n);
+	DEBUGOUT("** addr: %p, size: %zu **\n", addr, n);
 
 	if (addr == NULL) {
 		// -> malloc に移譲する
+		DEBUGWARN("addr == NULL -> delegate to malloc(%zu)\n", n);
 		return yo_malloc(n);
 	}
 
@@ -163,13 +164,18 @@ void*	yo_realloc(void *addr, size_t n) {
 	if (n > head->blocks * BLOCK_UNIT_SIZE) {
 		if (GET_IS_LARGE(head->next)) {
 			// LARGE の時は必ずリロケートする
+			DEBUGSTR("** RELOCATE LARGE!! **\n");
 			return _yo_relocate_chunk(head, n);
 		}
 
 		// 後続に十分な空きチャンクがあるなら, それらを現在のチャンクに取り込む.
-
+		t_block_header*	extended = _yo_try_extend_chunk(head, n);
+		if (extended != NULL) {
+			return extended;
+		}
 
 		// 後続に十分な空きチャンクがない場合はリロケートする
+		DEBUGSTR("** RELOCATE!! **\n");
 		return _yo_relocate_chunk(head, n);
 	} else {
 		// -> shrink

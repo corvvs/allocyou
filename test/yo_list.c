@@ -2,13 +2,13 @@
 
 void	insert_item(t_block_header **list, t_block_header *item) {
 	if (list == NULL) {
-		DEBUGSTR("SOMETHING WRONG: list is null");
+		DEBUGSTR("SOMETHING WRONG: list is null\n");
 		return;
 	}
 	if (*list == NULL) {
 		*list = item;
 		item->next = NULL;
-		DEBUGSTR("item is front");
+		DEBUGSTR("item is front\n");
 		return;
 	}
 	t_block_header	*curr = *list;
@@ -29,7 +29,7 @@ void	insert_item(t_block_header **list, t_block_header *item) {
 
 void	remove_item(t_block_header **list, t_block_header *item) {
 	if (list == NULL) {
-		DEBUGSTR("SOMETHING WRONG: list is null");
+		DEBUGSTR("SOMETHING WRONG: list is null\n");
 		return;
 	}
 	t_block_header	*curr = *list;

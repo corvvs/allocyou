@@ -43,6 +43,7 @@ void*	_yo_try_extend_chunk(t_block_header* head, size_t n) {
 	head->blocks = blocks_needed;
 	remove_item(&g_root.frees, cand);
 	insert_item(&g_root.frees, new_free);
+	DEBUGSTR("** EXTENDED **\n");
 	return head;
 }
 
@@ -64,6 +65,8 @@ void*	_yo_shrink_chunk(t_block_header* head, size_t n) {
 		free_head->blocks = head->blocks - blocks_needed - 1;
 		free_head->next = NULL;
 		yo_free(free_head + 1);
-	}	
+	} else {
+		DEBUGOUT("** MAINTAIN(%zu, %p) **\n", head->blocks, head);
+	}
 	return head + 1;
 }
