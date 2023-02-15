@@ -3,10 +3,6 @@
 
 # include "yo_common.h"
 
-# define TX_GRN "\e[32m"
-# define TX_BLU "\e[32m"
-# define TX_RST "\e[0m"
-
 // quantize a by b
 // least-greater-than multiple
 // a 以上で最小の b の倍数を返す
@@ -20,5 +16,7 @@
 # define COPYFLAGS(dst, src) ((void *)((uintptr_t)ADDRESS(dst) | (uintptr_t)FLAGS(src)))
 # define GET_IS_LARGE(ptr) (!!((uintptr_t)ptr & 1))
 # define SET_IS_LARGE(ptr, flag) ((void*)(((uintptr_t)ptr ^ 1) | !!flag))
+
+void	*yo_memcpy(void* dst, const void* src, size_t n);
 
 #endif

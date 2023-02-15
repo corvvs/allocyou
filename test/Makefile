@@ -8,6 +8,8 @@ SRCS	:=\
 			yo_malloc.c\
 			yo_list.c\
 			yo_allocation.c\
+			yo_realloc.c\
+			yo_utils.c\
 
 OBJS	:= $(SRCS:$(SRCDIR)%.c=$(OBJDIR)%.o)
 

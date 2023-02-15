@@ -19,22 +19,18 @@ void	yo_free(void *addr) {
 	}
 
 	// addr が malloc された領域なら, addr から sizeof(t_block_header) だけ下がったところにブロックヘッダがあるはず.
-	t_block_header *prev_unused = NULL;
-	t_block_header *curr_unused = g_root.frees;
-	while (curr_unused != NULL && curr_unused < head) {
-		prev_unused = curr_unused;
-		curr_unused = ADDRESS(curr_unused->next);
-	}
+	t_block_header *prev_unused = find_item(g_root.frees, head);
+	t_block_header *curr_unused = prev_unused == NULL ? g_root.frees : ADDRESS(prev_unused->next);
 	// assertion:
 	// (!prev_unused || prev_unused < addr) && addr <= curr_unused
 	if (head == curr_unused) {
 		// head が curr_unused と一致している -> なんかおかしい
-		DEBUGWARN("SOMETHING WRONG: head is equal to free-block-header: %p\n", head);
+		DEBUGERR("SOMETHING WRONG: head is equal to free-block-header: %p\n", head);
 		return;
 	}
 	if (prev_unused != NULL && head <= (prev_unused + prev_unused->blocks)) {
 		// head が前のチャンクの中にあるっぽい -> なんかおかしい
-		DEBUGWARN("SOMETHING WRONG: head seems to be within previous chunk: %p\n", head);
+		DEBUGERR("SOMETHING WRONG: head seems to be within previous chunk: %p\n", head);
 		return;
 	}
 	remove_item(&g_root.allocated, head);
@@ -78,11 +74,11 @@ void	yo_free(void *addr) {
 
 
 // n バイト**以上**の領域を確保して返す.
-void	*yo_malloc(size_t n) {
+void*	yo_malloc(size_t n) {
 
-	size_t mmap_unit = QUANTIZE(getpagesize(), BLOCK_UNIT_SIZE);
+	size_t	mmap_unit = QUANTIZE(getpagesize(), BLOCK_UNIT_SIZE);
 
-	size_t	blocks_needed = QUANTIZE(n, BLOCK_UNIT_SIZE) / BLOCK_UNIT_SIZE;
+	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
 	DEBUGOUT("** bytes: %zu, blocks: %zu **, mmap_unit: %zu\n", n, blocks_needed, mmap_unit);
 
 	if (blocks_needed >= mmap_unit) {
@@ -146,11 +142,39 @@ void	*yo_malloc(size_t n) {
 	DEBUGSTR("NO ENOUGH BLOCKS -> extend current zone\n");
 	t_block_header	*new_heap = _yo_allocate_heap(mmap_unit);
 	if (new_heap == NULL) {
+		errno = ENOMEM;
 		return NULL;
 	}
 	DEBUGOUT("new_heap = %p\n", new_heap);
 	yo_free(new_heap + 1);
 	return NULL;
+}
+
+void*	yo_realloc(void *addr, size_t n) {
+	DEBUGOUT("** addr: %p, size: %zu **", addr, n);
+
+	if (addr == NULL) {
+		// -> malloc に移譲する
+		return yo_malloc(n);
+	}
+
+	t_block_header	*head = addr;
+	--head;
+	if (n > head->blocks * BLOCK_UNIT_SIZE) {
+		if (GET_IS_LARGE(head->next)) {
+			// LARGE の時は必ずリロケートする
+			return _yo_relocate_chunk(head, n);
+		}
+
+		// 後続に十分な空きチャンクがあるなら, それらを現在のチャンクに取り込む.
+
+
+		// 後続に十分な空きチャンクがない場合はリロケートする
+		return _yo_relocate_chunk(head, n);
+	} else {
+		// -> shrink
+		return _yo_shrink_chunk(head, n);
+	}
 }
 
 void show_alloc_mem() {

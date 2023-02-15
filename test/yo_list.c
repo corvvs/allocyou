@@ -48,6 +48,18 @@ void	remove_item(t_block_header **list, t_block_header *item) {
 	}
 }
 
+// 昇順リスト list の要素のうち, item より小さい最大の要素を探す.
+// returns max{ m in list | m < item }
+t_block_header*	find_item(t_block_header* list, t_block_header *item) {
+	t_block_header *prev = NULL;
+	t_block_header *curr = list;
+	while (curr != NULL && curr < item) {
+		prev = curr;
+		curr = ADDRESS(curr->next);
+	}
+	return prev;
+}
+
 void	show_list(t_block_header *list) {
 	if (list == NULL) {
 		dprintf(STDERR_FILENO, "%s[nothing]%s\n", TX_GRN, TX_RST);

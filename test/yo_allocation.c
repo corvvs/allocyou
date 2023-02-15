@@ -35,7 +35,7 @@ void	_yo_free_large_chunk(t_block_header *head) {
 }
 
 void	*_yo_large_malloc(size_t n) {
-	size_t	blocks_needed = QUANTIZE(n, BLOCK_UNIT_SIZE) / BLOCK_UNIT_SIZE;
+	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
 	DEBUGOUT("** bytes: B:%zu, blocks: %zu **\n", n, blocks_needed);
 	t_block_header	*head = _yo_allocate_heap(blocks_needed);
 	if (head == NULL) {
