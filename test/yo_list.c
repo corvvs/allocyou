@@ -63,13 +63,13 @@ t_block_header*	find_item(t_block_header* list, t_block_header *item) {
 
 void	show_list(t_block_header *list) {
 	if (list == NULL) {
-		dprintf(STDERR_FILENO, "%s[nothing]%s", TX_YLW, TX_RST);
+		dprintf(STDERR_FILENO, "%s[nothing]%s\n", TX_YLW, TX_RST);
 		return;
 	}
 	dprintf(STDERR_FILENO, TX_GRN);
 	while (list != NULL) {
 		const int is_adjacent = ADDRESS(list->next) == NULL || (uintptr_t)ADDRESS(list->next) == (uintptr_t)(list + list->blocks + 1);
-		dprintf(STDERR_FILENO, "[%012lx:%zu]", (uintptr_t)list % (BLOCK_UNIT_SIZE << 24), list->blocks);
+		dprintf(STDERR_FILENO, "[%016lx:%zu]", (uintptr_t)list, list->blocks);
 		if (!is_adjacent) {
 			dprintf(STDERR_FILENO, "-");
 		}

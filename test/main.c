@@ -97,17 +97,20 @@ void	test5() {
 	yo_free(_);
 }
 
-#define MASS_RANDOM_N 10000
+#define MASS_RANDOM_N 30000
 
 void	mass_random() {
 	void	*m[MASS_RANDOM_N];
 
+	srand(111111107);
 	for (int i = 0; i < MASS_RANDOM_N; ++i) {
-		m[i] = yo_malloc(rand() % 100000 + 1);
+		m[i] = yo_malloc(rand() % 3000 + 1);
 	}
 	for (int i = 0; i < MASS_RANDOM_N; ++i) {
+		// show_alloc_mem();
 		yo_free(m[i]);
 	}
+	show_alloc_mem();
 }
 
 int main() {
@@ -118,5 +121,4 @@ int main() {
 	// test4();
 	// test5();
 	mass_random();
-
 }

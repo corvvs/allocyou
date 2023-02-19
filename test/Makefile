@@ -15,6 +15,7 @@ SRCS	:=\
 			yo_allocation.c\
 			yo_realloc.c\
 			yo_utils.c\
+			yo_predicates.c\
 
 OBJS	:= $(SRCS:$(SRCDIR)%.c=$(OBJDIR)%.o)
 NAME	:= libmalloc.a

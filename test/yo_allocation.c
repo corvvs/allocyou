@@ -6,13 +6,13 @@ extern t_yo_malloc_root	g_root;
 t_yo_zone_class	_yo_zone_for_bytes(size_t n) {
 	size_t	block_needed = BLOCKS_FOR_SIZE(n);
 	if (block_needed > SMALL_MAX_CHUNK_BLOCK) {
-		DEBUGWARN("zone LARGE for %zu B", n);
+		DEBUGWARN("zone for %zu B: LARGE", n);
 		return YO_ZONE_LARGE;
 	} else if (block_needed > TINY_MAX_CHUNK_BLOCK) {
-		DEBUGWARN("zone SMALL for %zu B", n);
+		DEBUGWARN("zone for %zu B: SMALL", n);
 		return YO_ZONE_SMALL;
 	}
-	DEBUGWARN("zone TINY for %zu B", n);
+	DEBUGWARN("zone for %zu B: TINY", n);
 	return YO_ZONE_TINY;
 }
 
@@ -49,20 +49,20 @@ t_yo_zone_class		_yo_zone_for_addr(void *addr) {
 	--head;
 	void	*flags = head->next;
 	if (GET_IS_LARGE(flags)) {
-		DEBUGWARN("zone LARGE for addr %p, flags: %p", addr, flags);
+		DEBUGWARN("zone for addr %p: LARGE, flags: %p", addr, flags);
 		return YO_ZONE_LARGE;
 	} else if (GET_IS_TINY(flags)) {
-		DEBUGWARN("zone TINY for addr %p, flags: %p", addr, flags);
+		DEBUGWARN("zone for addr %p: TINY, flags: %p", addr, flags);
 		return YO_ZONE_TINY;
 	}
-	DEBUGWARN("zone SMALL for addr %p, flags: %p", addr, flags);
+	DEBUGWARN("zone for addr %p: SMALL, flags: %p", addr, flags);
 	return YO_ZONE_SMALL;
 }
 
 
 // n + 1 個分のブロックを mmap で確保して返す
 // 失敗した場合は NULL が返る
-void	*_yo_allocate_heap(size_t n) {
+void	*_yo_allocate_heap(size_t n, t_yo_zone_class zone) {
 	void	*mapped = mmap(
 		NULL,
 		(n + 1) * BLOCK_UNIT_SIZE,
@@ -75,7 +75,7 @@ void	*_yo_allocate_heap(size_t n) {
 	// 確保できたら先頭にブロックヘッダを詰める
 	t_block_header	*header = mapped;
 	header->blocks = n;
-	header->next = NULL;
+	header->next = set_for_zone(NULL, zone);
 	return mapped;
 }
 
@@ -95,7 +95,7 @@ void	_yo_free_large_chunk(t_block_header *head) {
 void	*_yo_large_malloc(size_t n) {
 	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
 	DEBUGOUT("** bytes: B:%zu, blocks: %zu **", n, blocks_needed);
-	t_block_header	*head = _yo_allocate_heap(blocks_needed);
+	t_block_header	*head = _yo_allocate_heap(blocks_needed, YO_ZONE_LARGE);
 	if (head == NULL) {
 		return NULL;
 	}
