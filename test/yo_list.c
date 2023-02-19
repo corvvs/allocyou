@@ -7,7 +7,7 @@ void	insert_item(t_block_header **list, t_block_header *item) {
 	}
 	if (*list == NULL) {
 		*list = item;
-		item->next = NULL;
+		item->next = COPYFLAGS(NULL, item->next);
 		DEBUGSTR("item is front\n");
 		return;
 	}
@@ -17,11 +17,12 @@ void	insert_item(t_block_header **list, t_block_header *item) {
 		prev = curr;
 		curr = ADDRESS(curr->next);
 	}
+	// 挿入場所に挿入
 	if (curr != NULL) {
 		item->next = COPYFLAGS(curr, item->next);
 	}
 	if (prev != NULL) {
-		prev->next = item;
+		prev->next = COPYFLAGS(item, item->next);
 	} else {
 		*list = item;
 	}
@@ -62,13 +63,18 @@ t_block_header*	find_item(t_block_header* list, t_block_header *item) {
 
 void	show_list(t_block_header *list) {
 	if (list == NULL) {
-		dprintf(STDERR_FILENO, "%s[nothing]%s\n", TX_GRN, TX_RST);
+		dprintf(STDERR_FILENO, "%s[nothing]%s\n", TX_YLW, TX_RST);
 		return;
 	}
+	dprintf(STDERR_FILENO, TX_GRN);
 	while (list != NULL) {
-		dprintf(STDERR_FILENO, "%s[%012lx:%zu]%s", TX_GRN, (uintptr_t)list % (BLOCK_UNIT_SIZE << 24), list->blocks, TX_RST);
+		const int is_adjacent = ADDRESS(list->next) == NULL || (uintptr_t)ADDRESS(list->next) == (uintptr_t)(list + list->blocks + 1);
+		dprintf(STDERR_FILENO, "[%012lx:%zu]", (uintptr_t)list % (BLOCK_UNIT_SIZE << 24), list->blocks);
+		if (!is_adjacent) {
+			dprintf(STDERR_FILENO, "-");
+		}
 		list = ADDRESS(list->next);
 	}
-	dprintf(STDERR_FILENO, "\n");
+	dprintf(STDERR_FILENO, TX_RST "\n");
 }
 
