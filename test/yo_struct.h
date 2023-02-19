@@ -19,11 +19,30 @@ typedef struct s_block_header {
 	size_t					blocks;
 } t_block_header;
 
+// n in PDF
+# define TINY_MAX_CHUNK_BYTE ((size_t)992)
+# define TINY_MAX_CHUNK_BLOCK (BLOCKS_FOR_SIZE(TINY_MAX_CHUNK_BYTE))
+// m in PDF
+# define SMALL_MAX_CHUNK_BYTE ((size_t)15360)
+# define SMALL_MAX_CHUNK_BLOCK (BLOCKS_FOR_SIZE(SMALL_MAX_CHUNK_BYTE))
 
-typedef struct s_yo_malloc_root {
+// N in PDF
+# define TINY_MAX_HEAP_BYTE ((size_t)1048576)
+// M in PDF
+# define SMALL_MAX_HEAP_BYTE ((size_t)8388608)
+
+typedef struct s_yo_zone {
+	size_t			max_chunk_bytes;
+	size_t			heap_bytes;
+	size_t			heap_blocks;
 	t_block_header*	frees;
 	t_block_header*	allocated;
-	t_block_header* large;
+}	t_yo_zone;
+
+typedef struct s_yo_malloc_root {
+	t_yo_zone		tiny;
+	t_yo_zone		small;
+	t_block_header*	large;
 }	t_yo_malloc_root;
 
 // 1ブロックのサイズ

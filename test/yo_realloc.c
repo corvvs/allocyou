@@ -13,17 +13,18 @@ void*	_yo_relocate_chunk(t_block_header* head, size_t n) {
 	DEBUGOUT("yo_memcpy(%p, %p, %zu)\n", new_head + 1, head + 1, head->blocks * BLOCK_UNIT_SIZE);
 	yo_memcpy(new_head + 1, head + 1, head->blocks * BLOCK_UNIT_SIZE);
 	DEBUGOUT("freeing %p\n", head);
-	yo_free(head);
+	COPYFLAGS(new_head->next, head->next);
+	yo_free_actual(head);
 	return new_mem;
 }
 
 // 
-void*	_yo_try_extend_chunk(t_block_header* head, size_t n) {
+void*	_yo_try_extend_chunk(t_yo_zone* zone, t_block_header* head, size_t n) {
 	// フリーチャンクは隣接していない(隣接しているなら合体している)はずなので,
 	// 1つ後のフリーチャンクだけを調べればよい
 	t_block_header*	right = head + head->blocks + 1;
-	t_block_header*	prev = find_item(g_root.frees, right);
-	t_block_header*	cand = prev == NULL ? g_root.frees : ADDRESS(prev->next);
+	t_block_header*	prev = find_item(zone->frees, right);
+	t_block_header*	cand = prev == NULL ? zone->frees : ADDRESS(prev->next);
 	if (cand == NULL || cand != right) {
 		DEBUGSTR("no candidate free chunk\n");
 		return NULL;
@@ -41,8 +42,8 @@ void*	_yo_try_extend_chunk(t_block_header* head, size_t n) {
 	new_free->blocks = whole_blocks - 2 - blocks_needed;
 	new_free->next = NULL;
 	head->blocks = blocks_needed;
-	remove_item(&g_root.frees, cand);
-	insert_item(&g_root.frees, new_free);
+	remove_item(&zone->frees, cand);
+	insert_item(&zone->frees, new_free);
 	DEBUGSTR("** EXTENDED **\n");
 	return head;
 }
@@ -64,7 +65,7 @@ void*	_yo_shrink_chunk(t_block_header* head, size_t n) {
 		t_block_header	*free_head = head + head->blocks + 1;
 		free_head->blocks = head->blocks - blocks_needed - 1;
 		free_head->next = NULL;
-		yo_free(free_head + 1);
+		yo_free_actual(free_head + 1);
 	} else {
 		DEBUGOUT("** MAINTAIN(%zu, %p) **\n", head->blocks, head);
 	}

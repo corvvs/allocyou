@@ -2,9 +2,14 @@
 CC		:= gcc
 CFLAGS	:= -Wall -Wextra -Werror -g -fsanitize=address
 
-SRCDIR	:= 
-OBJDIR	:= 
+ifeq ($(HOSTTYPE),)
+	HOSTTYPE := $(shell uname -m)_$(shell uname -s)
+endif
+
+SRCDIR	:=
+OBJDIR	:=
 SRCS	:=\
+			yo_front.c\
 			yo_malloc.c\
 			yo_list.c\
 			yo_allocation.c\
@@ -15,8 +20,13 @@ OBJS	:= $(SRCS:$(SRCDIR)%.c=$(OBJDIR)%.o)
 NAME	:= libmalloc.a
 RM		:= rm -rf
 
+SONAME	:= 
+
 all:	malloc
 
+
+$(OBJDIR):
+	@mkdir -p $(OBJDIR)
 
 .PHONY:	malloc
 malloc:	$(NAME)
@@ -24,7 +34,7 @@ malloc:	$(NAME)
 	./$@
 
 
-$(NAME):	$(OBJS)
+$(NAME):	$(OBJDIR) $(OBJS)
 	ar rcs $(NAME) $(OBJS)
 
 clean:
