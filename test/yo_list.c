@@ -2,13 +2,13 @@
 
 void	insert_item(t_block_header **list, t_block_header *item) {
 	if (list == NULL) {
-		DEBUGSTR("SOMETHING WRONG: list is null\n");
+		DEBUGSTR("SOMETHING WRONG: list is null");
 		return;
 	}
 	if (*list == NULL) {
 		*list = item;
 		item->next = COPYFLAGS(NULL, item->next);
-		DEBUGSTR("item is front\n");
+		DEBUGSTR("item is front");
 		return;
 	}
 	t_block_header	*curr = *list;
@@ -30,7 +30,7 @@ void	insert_item(t_block_header **list, t_block_header *item) {
 
 void	remove_item(t_block_header **list, t_block_header *item) {
 	if (list == NULL) {
-		DEBUGSTR("SOMETHING WRONG: list is null\n");
+		DEBUGSTR("SOMETHING WRONG: list is null");
 		return;
 	}
 	t_block_header	*curr = *list;
@@ -63,7 +63,7 @@ t_block_header*	find_item(t_block_header* list, t_block_header *item) {
 
 void	show_list(t_block_header *list) {
 	if (list == NULL) {
-		dprintf(STDERR_FILENO, "%s[nothing]%s\n", TX_YLW, TX_RST);
+		dprintf(STDERR_FILENO, "%s[nothing]%s", TX_YLW, TX_RST);
 		return;
 	}
 	dprintf(STDERR_FILENO, TX_GRN);

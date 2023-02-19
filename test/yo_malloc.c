@@ -3,16 +3,16 @@
 // addr が malloc された領域ならば解放する.
 void	yo_free_actual(void *addr) {
 	if (addr == NULL) {
-		DEBUGSTR("freeing NULL\n");
+		DEBUGSTR("freeing NULL");
 		return;
 	}
 
 	t_yo_zone_class	zone_class = _yo_zone_for_addr(addr);
 
-	DEBUGOUT("** addr: %p **\n", addr);
+	DEBUGOUT("** addr: %p **", addr);
 	t_block_header *head = addr;
 	--head;
-	DEBUGOUT("head: %p, next: %p\n", head, head->next);
+	DEBUGOUT("head: %p, next: %p", head, head->next);
 
 	if (zone_class == YO_ZONE_LARGE) {
 		// ラージセクション -> munmapする
@@ -29,40 +29,40 @@ void	yo_free_actual(void *addr) {
 	// (!prev_unused || prev_unused < addr) && addr <= curr_unused
 	if (head == curr_unused) {
 		// head が curr_unused と一致している -> なんかおかしい
-		DEBUGERR("SOMETHING WRONG: head is equal to free-block-header: %p\n", head);
+		DEBUGERR("SOMETHING WRONG: head is equal to free-block-header: %p", head);
 		return;
 	}
 	if (prev_unused != NULL && head <= (prev_unused + prev_unused->blocks)) {
 		// head が前のチャンクの中にあるっぽい -> なんかおかしい
-		DEBUGERR("SOMETHING WRONG: head seems to be within previous chunk: %p\n", head);
+		DEBUGERR("SOMETHING WRONG: head seems to be within previous chunk: %p", head);
 		return;
 	}
 	remove_item(&zone->allocated, head);
 	// curr_unused があるなら, それは head より大きい最小の(=右隣の)ブロックヘッダ.
-	DEBUGOUT("curr_unused = %p\n", curr_unused);
+	DEBUGOUT("curr_unused = %p", curr_unused);
 	if (curr_unused) {
 		if ((head + head->blocks + 1) == curr_unused) {
 			// head と curr_unused がくっついている -> 統合する
-			DEBUGOUT("head(%zu, %p) + curr_unused(%zu, %p)\n", head->blocks, head, curr_unused->blocks, curr_unused);
+			DEBUGOUT("head(%zu, %p) + curr_unused(%zu, %p)", head->blocks, head, curr_unused->blocks, curr_unused);
 			head->blocks += curr_unused->blocks + 1;
 			head->next = ADDRESS(curr_unused->next);
 			curr_unused->blocks = 0;
 			curr_unused->next = 0;
-			DEBUGOUT("-> head(%zu, %p)\n", head->blocks, head);
+			DEBUGOUT("-> head(%zu, %p)", head->blocks, head);
 		} else {
 			head->next = curr_unused;
 		}
 	}
 	// prev_unused があるなら, それは head より小さい最大の(=左隣の)ブロックヘッダ.
-	DEBUGOUT("prev_unused = %p\n", prev_unused);
+	DEBUGOUT("prev_unused = %p", prev_unused);
 	if (prev_unused) {
-		DEBUGOUT("head = %p\n", head);
+		DEBUGOUT("head = %p", head);
 		if (prev_unused + (prev_unused->blocks + 1) == head) {
 			// prev_unused と head がくっついている -> 統合する
-			DEBUGOUT("prev_unused(%zu, %p) + head(%zu, %p)\n", prev_unused->blocks, prev_unused, head->blocks, head);
+			DEBUGOUT("prev_unused(%zu, %p) + head(%zu, %p)", prev_unused->blocks, prev_unused, head->blocks, head);
 			prev_unused->blocks += head->blocks + 1;
 			prev_unused->next = ADDRESS(head->next);
-			DEBUGOUT("-> prev_unused(%zu, %p)\n", prev_unused->blocks, prev_unused);
+			DEBUGOUT("-> prev_unused(%zu, %p)", prev_unused->blocks, prev_unused);
 			head->blocks = 0;
 			head->next = 0;
 			head = prev_unused;
@@ -73,7 +73,7 @@ void	yo_free_actual(void *addr) {
 		// prev_unused がない -> head が最小のブロックヘッダ
 		zone->frees = head;
 	}
-	DEBUGSTR("** free end **\n");
+	DEBUGSTR("** free end **");
 }
 
 
@@ -81,30 +81,30 @@ void	yo_free_actual(void *addr) {
 void*	yo_malloc_actual(size_t n) {
 	t_yo_zone_class	zone_class = _yo_zone_for_bytes(n);
 	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
-	DEBUGOUT("** bytes: %zu, blocks: %zu **\n", n, blocks_needed);
+	DEBUGOUT("** bytes: %zu, blocks: %zu **", n, blocks_needed);
 
 	if (zone_class == YO_ZONE_LARGE) {
 		// 要求サイズが1つのバンチに収まらない
 		// -> 専用のバンチを mmap して返す
-		DEBUGWARN("required size %zu(B) is for LARGE\n", n);
+		DEBUGWARN("required size %zu(B) is for LARGE", n);
 		return _yo_large_malloc(n);
 	}
 
 	t_yo_zone	*zone = _yo_retrieve_zone_for_class(zone_class);
 	
 	if (zone->frees == NULL) {
-		DEBUGSTR("allocating arena...\n");
+		DEBUGSTR("allocating arena...");
 		zone->frees = _yo_allocate_heap(zone->heap_blocks);
 	}
 	if (zone->frees == NULL) {
 		// g_root.frees 確保失敗
 		return NULL;
 	}
-	DEBUGOUT("g_root.frees head: (%zu, %p) -> %p\n", zone->frees->blocks, zone->frees, zone->frees->next);
+	DEBUGOUT("g_root.frees head: (%zu, %p) -> %p", zone->frees->blocks, zone->frees, zone->frees->next);
 	// 要求されるサイズ以上のチャンクが空いていないかどうか探す
 	t_block_header	*head = zone->frees;
 	t_block_header	*prev = NULL;
-	DEBUGOUT("blocks_needed = %zu\n", blocks_needed);
+	DEBUGOUT("blocks_needed = %zu", blocks_needed);
 	while (head != NULL) {
 		if (head->blocks >= blocks_needed) {
 			// 適合するチャンクがあった -> 後処理を行う
@@ -115,7 +115,7 @@ void*	yo_malloc_actual(size_t n) {
 			// head->blocks がちょうど blocks_needed と一致しているかどうかで場合分け
 			if (head->blocks <= blocks_needed + 1) {
 				// -> 見つかったチャンクを丸ごと使い尽くす
-				DEBUGOUT("exhausted chunk: (%zu, %p)\n", head->blocks, head);
+				DEBUGOUT("exhausted chunk: (%zu, %p)", head->blocks, head);
 				head = ADDRESS(head->next);
 			} else {
 				// -> 見つかったチャンクの一部が残る
@@ -125,7 +125,7 @@ void*	yo_malloc_actual(size_t n) {
 				// -> rest_blocks = head->blocks - (blocks_needed + 1)
 				new_head->blocks = head->blocks - (blocks_needed + 1);
 				new_head->next = ADDRESS(head->next);
-				DEBUGOUT("shorten block: (%zu, %p) -> (%zu, %p)\n", head->blocks, head, new_head->blocks, new_head);
+				DEBUGOUT("shorten block: (%zu, %p) -> (%zu, %p)", head->blocks, head, new_head->blocks, new_head);
 				head->blocks = blocks_needed;
 				head = new_head;
 			}
@@ -139,33 +139,33 @@ void*	yo_malloc_actual(size_t n) {
 			} else {
 				head->next = SET_IS_SMALL(head->next);
 			}
-			DEBUGOUT("head->next = %p\n", head->next);
-			DEBUGOUT("returning block: (%zu, %p)\n", blocks_needed, rv);
+			DEBUGOUT("head->next = %p", head->next);
+			DEBUGOUT("returning block: (%zu, %p)", blocks_needed, rv);
 			insert_item(&zone->allocated, (rv - 1));
-			DEBUGSTR("** malloc end **\n");
+			DEBUGSTR("** malloc end **");
 			return rv;
 		}
 		prev = head;
 		head = ADDRESS(head->next);
 	}
 	// 適合するチャンクがなかった
-	DEBUGSTR("NO ENOUGH BLOCKS -> extend current zone\n");
+	DEBUGSTR("NO ENOUGH BLOCKS -> extend current zone");
 	t_block_header	*new_heap = _yo_allocate_heap(zone->heap_blocks);
 	if (new_heap == NULL) {
 		errno = ENOMEM;
 		return NULL;
 	}
-	DEBUGOUT("new_heap = %p\n", new_heap);
+	DEBUGOUT("new_heap = %p", new_heap);
 	yo_free_actual(new_heap + 1);
 	return NULL;
 }
 
 void*	yo_realloc(void *addr, size_t n) {
-	DEBUGOUT("** addr: %p, size: %zu **\n", addr, n);
+	DEBUGOUT("** addr: %p, size: %zu **", addr, n);
 
 	if (addr == NULL) {
 		// -> malloc に移譲する
-		DEBUGWARN("addr == NULL -> delegate to malloc(%zu)\n", n);
+		DEBUGWARN("addr == NULL -> delegate to malloc(%zu)", n);
 		return yo_malloc_actual(n);
 	}
 
@@ -174,10 +174,10 @@ void*	yo_realloc(void *addr, size_t n) {
 	t_yo_zone_class	zone_class = _yo_zone_for_addr(addr);
 	if (zone_class == YO_ZONE_LARGE) {
 		if (n > head->blocks * BLOCK_UNIT_SIZE) {
-			DEBUGSTR("** RELOCATE LARGE!! **\n");
+			DEBUGSTR("** RELOCATE LARGE!! **");
 			return _yo_relocate_chunk(head, n);
 		}
-		DEBUGSTR("do nothing for large chunk\n");
+		DEBUGSTR("do nothing for large chunk");
 		return addr;
 	}
 
@@ -191,7 +191,7 @@ void*	yo_realloc(void *addr, size_t n) {
 		}
 
 		// 後続に十分な空きチャンクがない場合はリロケートする
-		DEBUGSTR("** RELOCATE!! **\n");
+		DEBUGSTR("** RELOCATE!! **");
 		return _yo_relocate_chunk(head, n);
 	} else {
 		// -> shrink
@@ -205,24 +205,11 @@ static	void show_zone(t_yo_zone	*zone) {
 }
 
 void show_alloc_mem() {
-	DEBUGSTR("TINY:\n");
+	DEBUGSTR("TINY:");
 	show_zone(&g_root.tiny);
-	DEBUGSTR("SMALL:\n");
+	DEBUGSTR("SMALL:");
 	show_zone(&g_root.small);
-	DEBUGSTR("LARGE:  \n");
+	DEBUGSTR("LARGE:  ");
 	DEBUGSTR("  used: ");
 	show_list(g_root.large);
-}
-
-void	yo_free(void *addr) {
-	SPRINT_START;
-	yo_free_actual(addr);
-	SPRINT_END;
-}
-
-void*	yo_malloc(size_t n) {
-	SPRINT_START;
-	void	*mem = yo_malloc_actual(n);
-	SPRINT_END;
-	return mem;
 }

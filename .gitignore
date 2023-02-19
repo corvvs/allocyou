@@ -1,1 +1,7 @@
 *.o
+*.a
+*.so
+malloc
+mmap
+*.plist
+*.json

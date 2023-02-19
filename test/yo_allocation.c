@@ -6,13 +6,13 @@ extern t_yo_malloc_root	g_root;
 t_yo_zone_class	_yo_zone_for_bytes(size_t n) {
 	size_t	block_needed = BLOCKS_FOR_SIZE(n);
 	if (block_needed > SMALL_MAX_CHUNK_BLOCK) {
-		DEBUGWARN("zone LARGE for %zu B\n", n);
+		DEBUGWARN("zone LARGE for %zu B", n);
 		return YO_ZONE_LARGE;
 	} else if (block_needed > TINY_MAX_CHUNK_BLOCK) {
-		DEBUGWARN("zone SMALL for %zu B\n", n);
+		DEBUGWARN("zone SMALL for %zu B", n);
 		return YO_ZONE_SMALL;
 	}
-	DEBUGWARN("zone TINY for %zu B\n", n);
+	DEBUGWARN("zone TINY for %zu B", n);
 	return YO_ZONE_TINY;
 }
 
@@ -37,7 +37,7 @@ t_yo_zone*		_yo_retrieve_zone_for_class(t_yo_zone_class zone) {
 			return &g_root.small;
 		}
 		default: {
-			DEBUGERR("SOMETHING WRONG: %d\n", zone);
+			DEBUGERR("SOMETHING WRONG: %d", zone);
 			return NULL;
 		}
 	}
@@ -49,13 +49,13 @@ t_yo_zone_class		_yo_zone_for_addr(void *addr) {
 	--head;
 	void	*flags = head->next;
 	if (GET_IS_LARGE(flags)) {
-		DEBUGWARN("zone LARGE for addr %p, flags: %p\n", addr, flags);
+		DEBUGWARN("zone LARGE for addr %p, flags: %p", addr, flags);
 		return YO_ZONE_LARGE;
 	} else if (GET_IS_TINY(flags)) {
-		DEBUGWARN("zone TINY for addr %p, flags: %p\n", addr, flags);
+		DEBUGWARN("zone TINY for addr %p, flags: %p", addr, flags);
 		return YO_ZONE_TINY;
 	}
-	DEBUGWARN("zone SMALL for addr %p, flags: %p\n", addr, flags);
+	DEBUGWARN("zone SMALL for addr %p, flags: %p", addr, flags);
 	return YO_ZONE_SMALL;
 }
 
@@ -80,13 +80,13 @@ void	*_yo_allocate_heap(size_t n) {
 }
 
 void	_yo_free_large_chunk(t_block_header *head) {
-	DEBUGOUT("** addr: %p, block: %zu **\n", head, head->blocks);
+	DEBUGOUT("** addr: %p, block: %zu **", head, head->blocks);
 	remove_item(&g_root.large, head);
 	size_t bytes = (head->blocks + 1) * BLOCK_UNIT_SIZE;
-	DEBUGOUT("bytes = %zu\n", bytes);
+	DEBUGOUT("bytes = %zu", bytes);
 	if (munmap(head, bytes) < 0) {
 		// failed
-		DEBUGOUT("FAILED: errno = %d, %s\n", errno, strerror(errno));
+		DEBUGOUT("FAILED: errno = %d, %s", errno, strerror(errno));
 		return;
 	}
 	return;
@@ -94,15 +94,15 @@ void	_yo_free_large_chunk(t_block_header *head) {
 
 void	*_yo_large_malloc(size_t n) {
 	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
-	DEBUGOUT("** bytes: B:%zu, blocks: %zu **\n", n, blocks_needed);
+	DEBUGOUT("** bytes: B:%zu, blocks: %zu **", n, blocks_needed);
 	t_block_header	*head = _yo_allocate_heap(blocks_needed);
 	if (head == NULL) {
 		return NULL;
 	}
 	head->blocks = blocks_needed;
 	head->next = SET_IS_LARGE(NULL);
-	DEBUGWARN("(1) head->next = %p\n", head->next);
+	DEBUGWARN("(1) head->next = %p", head->next);
 	insert_item(&g_root.large, head);
-	DEBUGWARN("(2) head->next = %p\n", head->next);
+	DEBUGWARN("(2) head->next = %p", head->next);
 	return head + 1;
 }

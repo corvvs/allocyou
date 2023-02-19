@@ -65,36 +65,49 @@ void	test5() {
 	char *_ = yo_realloc(NULL, 1);
 	memset(a, 'A', n);
 	char *b = yo_realloc(a, m);
-	DEBUGOUT("%p(%zu) -> %p(%zu)\n", a, n, b, m);
+	DEBUGOUT("%p(%zu) -> %p(%zu)", a, n, b, m);
 	a = b;
 	a[0] = 'B';
 	a[m - 1] = 0;
 	m = 3;
 	b = yo_realloc(a, m);
-	DEBUGOUT("-> %p(%zu)\n", b, m);
+	DEBUGOUT("-> %p(%zu)", b, m);
 	write(STDERR_FILENO, b, m);
 	write(STDERR_FILENO, "\n", 1);
 	a = b;
 	m = 6;
 	b = yo_realloc(a, m);
-	DEBUGOUT("-> %p(%zu)\n", b, m);
+	DEBUGOUT("-> %p(%zu)", b, m);
 	write(STDERR_FILENO, b, m);
 	write(STDERR_FILENO, "\n", 1);
 	a = b;
 	m = 12;
 	b = yo_realloc(a, m);
-	DEBUGOUT("-> %p(%zu)\n", b, m);
+	DEBUGOUT("-> %p(%zu)", b, m);
 	write(STDERR_FILENO, b, m);
 	write(STDERR_FILENO, "\n", 1);
 	a = b;
 	m = 24;
 	b = yo_realloc(a, m);
-	DEBUGOUT("-> %p(%zu)\n", b, m);
+	DEBUGOUT("-> %p(%zu)", b, m);
 	write(STDERR_FILENO, b, m);
 	write(STDERR_FILENO, "\n", 1);
 	a = b;
 	yo_free(a);
 	yo_free(_);
+}
+
+#define MASS_RANDOM_N 10000
+
+void	mass_random() {
+	void	*m[MASS_RANDOM_N];
+
+	for (int i = 0; i < MASS_RANDOM_N; ++i) {
+		m[i] = yo_malloc(rand() % 100000 + 1);
+	}
+	for (int i = 0; i < MASS_RANDOM_N; ++i) {
+		yo_free(m[i]);
+	}
 }
 
 int main() {
@@ -103,6 +116,7 @@ int main() {
 	// test2();
 	// test3();
 	// test4();
-	test5();
+	// test5();
+	mass_random();
 
 }
