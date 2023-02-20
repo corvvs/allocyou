@@ -59,30 +59,19 @@ void	yo_free_actual(void *addr) {
 	remove_item(&zone->allocated, head);
 
 	// [フリーリストへの追加]
-	// next_free があるなら, それは head より大きい最小の(=右隣の)ブロックヘッダ.
-	DEBUGOUT("next_free = %p", next_free);
-	if (next_free) {
-		if ((head + head->blocks + 1) == next_free) {
-			// head と next_free がくっついている -> 統合する
-			DEBUGOUT("CONCAT: head(%zu, %p) + next_free(%zu, %p)", head->blocks, head, next_free->blocks, next_free);
-			head->blocks += next_free->blocks + 1;
-			head->next = next_free->next;
-			next_free->blocks = 0;
-			next_free->next = 0;
-			DEBUGOUT("-> head(%zu, %p)", head->blocks, head);
-		} else {
-			head->next = COPYFLAGS(next_free, FLAGS(head->next));
-		}
-	}
+	show_list(zone->frees);
+
 	// prev_free があるなら, それは head より小さい最大の(=左隣の)ブロックヘッダ.
 	DEBUGOUT("prev_free = %p", prev_free);
 	if (prev_free) {
 		DEBUGOUT("head = %p", head);
-		if (prev_free + (prev_free->blocks + 1) == head) {
+		const void	*left_adjacent_to_prev_free = prev_free + (prev_free->blocks + 1);
+		DEBUGOUT("left_adjacent_to_prev_free = %p", left_adjacent_to_prev_free);
+		if (left_adjacent_to_prev_free == head) {
 			// prev_free と head がくっついている -> 統合する
-			DEBUGOUT("prev_free(%zu, %p) + head(%zu, %p)", prev_free->blocks, prev_free, head->blocks, head);
+			DEBUGOUT("CONCAT: prev_free(%zu, %p) + head(%zu, %p)", prev_free->blocks, prev_free, head->blocks, head);
 			prev_free->blocks += head->blocks + 1;
-			prev_free->next = head->next;
+			prev_free->next = COPYFLAGS(next_free, prev_free->next);
 			DEBUGOUT("-> prev_free(%zu, %p)", prev_free->blocks, prev_free);
 			head->blocks = 0;
 			head->next = 0;
@@ -94,6 +83,27 @@ void	yo_free_actual(void *addr) {
 		// prev_free がない -> head が最小のブロックヘッダ
 		zone->frees = head;
 	}
+
+	show_list(zone->frees);
+	// next_free があるなら, それは head より大きい最小の(=右隣の)ブロックヘッダ.
+	DEBUGOUT("next_free = %p", next_free);
+	if (next_free) {
+		const void	*left_adjacent_to_head = head + (head->blocks + 1);
+		DEBUGOUT("left_adjacent_to_head = %p", left_adjacent_to_head);
+		if (left_adjacent_to_head == next_free) {
+			// head と next_free がくっついている -> 統合する
+			DEBUGOUT("CONCAT: head(%zu, %p) + next_free(%zu, %p)", head->blocks, head, next_free->blocks, next_free);
+			head->blocks += next_free->blocks + 1;
+			head->next = next_free->next;
+			next_free->blocks = 0;
+			next_free->next = 0;
+			DEBUGOUT("-> head(%zu, %p)", head->blocks, head);
+		} else {
+			head->next = COPYFLAGS(next_free, FLAGS(head->next));
+		}
+	}
+	show_list(zone->frees);
+
 	zone->free_p = head;
 	DEBUGSTR("** free end **");
 }
