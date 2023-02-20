@@ -39,6 +39,8 @@ void*	_yo_relocate_chunk(t_block_header* head, size_t n);
 void*	_yo_shrink_chunk(t_block_header* head, size_t n);
 void*	_yo_try_extend_chunk(t_yo_zone* zone, t_block_header* head, size_t n);
 
+void	check_consistency(void);
+
 
 #define	BLOCKS_FOR_SIZE(n) (QUANTIZE(n, BLOCK_UNIT_SIZE) / BLOCK_UNIT_SIZE)
 

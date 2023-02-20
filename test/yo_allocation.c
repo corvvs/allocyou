@@ -76,6 +76,7 @@ void	*_yo_allocate_heap(size_t n, t_yo_zone_class zone) {
 	t_block_header	*header = mapped;
 	header->blocks = n;
 	header->next = set_for_zone(NULL, zone);
+	DEBUGOUT("allocated %zu blocks for addr %p", n, mapped);
 	return mapped;
 }
 

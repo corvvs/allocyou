@@ -59,54 +59,56 @@ void	yo_free_actual(void *addr) {
 	remove_item(&zone->allocated, head);
 
 	// [フリーリストへの追加]
-	// curr_unused があるなら, それは head より大きい最小の(=右隣の)ブロックヘッダ.
-	DEBUGOUT("curr_unused = %p", next_free);
+	// next_free があるなら, それは head より大きい最小の(=右隣の)ブロックヘッダ.
+	DEBUGOUT("next_free = %p", next_free);
 	if (next_free) {
 		if ((head + head->blocks + 1) == next_free) {
-			// head と curr_unused がくっついている -> 統合する
-			DEBUGOUT("head(%zu, %p) + curr_unused(%zu, %p)", head->blocks, head, next_free->blocks, next_free);
+			// head と next_free がくっついている -> 統合する
+			DEBUGOUT("CONCAT: head(%zu, %p) + next_free(%zu, %p)", head->blocks, head, next_free->blocks, next_free);
 			head->blocks += next_free->blocks + 1;
-			head->next = ADDRESS(next_free->next);
+			head->next = next_free->next;
 			next_free->blocks = 0;
 			next_free->next = 0;
 			DEBUGOUT("-> head(%zu, %p)", head->blocks, head);
 		} else {
-			head->next = next_free;
+			head->next = COPYFLAGS(next_free, FLAGS(head->next));
 		}
 	}
-	// prev_unused があるなら, それは head より小さい最大の(=左隣の)ブロックヘッダ.
-	DEBUGOUT("prev_unused = %p", prev_free);
+	// prev_free があるなら, それは head より小さい最大の(=左隣の)ブロックヘッダ.
+	DEBUGOUT("prev_free = %p", prev_free);
 	if (prev_free) {
 		DEBUGOUT("head = %p", head);
 		if (prev_free + (prev_free->blocks + 1) == head) {
-			// prev_unused と head がくっついている -> 統合する
-			DEBUGOUT("prev_unused(%zu, %p) + head(%zu, %p)", prev_free->blocks, prev_free, head->blocks, head);
+			// prev_free と head がくっついている -> 統合する
+			DEBUGOUT("prev_free(%zu, %p) + head(%zu, %p)", prev_free->blocks, prev_free, head->blocks, head);
 			prev_free->blocks += head->blocks + 1;
-			prev_free->next = ADDRESS(head->next);
-			DEBUGOUT("-> prev_unused(%zu, %p)", prev_free->blocks, prev_free);
+			prev_free->next = head->next;
+			DEBUGOUT("-> prev_free(%zu, %p)", prev_free->blocks, prev_free);
 			head->blocks = 0;
 			head->next = 0;
 			head = prev_free;
 		} else {
-			prev_free->next = head;
+			prev_free->next = COPYFLAGS(head, FLAGS(prev_free->next));
 		}
 	} else {
-		// prev_unused がない -> head が最小のブロックヘッダ
+		// prev_free がない -> head が最小のブロックヘッダ
 		zone->frees = head;
 	}
+	zone->free_p = head;
 	DEBUGSTR("** free end **");
 }
 
 
 // n バイト**以上**の領域を確保して返す.
 void*	yo_malloc_actual(size_t n) {
-	t_yo_zone_class	zone_class = _yo_zone_for_bytes(n);
 	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
 	DEBUGOUT("** bytes: %zu, blocks: %zu **", n, blocks_needed);
 
+	// [ゾーンの取得]
+	t_yo_zone_class	zone_class = _yo_zone_for_bytes(n);
+
 	if (zone_class == YO_ZONE_LARGE) {
-		// 要求サイズが1つのバンチに収まらない
-		// -> 専用のバンチを mmap して返す
+		// ラージセクション
 		DEBUGWARN("required size %zu(B) is for LARGE", n);
 		return _yo_large_malloc(n);
 	}
@@ -116,17 +118,23 @@ void*	yo_malloc_actual(size_t n) {
 	if (zone->frees == NULL) {
 		DEBUGSTR("allocating arena...");
 		zone->frees = _yo_allocate_heap(zone->heap_blocks, zone_class);
+		zone->free_p = zone->frees;
+		zone->cons.total_blocks += zone->frees->blocks + 1;
 	}
 	if (zone->frees == NULL) {
 		// g_root.frees 確保失敗
+		errno = ENOMEM;
+		DEBUGERR("failed to allocate zone for class: %d", zone_class);
 		return NULL;
 	}
 	DEBUGOUT("g_root.frees head: (%zu, %p, %p)", zone->frees->blocks, zone->frees, zone->frees->next);
 	// 要求されるサイズ以上のチャンクが空いていないかどうか探す
+	// t_block_header	*head = zone->free_p;
 	t_block_header	*head = zone->frees;
 	t_block_header	*prev = NULL;
 	DEBUGOUT("blocks_needed = %zu", blocks_needed);
-	while (head != NULL) {
+	while (1) {
+		DEBUGOUT("head = %p, free_p = %p", head, zone->free_p);
 		if (blocks_needed <= head->blocks) {
 			// 適合するチャンクがあった -> 後処理を行う
 			// ブロックヘッダの次のブロックを返す
@@ -147,16 +155,18 @@ void*	yo_malloc_actual(size_t n) {
 				// head->blocks + 1 = (blocks_needed + 1) + (rest_blocks + 1)
 				// -> rest_blocks = head->blocks - (blocks_needed + 1)
 				new_free->blocks = head->blocks - (blocks_needed + 1);
-				new_free->next = ADDRESS(head->next);
+				new_free->next = head->next;
 
 				DEBUGOUT("shorten block: (%zu, %p) -> (%zu, %p)", head->blocks, head, new_free->blocks, new_free);
 				head->blocks = blocks_needed;
 			}
 			// head を zone->frees につなぐ
-			if (prev) {
+			if (prev != NULL) {
 				prev->next = new_free;
+				zone->free_p = prev;
 			} else {
 				zone->frees = new_free;
+				zone->free_p = zone->frees;
 			}
 			head->next = set_for_zone(head->next, zone_class);
 			DEBUGOUT("returning block: (%zu, %p, %p)", blocks_needed, head, head->next);
@@ -166,16 +176,27 @@ void*	yo_malloc_actual(size_t n) {
 		}
 		prev = head;
 		head = ADDRESS(head->next);
+		// if (head == NULL) {
+		// 	head = zone->frees;
+		// 	prev = NULL;
+		// }
+		if (head == NULL) {
+			break;
+		}
 	}
 	// 適合するチャンクがなかった
-	DEBUGSTR("NO ENOUGH BLOCKS -> extend current zone");
+	DEBUGOUT("NO ENOUGH BLOCKS -> extend current zone: %p", zone);
 	t_block_header	*new_heap = _yo_allocate_heap(zone->heap_blocks, zone_class);
 	if (new_heap == NULL) {
 		errno = ENOMEM;
 		return NULL;
 	}
-	DEBUGOUT("new_heap = %p", new_heap);
+	check_consistency();
+	DEBUGOUT("(1) new_heap = %p, %zu blocks", new_heap, new_heap->blocks);
+	zone->cons.total_blocks += new_heap->blocks + 1;
 	yo_free_actual(new_heap + 1);
+	DEBUGOUT("(2) new_heap = %p, %zu blocks", new_heap, new_heap->blocks);
+	check_consistency();
 	return yo_malloc_actual(n);
 }
 
@@ -218,16 +239,54 @@ void*	yo_realloc(void *addr, size_t n) {
 	}
 }
 
-static	void show_zone(t_yo_zone	*zone) {
+static	void show_zone(t_yo_zone *zone) {
 	DEBUGSTRN("  allocated: "); show_list(zone->allocated);
 	DEBUGSTRN("  free:      "); show_list(zone->frees);
 }
 
-void show_alloc_mem() {
+void show_alloc_mem(void) {
 	DEBUGSTR("TINY:");
 	show_zone(&g_root.tiny);
 	DEBUGSTR("SMALL:");
 	show_zone(&g_root.small);
 	DEBUGSTR("LARGE:  ");
 	DEBUGSTRN("  used: "); show_list(g_root.large);
+}
+
+void check_zone_consistency(t_yo_zone *zone) {
+	t_block_header	*h;
+	size_t block_in_use = 0;
+	size_t block_free = 0;
+	h = zone->frees;
+	while (h) {
+		block_free += h->blocks + 1;
+		h = ADDRESS(h->next);
+	}
+	h = zone->allocated;
+	while (h) {
+		block_in_use += h->blocks + 1;
+		h = ADDRESS(h->next);
+	}
+	ssize_t block_diff = zone->cons.total_blocks - (block_free + block_in_use);
+	DEBUGOUT("total: %zu, free: %zu, in use: %zu, diff: %zd blocks",
+			zone->cons.total_blocks, block_free, block_in_use, block_diff);
+	DEBUGSTRN("  free:      "); show_list(zone->frees);
+	if (block_diff) {
+		// show_alloc_mem();
+		DEBUGERR("consistency KO!!: zone %p", zone);
+		assert(zone->cons.total_blocks == block_free + block_in_use);
+	}
+}
+
+void check_consistency(void) {
+	if (g_root.tiny.frees) {
+		DEBUGSTR("check consistency: TINY");
+		check_zone_consistency(&g_root.tiny);
+		DEBUGSTR("-> ok.");
+	}
+	if (g_root.small.frees) {
+		DEBUGSTR("check consistency: SMALL");
+		check_zone_consistency(&g_root.small);
+		DEBUGSTR("-> ok.");
+	}
 }
