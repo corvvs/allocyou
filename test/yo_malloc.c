@@ -127,11 +127,34 @@ void*	yo_malloc_actual(size_t n) {
 		DEBUGERR("failed to allocate zone for class: %d", zone_class);
 		return NULL;
 	}
-	DEBUGOUT("g_root.frees head: (%zu, %p, %p)", zone->frees->blocks, zone->frees, zone->frees->next);
+	assert(zone->frees != NULL);
+	assert(zone->free_p != NULL);
+	DEBUGOUT("zone->frees: (%zu, %p, %p)", zone->frees->blocks, zone->frees, zone->frees->next);
+	DEBUGOUT("zone->free_p: (%zu, %p, %p)", zone->free_p->blocks, zone->free_p, zone->free_p->next);
 	// 要求されるサイズ以上のチャンクが空いていないかどうか探す
-	// t_block_header	*head = zone->free_p;
-	t_block_header	*head = zone->frees;
-	t_block_header	*prev = NULL;
+	// (prev, next) is:
+	// - free_p-> next がある:
+	//   - (free_p, free_p->next)
+	// - ない:
+	//   - (NULL, frees)
+	t_block_header	*head;
+	t_block_header	*prev;
+	if (ADDRESS(zone->free_p->next) != NULL) {
+		prev = zone->free_p;
+		head = ADDRESS(prev->next);
+	} else {
+		prev = NULL;
+		head = zone->frees;
+	}
+	// t_block_header	*head = zone->frees;
+	// t_block_header	*prev = NULL;
+	int				visited_freep = 0;
+	DEBUGOUT("head: (%zu, %p, %p)", head->blocks, head, head->next);
+	if (prev != NULL) {
+		DEBUGOUT("prev: (%zu, %p, %p)", prev->blocks, prev, prev->next);
+	} else {
+		DEBUGSTR("prev is NULL");
+	}
 	DEBUGOUT("blocks_needed = %zu", blocks_needed);
 	while (1) {
 		DEBUGOUT("head = %p, free_p = %p", head, zone->free_p);
@@ -176,10 +199,17 @@ void*	yo_malloc_actual(size_t n) {
 		}
 		prev = head;
 		head = ADDRESS(head->next);
-		// if (head == NULL) {
-		// 	head = zone->frees;
-		// 	prev = NULL;
-		// }
+		if (head == NULL) {
+			head = zone->frees;
+			prev = NULL;
+			DEBUGSTR("TUNRNED BACK to front of frees");
+		}
+		if (head == zone->free_p) {
+			if (visited_freep) {
+				break;
+			}
+			visited_freep = 1;
+		}
 		if (head == NULL) {
 			break;
 		}
