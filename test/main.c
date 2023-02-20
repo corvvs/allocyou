@@ -1,6 +1,14 @@
 #include "yo_common.h"
 #include "yo_malloc.h"
 #include <string.h>
+#include <assert.h>
+
+void	swap(void **a, void **b)
+{
+	void *c = *a;
+	*a = *b;
+	*b = c;
+}
 
 void	test1() {
 	show_alloc_mem();
@@ -97,18 +105,73 @@ void	test5() {
 	yo_free(_);
 }
 
-#define MASS_RANDOM_N 30000
+#define MASS_RANDOM_N 50000
 
-void	mass_random() {
+// mallocした順にfree
+void	mass_fifo() {
 	void	*m[MASS_RANDOM_N];
 
 	srand(111111107);
 	for (int i = 0; i < MASS_RANDOM_N; ++i) {
-		m[i] = yo_malloc(rand() % 3000 + 1);
+		m[i] = yo_malloc(rand() % 500 + 1);
+		assert(m[i] != NULL);
 	}
 	for (int i = 0; i < MASS_RANDOM_N; ++i) {
 		// show_alloc_mem();
 		yo_free(m[i]);
+	}
+	show_alloc_mem();
+}
+
+// mallocを逆順にfree
+void	mass_filo() {
+	void	*m[MASS_RANDOM_N];
+
+	srand(111111107);
+	for (int i = 0; i < MASS_RANDOM_N; ++i) {
+		m[i] = yo_malloc(rand() % 500 + 1);
+		assert(m[i] != NULL);
+	}
+	for (int i = MASS_RANDOM_N - 1; 0 <= i; --i) {
+		yo_free(m[i]);
+	}
+	show_alloc_mem();
+}
+
+void	mass_random_free() {
+	void	*m[MASS_RANDOM_N];
+
+	srand(111111107);
+	for (int i = 0; i < MASS_RANDOM_N; ++i) {
+		m[i] = yo_malloc(rand() % 500 + 1);
+		assert(m[i] != NULL);
+	}
+	for (int n = MASS_RANDOM_N; 0 < n; --n) {
+		int i = rand() % n;
+		DEBUGOUT("i = %d", i);
+		yo_free(m[i]);
+		swap(&m[i], &m[n - 1]);
+	}
+	show_alloc_mem();
+}
+
+void	mass_random_malloc_and_free() {
+	void	*m[1000] = {};
+
+	srand(111111107);
+	for (int i = 0; i < MASS_RANDOM_N; ++i) {
+		int j = rand() % 1000;
+		if (m[j]) {
+			yo_free(m[j]);
+			m[j] = 0;
+		} else {
+			m[j] = yo_malloc(rand() % 500);
+		}
+	}
+	for (int i = 0; i < 1000; ++i) {
+		if (m[i]) {
+			yo_free(m[i]);
+		}
 	}
 	show_alloc_mem();
 }
@@ -120,5 +183,7 @@ int main() {
 	// test3();
 	// test4();
 	// test5();
-	mass_random();
+	// mass_filo();
+	mass_random_free();
+	// mass_random_malloc_and_free();
 }

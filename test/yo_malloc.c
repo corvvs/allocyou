@@ -59,7 +59,7 @@ void	yo_free_actual(void *addr) {
 	remove_item(&zone->allocated, head);
 
 	// [フリーリストへの追加]
-	show_list(zone->frees);
+	// show_list(zone->frees);
 
 	// prev_free があるなら, それは head より小さい最大の(=左隣の)ブロックヘッダ.
 	DEBUGOUT("prev_free = %p", prev_free);
@@ -84,7 +84,7 @@ void	yo_free_actual(void *addr) {
 		zone->frees = head;
 	}
 
-	show_list(zone->frees);
+	// show_list(zone->frees);
 	// next_free があるなら, それは head より大きい最小の(=右隣の)ブロックヘッダ.
 	DEBUGOUT("next_free = %p", next_free);
 	if (next_free) {
@@ -102,7 +102,7 @@ void	yo_free_actual(void *addr) {
 			head->next = COPYFLAGS(next_free, FLAGS(head->next));
 		}
 	}
-	show_list(zone->frees);
+	// show_list(zone->frees);
 
 	zone->free_p = head;
 	DEBUGSTR("** free end **");
@@ -167,11 +167,16 @@ void*	yo_malloc_actual(size_t n) {
 	}
 	DEBUGOUT("blocks_needed = %zu", blocks_needed);
 	while (1) {
-		DEBUGOUT("head = %p, free_p = %p", head, zone->free_p);
+		// DEBUGOUT("head = %p, free_p = %p", head, zone->free_p);
 		if (blocks_needed <= head->blocks) {
 			// 適合するチャンクがあった -> 後処理を行う
 			// ブロックヘッダの次のブロックを返す
 			t_block_header	*rv = head + 1;
+			if (prev != NULL) {
+				DEBUGOUT("FOUND: prev: (%zu, %p, %p)", prev->blocks, prev, prev->next);
+			}
+			DEBUGOUT("FOUND: head: (%zu, %p, %p)", head->blocks, head, head->next);
+			check_consistency();
 
 			// 見つかったチャンクのうち, 最初の blocks_needed 個を除去する
 			// head->blocks がちょうど blocks_needed と一致しているかどうかで場合分け
@@ -201,8 +206,8 @@ void*	yo_malloc_actual(size_t n) {
 				zone->frees = new_free;
 				zone->free_p = zone->frees;
 			}
-			head->next = set_for_zone(head->next, zone_class);
-			DEBUGOUT("returning block: (%zu, %p, %p)", blocks_needed, head, head->next);
+			head->next = set_for_zone(NULL, zone_class);
+			DEBUGOUT("returning block: (%zu, %p, %p)", head->blocks, head, head->next);
 			insert_item(&zone->allocated, head);
 			DEBUGSTR("** malloc end **");
 			return rv;
@@ -279,12 +284,25 @@ void*	yo_realloc(void *addr, size_t n) {
 	}
 }
 
-static	void show_zone(t_yo_zone *zone) {
-	DEBUGSTRN("  allocated: "); show_list(zone->allocated);
-	DEBUGSTRN("  free:      "); show_list(zone->frees);
+static double	get_fragmentation_rate(t_block_header *list)
+{
+	size_t	blocks = 0;
+	size_t	headers = 0;
+	while (list != NULL) {
+		blocks += list->blocks;
+		headers += 1;
+		list = ADDRESS(list->next);
+	}
+	return blocks > 0 ? (double)headers / (double)blocks : 0;
 }
 
-void show_alloc_mem(void) {
+static void	show_zone(t_yo_zone *zone) {
+	DEBUGSTRN("  allocated: "); show_list(zone->allocated);
+	DEBUGSTRN("  free:      "); show_list(zone->frees);
+	DEBUGOUT( "  fragmentation: %1.4f%%", get_fragmentation_rate(zone->frees) * 100);
+}
+
+void	show_alloc_mem(void) {
 	DEBUGSTR("TINY:");
 	show_zone(&g_root.tiny);
 	DEBUGSTR("SMALL:");
@@ -293,32 +311,36 @@ void show_alloc_mem(void) {
 	DEBUGSTRN("  used: "); show_list(g_root.large);
 }
 
-void check_zone_consistency(t_yo_zone *zone) {
+void	check_zone_consistency(t_yo_zone *zone) {
 	t_block_header	*h;
 	size_t block_in_use = 0;
 	size_t block_free = 0;
 	h = zone->frees;
 	while (h) {
+		assert(h->blocks > 0);
 		block_free += h->blocks + 1;
 		h = ADDRESS(h->next);
 	}
 	h = zone->allocated;
 	while (h) {
+		assert(h->blocks > 0);
 		block_in_use += h->blocks + 1;
 		h = ADDRESS(h->next);
 	}
 	ssize_t block_diff = zone->cons.total_blocks - (block_free + block_in_use);
 	DEBUGOUT("total: %zu, free: %zu, in use: %zu, diff: %zd blocks",
 			zone->cons.total_blocks, block_free, block_in_use, block_diff);
-	DEBUGSTRN("  free:      "); show_list(zone->frees);
+	DEBUGOUT("fragmentation: %1.4f%%", get_fragmentation_rate(zone->frees) * 100);
+	// DEBUGSTRN("  free:      "); show_list(zone->frees);
 	if (block_diff) {
 		// show_alloc_mem();
+		// DEBUGSTRN("  free:      "); show_list(zone->frees);
 		DEBUGERR("consistency KO!!: zone %p", zone);
 		assert(zone->cons.total_blocks == block_free + block_in_use);
 	}
 }
 
-void check_consistency(void) {
+void	check_consistency(void) {
 	if (g_root.tiny.frees) {
 		DEBUGSTR("check consistency: TINY");
 		check_zone_consistency(&g_root.tiny);
@@ -330,3 +352,4 @@ void check_consistency(void) {
 		DEBUGSTR("-> ok.");
 	}
 }
+
