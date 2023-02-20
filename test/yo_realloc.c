@@ -23,7 +23,7 @@ void*	_yo_try_extend_chunk(t_yo_zone* zone, t_block_header* head, size_t n) {
 	// フリーチャンクは隣接していない(隣接しているなら合体している)はずなので,
 	// 1つ後のフリーチャンクだけを調べればよい
 	t_block_header*	right = head + head->blocks + 1;
-	t_block_header*	prev = find_item(zone->frees, right);
+	t_block_header*	prev = find_inf_item(zone->frees, right);
 	t_block_header*	cand = prev == NULL ? zone->frees : ADDRESS(prev->next);
 	if (cand == NULL || cand != right) {
 		DEBUGSTR("no candidate free chunk");

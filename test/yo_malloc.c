@@ -49,8 +49,8 @@ void	yo_free_actual(void *addr) {
 	t_yo_zone	*zone = _yo_retrieve_zone_for_class(zone_class);
 
 	// addr が malloc された領域なら, addr から sizeof(t_block_header) だけ下がったところにブロックヘッダがあるはず.
-	t_block_header *prev_free = find_item(zone->frees, head);
-	t_block_header *next_free = prev_free == NULL ? zone->frees : ADDRESS(prev_free->next);
+	t_block_header *prev_free = find_inf_item(zone->frees, head);
+	t_block_header *next_free = prev_free == NULL ? zone->frees : list_next_head(prev_free);
 
 	check_double_free(head, next_free);
 	check_free_invalid_address(head, prev_free);
@@ -62,19 +62,13 @@ void	yo_free_actual(void *addr) {
 	// show_list(zone->frees);
 
 	// prev_free があるなら, それは head より小さい最大の(=左隣の)ブロックヘッダ.
-	DEBUGOUT("prev_free = %p", prev_free);
 	if (prev_free) {
-		DEBUGOUT("head = %p", head);
 		const void	*left_adjacent_to_prev_free = prev_free + (prev_free->blocks + 1);
-		DEBUGOUT("left_adjacent_to_prev_free = %p", left_adjacent_to_prev_free);
 		if (left_adjacent_to_prev_free == head) {
 			// prev_free と head がくっついている -> 統合する
-			DEBUGOUT("CONCAT: prev_free(%zu, %p) + head(%zu, %p)", prev_free->blocks, prev_free, head->blocks, head);
 			prev_free->blocks += head->blocks + 1;
 			prev_free->next = COPYFLAGS(next_free, prev_free->next);
-			DEBUGOUT("-> prev_free(%zu, %p)", prev_free->blocks, prev_free);
-			head->blocks = 0;
-			head->next = 0;
+			*head = (t_block_header){};
 			head = prev_free;
 		} else {
 			prev_free->next = COPYFLAGS(head, FLAGS(prev_free->next));
@@ -86,18 +80,13 @@ void	yo_free_actual(void *addr) {
 
 	// show_list(zone->frees);
 	// next_free があるなら, それは head より大きい最小の(=右隣の)ブロックヘッダ.
-	DEBUGOUT("next_free = %p", next_free);
 	if (next_free) {
 		const void	*left_adjacent_to_head = head + (head->blocks + 1);
-		DEBUGOUT("left_adjacent_to_head = %p", left_adjacent_to_head);
 		if (left_adjacent_to_head == next_free) {
 			// head と next_free がくっついている -> 統合する
-			DEBUGOUT("CONCAT: head(%zu, %p) + next_free(%zu, %p)", head->blocks, head, next_free->blocks, next_free);
 			head->blocks += next_free->blocks + 1;
 			head->next = next_free->next;
-			next_free->blocks = 0;
-			next_free->next = 0;
-			DEBUGOUT("-> head(%zu, %p)", head->blocks, head);
+			*next_free = (t_block_header){};
 		} else {
 			head->next = COPYFLAGS(next_free, FLAGS(head->next));
 		}
@@ -139,8 +128,6 @@ void*	yo_malloc_actual(size_t n) {
 	}
 	assert(zone->frees != NULL);
 	assert(zone->free_p != NULL);
-	DEBUGOUT("zone->frees: (%zu, %p, %p)", zone->frees->blocks, zone->frees, zone->frees->next);
-	DEBUGOUT("zone->free_p: (%zu, %p, %p)", zone->free_p->blocks, zone->free_p, zone->free_p->next);
 	// 要求されるサイズ以上のチャンクが空いていないかどうか探す
 	// (prev, next) is:
 	// - free_p-> next がある:
@@ -149,9 +136,9 @@ void*	yo_malloc_actual(size_t n) {
 	//   - (NULL, frees)
 	t_block_header	*head;
 	t_block_header	*prev;
-	if (ADDRESS(zone->free_p->next) != NULL) {
+	if (list_next_head(zone->free_p) != NULL) {
 		prev = zone->free_p;
-		head = ADDRESS(prev->next);
+		head = list_next_head(prev);
 	} else {
 		prev = NULL;
 		head = zone->frees;
@@ -159,12 +146,6 @@ void*	yo_malloc_actual(size_t n) {
 	// t_block_header	*head = zone->frees;
 	// t_block_header	*prev = NULL;
 	int				visited_freep = 0;
-	DEBUGOUT("head: (%zu, %p, %p)", head->blocks, head, head->next);
-	if (prev != NULL) {
-		DEBUGOUT("prev: (%zu, %p, %p)", prev->blocks, prev, prev->next);
-	} else {
-		DEBUGSTR("prev is NULL");
-	}
 	DEBUGOUT("blocks_needed = %zu", blocks_needed);
 	while (1) {
 		// DEBUGOUT("head = %p, free_p = %p", head, zone->free_p);
@@ -183,19 +164,13 @@ void*	yo_malloc_actual(size_t n) {
 			t_block_header	*new_free;
 			if (head->blocks - 1 <= blocks_needed) {
 				// -> 見つかったチャンクを丸ごと使い尽くす
-				DEBUGOUT("exhausted chunk: (%zu, %p, %p)", head->blocks, head, head->next);
-				new_free = ADDRESS(head->next);
+				new_free = list_next_head(head);
 				// !! head が NULL である場合の考慮が必要 !!
 			} else {
 				// -> 見つかったチャンクの一部が残る
 				new_free = head + blocks_needed + 1;
-
-				// head->blocks + 1 = (blocks_needed + 1) + (rest_blocks + 1)
-				// -> rest_blocks = head->blocks - (blocks_needed + 1)
 				new_free->blocks = head->blocks - (blocks_needed + 1);
 				new_free->next = head->next;
-
-				DEBUGOUT("shorten block: (%zu, %p) -> (%zu, %p)", head->blocks, head, new_free->blocks, new_free);
 				head->blocks = blocks_needed;
 			}
 			// head を zone->frees につなぐ
@@ -207,13 +182,12 @@ void*	yo_malloc_actual(size_t n) {
 				zone->free_p = zone->frees;
 			}
 			head->next = set_for_zone(NULL, zone_class);
-			DEBUGOUT("returning block: (%zu, %p, %p)", head->blocks, head, head->next);
 			insert_item(&zone->allocated, head);
 			DEBUGSTR("** malloc end **");
 			return rv;
 		}
 		prev = head;
-		head = ADDRESS(head->next);
+		head = list_next_head(head);
 		if (head == NULL) {
 			head = zone->frees;
 			prev = NULL;
@@ -237,10 +211,8 @@ void*	yo_malloc_actual(size_t n) {
 		return NULL;
 	}
 	check_consistency();
-	DEBUGOUT("(1) new_heap = %p, %zu blocks", new_heap, new_heap->blocks);
 	zone->cons.total_blocks += new_heap->blocks + 1;
 	yo_free_actual(new_heap + 1);
-	DEBUGOUT("(2) new_heap = %p, %zu blocks", new_heap, new_heap->blocks);
 	check_consistency();
 	return yo_malloc_actual(n);
 }
@@ -291,7 +263,7 @@ static double	get_fragmentation_rate(t_block_header *list)
 	while (list != NULL) {
 		blocks += list->blocks;
 		headers += 1;
-		list = ADDRESS(list->next);
+		list = list_next_head(list);
 	}
 	return blocks > 0 ? (double)headers / (double)blocks : 0;
 }
@@ -319,13 +291,13 @@ void	check_zone_consistency(t_yo_zone *zone) {
 	while (h) {
 		assert(h->blocks > 0);
 		block_free += h->blocks + 1;
-		h = ADDRESS(h->next);
+		h = list_next_head(h);
 	}
 	h = zone->allocated;
 	while (h) {
 		assert(h->blocks > 0);
 		block_in_use += h->blocks + 1;
-		h = ADDRESS(h->next);
+		h = list_next_head(h);
 	}
 	ssize_t block_diff = zone->cons.total_blocks - (block_free + block_in_use);
 	DEBUGOUT("total: %zu, free: %zu, in use: %zu, diff: %zd blocks",

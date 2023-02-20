@@ -26,9 +26,10 @@ t_yo_zone*		_yo_retrieve_zone_for_class(t_yo_zone_class zone);
 void*			_yo_allocate_heap(size_t n, t_yo_zone_class zone);
 void*			set_for_zone(void *addr, t_yo_zone_class zone);
 
+t_block_header	*list_next_head(t_block_header *head);
 void			insert_item(t_block_header **list, t_block_header *item);
 void			remove_item(t_block_header **list, t_block_header *item);
-t_block_header*	find_item(t_block_header* list, t_block_header *item);
+t_block_header*	find_inf_item(t_block_header* list, t_block_header *item);
 
 void	show_list(t_block_header *list);
 void*	yo_malloc_actual(size_t n);

@@ -19,6 +19,11 @@ typedef struct s_block_header {
 	size_t					blocks;
 } t_block_header;
 
+typedef struct s_listcursor {
+	t_block_header	*curr;
+	t_block_header	*prev;
+}	t_listcursor;
+
 // n in PDF
 # define TINY_MAX_CHUNK_BYTE ((size_t)992)
 # define TINY_MAX_CHUNK_BLOCK (BLOCKS_FOR_SIZE(TINY_MAX_CHUNK_BYTE))

@@ -16,28 +16,34 @@ t_yo_zone_class	_yo_zone_for_bytes(size_t n) {
 	return YO_ZONE_TINY;
 }
 
+static t_yo_zone	init_zone(size_t max_chunk_bytes, size_t max_heap_bytes) {
+	t_yo_zone	zone = {
+		.max_chunk_bytes = max_chunk_bytes,
+		.heap_bytes = QUANTIZE(max_heap_bytes, QUANTIZE(getpagesize(), BLOCK_UNIT_SIZE)),
+	};
+	zone.heap_blocks = (zone.heap_bytes - 1) / BLOCK_UNIT_SIZE;
+	return zone;
+}
+
 // メモリゾーンクラスに対応するメモリゾーン(へのポインタ)を返す
 t_yo_zone*		_yo_retrieve_zone_for_class(t_yo_zone_class zone) {
 	switch (zone) {
 		case YO_ZONE_TINY: {
 			if (g_root.tiny.max_chunk_bytes == 0) {
-				g_root.tiny.max_chunk_bytes = TINY_MAX_CHUNK_BYTE;
-				g_root.tiny.heap_bytes = QUANTIZE(TINY_MAX_HEAP_BYTE, QUANTIZE(getpagesize(), BLOCK_UNIT_SIZE));
-				g_root.tiny.heap_blocks = (g_root.tiny.heap_bytes - 1) / BLOCK_UNIT_SIZE;
+				g_root.tiny = init_zone(TINY_MAX_CHUNK_BYTE, TINY_MAX_HEAP_BYTE);
 			}
 			return &g_root.tiny;
 		}
 
 		case YO_ZONE_SMALL: {
 			if (g_root.small.max_chunk_bytes == 0) {
-				g_root.small.max_chunk_bytes = SMALL_MAX_CHUNK_BYTE;
-				g_root.small.heap_bytes = QUANTIZE(SMALL_MAX_HEAP_BYTE, QUANTIZE(getpagesize(), BLOCK_UNIT_SIZE));
-				g_root.small.heap_blocks = (g_root.small.heap_bytes - 1) / BLOCK_UNIT_SIZE;
+				g_root.small = init_zone(SMALL_MAX_CHUNK_BYTE, SMALL_MAX_HEAP_BYTE);
 			}
 			return &g_root.small;
 		}
 		default: {
 			DEBUGERR("SOMETHING WRONG: %d", zone);
+			assert(0);
 			return NULL;
 		}
 	}
@@ -74,17 +80,17 @@ void	*_yo_allocate_heap(size_t n, t_yo_zone_class zone) {
 	}
 	// 確保できたら先頭にブロックヘッダを詰める
 	t_block_header	*header = mapped;
-	header->blocks = n;
-	header->next = set_for_zone(NULL, zone);
+	*header = (t_block_header) {
+		.blocks = n,
+		.next = set_for_zone(NULL, zone),
+	};
 	DEBUGOUT("allocated %zu blocks for addr %p", n, mapped);
 	return mapped;
 }
 
 void	_yo_free_large_chunk(t_block_header *head) {
-	DEBUGOUT("** addr: %p, block: %zu **", head, head->blocks);
 	remove_item(&g_root.large, head);
 	size_t bytes = (head->blocks + 1) * BLOCK_UNIT_SIZE;
-	DEBUGOUT("bytes = %zu", bytes);
 	if (munmap(head, bytes) < 0) {
 		// failed
 		DEBUGOUT("FAILED: errno = %d, %s", errno, strerror(errno));
@@ -100,8 +106,10 @@ void	*_yo_large_malloc(size_t n) {
 	if (head == NULL) {
 		return NULL;
 	}
-	head->blocks = blocks_needed;
-	head->next = SET_IS_LARGE(NULL);
+	*head = (t_block_header) {
+		.blocks = blocks_needed,
+		.next = set_for_zone(NULL, YO_ZONE_LARGE),
+	};
 	DEBUGWARN("(1) head->next = %p", head->next);
 	insert_item(&g_root.large, head);
 	DEBUGWARN("(2) head->next = %p", head->next);
