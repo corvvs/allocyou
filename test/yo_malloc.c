@@ -24,102 +24,147 @@ void	*set_for_zone(void *addr, t_yo_zone_class zone)
 	}
 }
 
-// addr が malloc された領域ならば解放する.
+static bool	extend_zone(t_yo_zone *zone) {
+	t_block_header	*new_heap = _yo_allocate_heap(zone->heap_blocks, zone->zone_class);
+	if (new_heap == NULL) {
+		errno = ENOMEM;
+		return false;
+	}
+	zone->cons.total_blocks += new_heap->blocks + 1;
+	yo_free_actual(new_heap + 1);
+	return true;
+}
+
+static void	nullify_chunk(t_block_header *chunk) {
+	*chunk = (t_block_header){};
+}
+
+static t_block_header	*unify_chunk(t_block_header *b1, t_block_header *b2) {
+	b1->blocks += b2->blocks + 1;
+	concat_item(b1, b2->next);
+	nullify_chunk(b2);
+	return b1;
+}
+
+
+// void yo_free_actual(void *addr)
+//
+// [task]
+// - `addr`が malloc された領域の先頭であれば, それを未使用領域に戻す.
+// - `addr`が NULL ならば, なにもしない.
+// - それ以外の場合の動作は未定義.
+//
+// [mechanism]
+// `addr`からヘッダ1つ分前のアドレスがチャンクのヘッダ`head`であると仮定し,
+// `head`から対応するゾーンを取得する.
+// ゾーンが LARGE である場合は当該チャンクを即座に unmap する.
+//
+// 以下, ゾーンが LARGE でないとする.
+// まず, `head`をアロケーションリストから除去する.
+// 続いて, ゾーンのフリーリストから, `prev` < `head` < `curr` となるような隣接する2要素`prev`, `curr`を探す.
+// この後フリーリストの`prev`と`curr`の間に`head`を挿入するのだが,
+// `prev`と`head`, および`head`と`curr`が「隣接」している場合は1つのチャンクに統合する.
+// ここで「隣接」とは, `2つの領域が隙間なく連続していることを意味する.
+// 例えば, `head`と`curr`が隣接しているとは, `head + (head->blocks + 1) == curr` が成り立つこと.
+//
 void	yo_free_actual(void *addr) {
 	if (addr == NULL) {
 		DEBUGSTR("freeing NULL");
 		return;
 	}
 
-	DEBUGOUT("** addr: %p **", addr);
-	t_block_header *head = addr;
+	t_block_header*	head = addr;
 	--head;
 	DEBUGOUT("head: %p, next: %p", head, head->next);
 
-	// [ゾーンの取得]
+	// [determine zone]
 	t_yo_zone_class	zone_class = _yo_zone_for_addr(addr);
 	if (zone_class == YO_ZONE_LARGE) {
-		// ラージセクション -> munmapする
+		// [for LARGE zone]
 		_yo_free_large_chunk(head);
 		return;
 	}
 
-	// [アロケーションリストからの除去]
-	// 対応するゾーンから, addr を挟むブロックを探してくる.
-	t_yo_zone	*zone = _yo_retrieve_zone_for_class(zone_class);
-
-	// addr が malloc された領域なら, addr から sizeof(t_block_header) だけ下がったところにブロックヘッダがあるはず.
-	t_block_header *prev_free = find_inf_item(zone->frees, head);
-	t_block_header *next_free = prev_free == NULL ? zone->frees : list_next_head(prev_free);
+	// [retrieve zone]
+	t_yo_zone*		zone = _yo_retrieve_zone_for_class(zone_class);
+	t_block_header*	prev_free = find_inf_item(zone->frees, head);
+	t_block_header*	next_free = prev_free == NULL ? zone->frees : list_next_head(prev_free);
 
 	check_double_free(head, next_free);
 	check_free_invalid_address(head, prev_free);
 
-	// アロケーションリストから除去すべきブロックが見つかったので除去する.
 	remove_item(&zone->allocated, head);
 
-	// [フリーリストへの追加]
-	// show_list(zone->frees);
-
-	// prev_free があるなら, それは head より小さい最大の(=左隣の)ブロックヘッダ.
 	if (prev_free) {
-		const void	*left_adjacent_to_prev_free = prev_free + (prev_free->blocks + 1);
-		if (left_adjacent_to_prev_free == head) {
-			// prev_free と head がくっついている -> 統合する
-			prev_free->blocks += head->blocks + 1;
-			prev_free->next = COPYFLAGS(next_free, prev_free->next);
-			*head = (t_block_header){};
-			head = prev_free;
+		const bool is_unifiable = (prev_free + (prev_free->blocks + 1)) == head;
+		if (is_unifiable) {
+			t_block_header	*unified = unify_chunk(prev_free, head);
+			concat_item(unified, next_free);
+			head = unified;
 		} else {
-			prev_free->next = COPYFLAGS(head, FLAGS(prev_free->next));
+			concat_item(prev_free, head);
 		}
 	} else {
-		// prev_free がない -> head が最小のブロックヘッダ
 		zone->frees = head;
 	}
 
-	// show_list(zone->frees);
-	// next_free があるなら, それは head より大きい最小の(=右隣の)ブロックヘッダ.
 	if (next_free) {
-		const void	*left_adjacent_to_head = head + (head->blocks + 1);
-		if (left_adjacent_to_head == next_free) {
-			// head と next_free がくっついている -> 統合する
-			head->blocks += next_free->blocks + 1;
-			head->next = next_free->next;
-			*next_free = (t_block_header){};
+		const bool is_unifiable = (head + (head->blocks + 1)) == next_free;
+		if (is_unifiable) {
+			unify_chunk(head, next_free);
 		} else {
-			head->next = COPYFLAGS(next_free, FLAGS(head->next));
+			concat_item(head, next_free);
 		}
 	}
-	// show_list(zone->frees);
 
 	zone->free_p = head;
-	DEBUGSTR("** free end **");
 }
 
-
-// n バイト**以上**の領域を確保して返す.
+// void* yo_malloc_actual(size_t n)
+//
+// [task]
+// - n バイト**以上**のサイズを持つチャンクを確保し, その(ユーザが使用できる)領域の先頭アドレスを返す.
+// - 上記が失敗した場合は NULL を返し, errno に ENOMEM をセットする.
+// - n == 0 における動作は n == 1 と同じ.
+//
+// [mechanism]
+// `n`(与えられた要求バイトサイズ)から, 必要なメモリブロック数`blocks_needed`を算出する.
+// さらにゾーン種別`zone_class`を決定する.
+// ゾーン種別は以下の3種類:
+// - TINY  ... `blocks_needed`が「992バイトに対応するブロック数」以下の時
+// - SMALL ... `blocks_needed`が「15360バイトに対応するブロック数」以下の時
+// - LARGE ... 上記以外
+//
+// ゾーン種別が LARGE だった場合は, チャンクをリスト管理しない.
+// 以下ゾーン種別が LARGE でないとする.
+//
+// ゾーン種別に対応するゾーン`zone`を取得する.
+// この時, ゾーンがまだ存在していないなら mmap でゾーンを確保する.
+// ゾーンのフリーリストから, ブロック数(ヘッダ除く)が`blocks_needed`以上であるようなチャンクを探す.
+// 
+// (チャンクが見つからなかった場合)
+// 現在のゾーンに新しいヒープを追加し, 同じ引数でこの関数を呼び直す.
+// 次はチャンクが見つかるはず.
+//
+// (チャンクが見つかった場合)
+// 見つかったチャンクをフリーリストから除去し, アロケーションリストに挿入する.
+// ただし, 見つかったチャンクのブロック数が`blocks_needed`より2ブロック以上小さい場合は,
+// 見つかったチャンクを前後に分割し, 後の方をフリーリストに残す.
+//
 void*	yo_malloc_actual(size_t n) {
 	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
-	DEBUGOUT("** bytes: %zu, blocks: %zu **", n, blocks_needed);
 
-	// [ゾーンの取得]
+	// [determine zone class]
 	t_yo_zone_class	zone_class = _yo_zone_for_bytes(n);
 
 	if (zone_class == YO_ZONE_LARGE) {
-		// ラージセクション
+		// [for LARGE zone]
 		DEBUGWARN("required size %zu(B) is for LARGE", n);
 		return _yo_large_malloc(n);
 	}
 
+	// [retrieve zone]
 	t_yo_zone	*zone = _yo_retrieve_zone_for_class(zone_class);
-	
-	if (zone->frees == NULL) {
-		DEBUGSTR("allocating arena...");
-		zone->frees = _yo_allocate_heap(zone->heap_blocks, zone_class);
-		zone->free_p = zone->frees;
-		zone->cons.total_blocks += zone->frees->blocks + 1;
-	}
 	if (zone->frees == NULL) {
 		// g_root.frees 確保失敗
 		errno = ENOMEM;
@@ -128,109 +173,115 @@ void*	yo_malloc_actual(size_t n) {
 	}
 	assert(zone->frees != NULL);
 	assert(zone->free_p != NULL);
-	// 要求されるサイズ以上のチャンクが空いていないかどうか探す
-	// (prev, next) is:
-	// - free_p-> next がある:
-	//   - (free_p, free_p->next)
-	// - ない:
-	//   - (NULL, frees)
-	t_block_header	*head;
-	t_block_header	*prev;
-	if (list_next_head(zone->free_p) != NULL) {
-		prev = zone->free_p;
-		head = list_next_head(prev);
-	} else {
-		prev = NULL;
-		head = zone->frees;
-	}
-	// t_block_header	*head = zone->frees;
-	// t_block_header	*prev = NULL;
-	int				visited_freep = 0;
+	// [find vacant blocks for chunk]
+	t_listcursor	cursor = init_cursor_from_mid(zone->frees, zone->free_p);
+	assert(cursor.curr != NULL);
 	DEBUGOUT("blocks_needed = %zu", blocks_needed);
-	while (1) {
-		// DEBUGOUT("head = %p, free_p = %p", head, zone->free_p);
-		if (blocks_needed <= head->blocks) {
-			// 適合するチャンクがあった -> 後処理を行う
-			// ブロックヘッダの次のブロックを返す
-			t_block_header	*rv = head + 1;
-			if (prev != NULL) {
-				DEBUGOUT("FOUND: prev: (%zu, %p, %p)", prev->blocks, prev, prev->next);
-			}
-			DEBUGOUT("FOUND: head: (%zu, %p, %p)", head->blocks, head, head->next);
-			check_consistency();
+	while (cursor.curr != NULL && cursor.curr->blocks < blocks_needed) {
+		increment_cursor(&cursor);
+	}
 
-			// 見つかったチャンクのうち, 最初の blocks_needed 個を除去する
-			// head->blocks がちょうど blocks_needed と一致しているかどうかで場合分け
-			t_block_header	*new_free;
-			if (head->blocks - 1 <= blocks_needed) {
-				// -> 見つかったチャンクを丸ごと使い尽くす
-				new_free = list_next_head(head);
-				// !! head が NULL である場合の考慮が必要 !!
-			} else {
-				// -> 見つかったチャンクの一部が残る
-				new_free = head + blocks_needed + 1;
-				new_free->blocks = head->blocks - (blocks_needed + 1);
-				new_free->next = head->next;
-				head->blocks = blocks_needed;
-			}
-			// head を zone->frees につなぐ
-			if (prev != NULL) {
-				prev->next = new_free;
-				zone->free_p = prev;
-			} else {
-				zone->frees = new_free;
-				zone->free_p = zone->frees;
-			}
-			head->next = set_for_zone(NULL, zone_class);
-			insert_item(&zone->allocated, head);
-			DEBUGSTR("** malloc end **");
-			return rv;
+	if (cursor.curr == NULL) {
+		// [extend the zone for requirement]
+		DEBUGOUT("NO ENOUGH BLOCKS -> extend current zone: %p", zone);
+		check_consistency();
+		if (!extend_zone(zone)) {
+			return NULL;
 		}
-		prev = head;
-		head = list_next_head(head);
-		if (head == NULL) {
-			head = zone->frees;
-			prev = NULL;
-			DEBUGSTR("TUNRNED BACK to front of frees");
-		}
-		if (head == zone->free_p) {
-			if (visited_freep) {
-				break;
-			}
-			visited_freep = 1;
-		}
-		if (head == NULL) {
-			break;
-		}
+		check_consistency();
+		return yo_malloc_actual(n);
 	}
-	// 適合するチャンクがなかった
-	DEBUGOUT("NO ENOUGH BLOCKS -> extend current zone: %p", zone);
-	t_block_header	*new_heap = _yo_allocate_heap(zone->heap_blocks, zone_class);
-	if (new_heap == NULL) {
-		errno = ENOMEM;
-		return NULL;
+
+	void*	rv = cursor.curr + 1;
+	check_consistency();
+
+	// [get out a chunk]
+
+	t_block_header	*rest_free;
+	const size_t	chunk_size = blocks_needed + 1;
+	if (chunk_size < cursor.curr->blocks) {
+		// [only necessary blocks]
+		rest_free = cursor.curr + chunk_size;
+		*rest_free = *cursor.curr;
+		rest_free->blocks -= chunk_size;
+		cursor.curr->blocks = blocks_needed;
+	} else {
+		// [taking all blocks]
+		rest_free = list_next_head(cursor.curr);
 	}
-	check_consistency();
-	zone->cons.total_blocks += new_heap->blocks + 1;
-	yo_free_actual(new_heap + 1);
-	check_consistency();
-	return yo_malloc_actual(n);
+
+	if (cursor.prev != NULL) {
+		concat_item(cursor.prev, rest_free);
+	} else {
+		zone->frees = rest_free;
+	}
+	if (cursor.prev != NULL) {
+		zone->free_p = cursor.prev;
+	} else {
+		zone->free_p = zone->frees;
+	}
+	cursor.curr->next = set_for_zone(NULL, zone_class);
+	insert_item(&zone->allocated, cursor.curr);
+	DEBUGOUT("** returning %p **", cursor.curr);
+	return rv;
 }
 
-void*	yo_realloc(void *addr, size_t n) {
-	DEBUGOUT("** addr: %p, size: %zu **", addr, n);
-
+// void* yo_realloc_actual(void *addr, size_t n)
+//
+// [task]
+// - `addr`が NULL の場合は, malloc(n) に処理を移譲する.
+// - `addr`が malloc されたチャンクである場合:
+//   - まずチャンクのアドレスを変えないままチャンクサイズの変更を試みる.
+//   - 変更ができない場合は, malloc(n) の後, 確保されたチャンクに元のチャンクのデータをすべてコピーし, 元のチャンクを解放する.
+// - いずれでもない場合の動作は未定義.
+//
+// [mechanism]
+// `addr`は NULL でないとする.
+// 大まかな手順は:
+// - チャンクを引っ越す(リロケートする)必要があるかどうか判定する.
+// - リロケートする場合は, malloc, copy and free を行う.
+// - リロケートしない場合は, チャンクのサイズ調整を行う.
+//
+// (リロケーションの要否の決定)
+// `n`(与えられた要求バイトサイズ)から, 必要なメモリブロック数`blocks_needed`を算出する.
+// さらに`blocks_needed`から対応するゾーン種別`zone_class_to`を決定する.
+// また, `addr`からヘッダ1つ分前のアドレスがチャンクのヘッダ`head`であると仮定し,
+// チャンクのブロック数`blocks_current`と対応するゾーン種別`zone_class_from`を決定する.
+// zone_class_from != zone_class_to なら** その時点でリロケーションが必要 **.
+// zone_class_from == zone_class_to である場合,
+// 対象チャンクのブロック数を`blocks_needed`ブロックに変更できるかどうかを調べる.
+// ** 変更できない場合はリロケーションが必要 **.
+//
+// (リロケーションする場合)
+// malloc し, データコピーし, free して 新しいアドレスを返して終わり.
+//
+// (リロケーションしない場合)
+// データコピーは不要.
+// 以下の3パターンが考えられる:
+// `blocks_needed`と`blocks_current`の大小に応じてやることが違う.
+// - blocks_current - 1 <= blocks_needed <= blocks_current
+//   - 何もしない.
+//   - ブロック数は小さくなるのだが, 小さくしても新しいブロックを生成できないため.
+// - blocks_needed < blocks_current - 1
+//   - 必要なブロック数が現在よりも減る.
+//   - 現在のチャンクのブロック数を小さくし, 余ったブロックを新たな未使用チャンクとする.
+// - blocks_current < blocks_needed
+//   - 必要なブロック数が現在よりも増える.
+//   - 現在のチャンクのすぐ右に十分なブロックを持つ未使用チャンクがある(事前にあることを確認している).
+//   - この未使用チャンクを解体し, 現在チャンクに合体させる.
+//
+void*	yo_realloc_actual(void *addr, size_t n) {
 	if (addr == NULL) {
-		// -> malloc に移譲する
 		DEBUGWARN("addr == NULL -> delegate to malloc(%zu)", n);
 		return yo_malloc_actual(n);
 	}
 
 	t_block_header	*head = addr;
 	--head;
+	const bool	blocks_increasing = BLOCKS_FOR_SIZE(n) > head->blocks;
 	t_yo_zone_class	zone_class = _yo_zone_for_addr(addr);
 	if (zone_class == YO_ZONE_LARGE) {
-		if (n > head->blocks * BLOCK_UNIT_SIZE) {
+		if (blocks_increasing) {
 			DEBUGSTR("** RELOCATE LARGE!! **");
 			return _yo_relocate_chunk(head, n);
 		}
@@ -239,20 +290,17 @@ void*	yo_realloc(void *addr, size_t n) {
 	}
 
 	t_yo_zone	*zone = _yo_retrieve_zone_for_class(zone_class);
-	if (n > head->blocks * BLOCK_UNIT_SIZE) {
-
-		// 後続に十分な空きチャンクがあるなら, それらを現在のチャンクに取り込む.
+	if (blocks_increasing) {
 		t_block_header*	extended = _yo_try_extend_chunk(zone, head, n);
 		if (extended != NULL) {
 			return extended;
 		}
 
-		// 後続に十分な空きチャンクがない場合はリロケートする
-		DEBUGSTR("** RELOCATE!! **");
 		return _yo_relocate_chunk(head, n);
 	} else {
 		// -> shrink
-		return _yo_shrink_chunk(head, n);
+		_yo_shrink_chunk(head, n);
+		return addr;
 	}
 }
 

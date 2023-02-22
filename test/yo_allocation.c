@@ -16,13 +16,22 @@ t_yo_zone_class	_yo_zone_for_bytes(size_t n) {
 	return YO_ZONE_TINY;
 }
 
-static t_yo_zone	init_zone(size_t max_chunk_bytes, size_t max_heap_bytes) {
-	t_yo_zone	zone = {
+static t_yo_zone	init_zone(t_yo_zone_class zone, size_t max_chunk_bytes, size_t max_heap_bytes) {
+	t_yo_zone	z = {
+		.zone_class = zone,
 		.max_chunk_bytes = max_chunk_bytes,
 		.heap_bytes = QUANTIZE(max_heap_bytes, QUANTIZE(getpagesize(), BLOCK_UNIT_SIZE)),
+		.frees = NULL,
+		.free_p = NULL,
+		.cons = {},
 	};
-	zone.heap_blocks = (zone.heap_bytes - 1) / BLOCK_UNIT_SIZE;
-	return zone;
+	z.heap_blocks = (z.heap_bytes - 1) / BLOCK_UNIT_SIZE;
+	z.frees = _yo_allocate_heap(z.heap_blocks, zone);
+	z.free_p = z.frees;
+	if (z.frees != NULL) {
+		z.cons.total_blocks += z.frees->blocks + 1;
+	}
+	return z;
 }
 
 // メモリゾーンクラスに対応するメモリゾーン(へのポインタ)を返す
@@ -30,14 +39,14 @@ t_yo_zone*		_yo_retrieve_zone_for_class(t_yo_zone_class zone) {
 	switch (zone) {
 		case YO_ZONE_TINY: {
 			if (g_root.tiny.max_chunk_bytes == 0) {
-				g_root.tiny = init_zone(TINY_MAX_CHUNK_BYTE, TINY_MAX_HEAP_BYTE);
+				g_root.tiny = init_zone(zone, TINY_MAX_CHUNK_BYTE, TINY_MAX_HEAP_BYTE);
 			}
 			return &g_root.tiny;
 		}
 
 		case YO_ZONE_SMALL: {
 			if (g_root.small.max_chunk_bytes == 0) {
-				g_root.small = init_zone(SMALL_MAX_CHUNK_BYTE, SMALL_MAX_HEAP_BYTE);
+				g_root.small = init_zone(zone, SMALL_MAX_CHUNK_BYTE, SMALL_MAX_HEAP_BYTE);
 			}
 			return &g_root.small;
 		}

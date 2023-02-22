@@ -105,7 +105,7 @@ void	test5() {
 	yo_free(_);
 }
 
-#define MASS_RANDOM_N 10000
+#define MASS_RANDOM_N 100000
 
 // mallocした順にfree
 void	mass_fifo() {
@@ -157,19 +157,19 @@ void	mass_random_free() {
 }
 
 void	mass_random_malloc_and_free() {
-	void	*m[1000] = {};
+	void	*m[5000] = {};
 
 	srand(111111107);
 	for (int i = 0; i < MASS_RANDOM_N; ++i) {
-		int j = rand() % 1000;
+		int j = rand() % 5000;
 		if (m[j]) {
 			yo_free(m[j]);
 			m[j] = 0;
 		} else {
-			m[j] = yo_malloc(rand() % 100000 + 1);
+			m[j] = yo_malloc(rand() % 1000 + 1);
 		}
 	}
-	for (int i = 0; i < 1000; ++i) {
+	for (int i = 0; i < 5000; ++i) {
 		if (m[i]) {
 			yo_free(m[i]);
 		}

@@ -2,6 +2,7 @@
 # define YO_STRUCT_H
 
 # include <stdlib.h>
+# include <stdbool.h>
 # include "yo_utils.h"
 
 /**
@@ -22,6 +23,10 @@ typedef struct s_block_header {
 typedef struct s_listcursor {
 	t_block_header	*curr;
 	t_block_header	*prev;
+
+	t_block_header	*head;
+	t_block_header	*start;
+	bool			visited_once;
 }	t_listcursor;
 
 // n in PDF
@@ -36,6 +41,12 @@ typedef struct s_listcursor {
 // M in PDF
 # define SMALL_MAX_HEAP_BYTE ((size_t)8388608)
 
+typedef enum e_yo_zone_class {
+	YO_ZONE_TINY,
+	YO_ZONE_SMALL,
+	YO_ZONE_LARGE,
+}	t_yo_zone_class;
+
 typedef struct s_yo_zone_consistency {
 	// ヘッダも含めた当該ゾーンの全ブロック数
 	// ヒープアロケートにより追加される.
@@ -43,6 +54,7 @@ typedef struct s_yo_zone_consistency {
 }	t_yo_zone_consistency;
 
 typedef struct s_yo_zone {
+	t_yo_zone_class			zone_class;
 	size_t					max_chunk_bytes;
 	size_t					heap_bytes;
 	size_t					heap_blocks;

@@ -1,11 +1,33 @@
 #include "yo_internal.h"
 
-t_listcursor	init_cursor(t_block_header *list)
-{
-	return (t_listcursor){
-		.curr = list,
-		.prev = NULL,
+t_listcursor	init_cursor(t_block_header *list) {
+	return (t_listcursor) {
+		.curr			= list,
+		.prev			= NULL,
+		.head			= NULL,
+		.start			= list,
+		.visited_once	= false,
 	};
+}
+
+t_listcursor	init_cursor_from_mid(t_block_header *list, t_block_header *mid) {
+	if (list_next_head(mid) != NULL) {
+		return (t_listcursor) {
+			.prev			= mid,
+			.curr			= list_next_head(mid),
+			.head			= list,
+			.start			= list_next_head(mid),
+			.visited_once	= false,
+		};
+	} else {
+		return (t_listcursor) {
+			.prev			= NULL,
+			.curr			= list,
+			.head			= list,
+			.start			= list,
+			.visited_once	= false,
+		};
+	}
 }
 
 t_block_header	*list_next_head(t_block_header *head) {
@@ -18,10 +40,20 @@ void	concat_item(t_block_header *head, t_block_header *item) {
 	head->next = COPYFLAGS(item, head->next);
 }
 
-void	increment_cursor(t_listcursor *cursor)
-{
+void	increment_cursor(t_listcursor *cursor) {
 	cursor->prev = cursor->curr;
 	cursor->curr = list_next_head(cursor->curr);
+	if (cursor->curr == NULL && cursor->head != NULL) {
+		cursor->curr = cursor->head;
+		cursor->prev = NULL;
+	}
+	if (cursor->curr == cursor->start) {
+		if (cursor->visited_once) {
+			cursor->curr = NULL;
+		} else {
+			cursor->visited_once = true;
+		}
+	}
 }
 
 // cursor.prev < item < cursor.curr となるような cursor を返す
@@ -39,10 +71,21 @@ t_listcursor	find_cross_cursor(t_block_header* list, t_block_header *item) {
 t_listcursor	find_fit_cursor(t_block_header* list, t_block_header *item) {
 	assert(item != NULL);
 	t_listcursor	cursor = init_cursor(list);
-	while (cursor.curr != NULL && cursor.curr != item) {
+	while (cursor.curr != NULL && cursor.curr < item) {
 		increment_cursor(&cursor);
 	}
+	DEBUGOUT("cursor.curr = %p, item = %p", cursor.curr, item);
+	if (cursor.curr != item) {
+		cursor.curr = NULL;
+	}
+	// ↑ cursor.curr == NULL になるのは, 新しく確保したヒープを(free で) zone の末尾に追加するときのみ.
 	return cursor;
+}
+
+// 昇順リスト list の要素のうち, item より小さい最大の要素を探す.
+// returns max{ m in list | m < item }
+t_block_header*	find_inf_item(t_block_header* list, t_block_header *item) {
+	return find_cross_cursor(list, item).prev;
 }
 
 void	insert_item(t_block_header **list, t_block_header *item) {
@@ -85,12 +128,6 @@ void	remove_item(t_block_header **list, t_block_header *item) {
 	}
 	// isolate: cursor.curr
 	concat_item(cursor.curr, NULL);
-}
-
-// 昇順リスト list の要素のうち, item より小さい最大の要素を探す.
-// returns max{ m in list | m < item }
-t_block_header*	find_inf_item(t_block_header* list, t_block_header *item) {
-	return find_cross_cursor(list, item).prev;
 }
 
 void	show_list(t_block_header *list) {
