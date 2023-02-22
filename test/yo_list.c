@@ -130,6 +130,24 @@ void	remove_item(t_block_header **list, t_block_header *item) {
 	concat_item(cursor.curr, NULL);
 }
 
+void	nullify_chunk(t_block_header *chunk) {
+	*chunk = (t_block_header){};
+}
+
+t_block_header*	unify_chunk(t_block_header *b1, t_block_header *b2) {
+	b1->blocks += b2->blocks + 1;
+	concat_item(b1, b2->next);
+	nullify_chunk(b2);
+	return b1;
+}
+
+// ASSERT: b2 should be separated from list
+t_block_header*	assimilate_chunk(t_block_header *b1, t_block_header *b2) {
+	b1->blocks += b2->blocks + 1;
+	nullify_chunk(b2);
+	return b1;
+}
+
 void	show_list(t_block_header *list) {
 	if (list == NULL) {
 		dprintf(STDERR_FILENO, "%s[nothing]%s\n", TX_YLW, TX_RST);

@@ -24,6 +24,38 @@ void	*set_for_zone(void *addr, t_yo_zone_class zone)
 	}
 }
 
+bool	is_relocation_needed(void *addr, size_t n) {
+	const size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
+	const t_yo_zone_class	zone_class_needed = _yo_zone_for_bytes(n);
+
+	t_block_header	*head = addr;
+	--head;
+	const size_t	blocks_current = head->blocks;
+	const t_yo_zone_class	zone_class_current = _yo_zone_for_addr(addr);
+
+	if (zone_class_current != zone_class_needed) {
+		// ゾーンが異なる -> リロケーション要
+		return true;
+	}
+	if (blocks_needed <= blocks_current) {
+		// ブロック数が減る -> リロケーション不要
+		return false;
+	}
+	// ブロック数を増やせる(エクステンション可能)かどうか確認
+	t_yo_zone*	zone = _yo_retrieve_zone_for_class(zone_class_current);
+	assert(zone != NULL);
+	t_block_header*	left_adjacent = head + head->blocks + 1;
+	t_listcursor	cursor = find_fit_cursor(zone->frees, left_adjacent);
+	if (cursor.curr == NULL) {
+		// 右隣接するフリーブロックがない -> リロケーション要(エクステンション不可)
+		return true;
+	}
+	const size_t	blocks_capable = blocks_current + cursor.curr->blocks + 1;
+	// 現在のブロック数 + 追加可能なブロック数 < 必要なブロック数
+	// ならばリロケーション要(エクステンション不可)
+	return blocks_capable < blocks_needed;
+}
+
 static bool	extend_zone(t_yo_zone *zone) {
 	t_block_header	*new_heap = _yo_allocate_heap(zone->heap_blocks, zone->zone_class);
 	if (new_heap == NULL) {
@@ -34,18 +66,6 @@ static bool	extend_zone(t_yo_zone *zone) {
 	yo_free_actual(new_heap + 1);
 	return true;
 }
-
-static void	nullify_chunk(t_block_header *chunk) {
-	*chunk = (t_block_header){};
-}
-
-static t_block_header	*unify_chunk(t_block_header *b1, t_block_header *b2) {
-	b1->blocks += b2->blocks + 1;
-	concat_item(b1, b2->next);
-	nullify_chunk(b2);
-	return b1;
-}
-
 
 // void yo_free_actual(void *addr)
 //
@@ -215,11 +235,7 @@ void*	yo_malloc_actual(size_t n) {
 	} else {
 		zone->frees = rest_free;
 	}
-	if (cursor.prev != NULL) {
-		zone->free_p = cursor.prev;
-	} else {
-		zone->free_p = zone->frees;
-	}
+	zone->free_p = (cursor.prev != NULL) ? cursor.prev : zone->frees;
 	cursor.curr->next = set_for_zone(NULL, zone_class);
 	insert_item(&zone->allocated, cursor.curr);
 	DEBUGOUT("** returning %p **", cursor.curr);
@@ -252,6 +268,13 @@ void*	yo_malloc_actual(size_t n) {
 // 対象チャンクのブロック数を`blocks_needed`ブロックに変更できるかどうかを調べる.
 // ** 変更できない場合はリロケーションが必要 **.
 //
+// (対象チャンクのブロック数を`blocks_needed`ブロックに変更できるかどうか)
+// blocks_needed <= blocks_current なら無条件で可能.
+// そうでない場合, 対象チャンクのすぐ右に未使用チャンクがあり, かつその未使用チャンクのブロック数が十分に大きければ変更可能.
+// 具体的には,
+// blocks_needed <= blocks_current + 1 + 未使用チャンクのブロック数
+// ならば変更可能.
+//
 // (リロケーションする場合)
 // malloc し, データコピーし, free して 新しいアドレスを返して終わり.
 //
@@ -262,13 +285,13 @@ void*	yo_malloc_actual(size_t n) {
 // - blocks_current - 1 <= blocks_needed <= blocks_current
 //   - 何もしない.
 //   - ブロック数は小さくなるのだが, 小さくしても新しいブロックを生成できないため.
-// - blocks_needed < blocks_current - 1
-//   - 必要なブロック数が現在よりも減る.
-//   - 現在のチャンクのブロック数を小さくし, 余ったブロックを新たな未使用チャンクとする.
 // - blocks_current < blocks_needed
 //   - 必要なブロック数が現在よりも増える.
-//   - 現在のチャンクのすぐ右に十分なブロックを持つ未使用チャンクがある(事前にあることを確認している).
+//   - 対象チャンクのすぐ右に十分なブロックを持つ未使用チャンクがある(事前にあることを確認している).
 //   - この未使用チャンクを解体し, 現在チャンクに合体させる.
+// - blocks_needed < blocks_current - 1
+//   - 必要なブロック数が現在よりも減る.
+//   - 対象チャンクのブロック数を小さくし, 余ったブロックを新たな未使用チャンクとする.
 //
 void*	yo_realloc_actual(void *addr, size_t n) {
 	if (addr == NULL) {
@@ -276,32 +299,28 @@ void*	yo_realloc_actual(void *addr, size_t n) {
 		return yo_malloc_actual(n);
 	}
 
+	if (is_relocation_needed(addr, n)) {
+		return _yo_relocate(addr, n);
+	}
+
 	t_block_header	*head = addr;
 	--head;
-	const bool	blocks_increasing = BLOCKS_FOR_SIZE(n) > head->blocks;
-	t_yo_zone_class	zone_class = _yo_zone_for_addr(addr);
-	if (zone_class == YO_ZONE_LARGE) {
-		if (blocks_increasing) {
-			DEBUGSTR("** RELOCATE LARGE!! **");
-			return _yo_relocate_chunk(head, n);
-		}
-		DEBUGSTR("do nothing for large chunk");
-		return addr;
-	}
-
-	t_yo_zone	*zone = _yo_retrieve_zone_for_class(zone_class);
-	if (blocks_increasing) {
-		t_block_header*	extended = _yo_try_extend_chunk(zone, head, n);
-		if (extended != NULL) {
-			return extended;
-		}
-
-		return _yo_relocate_chunk(head, n);
+	const size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
+	const size_t	blocks_current = head->blocks;
+	assert(blocks_current > 0);
+	if (blocks_current - 1 <= blocks_needed && blocks_needed <= blocks_current) {
+		DEBUGSTR("DO NOTHING");
+	} else if (blocks_current < blocks_needed) {
+		DEBUGSTR("EXTEND");
+		t_yo_zone_class	zone_class = _yo_zone_for_addr(addr);
+		t_yo_zone*	zone = _yo_retrieve_zone_for_class(zone_class);
+		assert(zone != NULL);
+		_yo_extend_chunk(zone, head, n);
 	} else {
-		// -> shrink
+		DEBUGSTR("SHRINK");
 		_yo_shrink_chunk(head, n);
-		return addr;
 	}
+	return addr;
 }
 
 static double	get_fragmentation_rate(t_block_header *list)
@@ -337,6 +356,7 @@ void	check_zone_consistency(t_yo_zone *zone) {
 	size_t block_free = 0;
 	h = zone->frees;
 	while (h) {
+		DEBUGOUT("(%zu, %p, %p)", h->blocks, h, h->next);
 		assert(h->blocks > 0);
 		block_free += h->blocks + 1;
 		h = list_next_head(h);

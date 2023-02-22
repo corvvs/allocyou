@@ -32,6 +32,8 @@
 # define GET_IS_SMALL(ptr) (!GET_IS_LARGE(ptr) && !GET_IS_TINY(ptr))
 # define SET_IS_SMALL(ptr) (UNSET_IS_TINY(UNSET_IS_LARGE(ptr)))
 
+# define YO_MIN(v1, v2) (v1 < v2 ? v1 : v2)
+
 void	*yo_memcpy(void* dst, const void* src, size_t n);
 
 #endif

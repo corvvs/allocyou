@@ -162,6 +162,7 @@ void	mass_random_malloc_and_free() {
 	srand(111111107);
 	for (int i = 0; i < MASS_RANDOM_N; ++i) {
 		int j = rand() % 5000;
+		DEBUGOUT("i = %d, j = %d", i, j);
 		if (m[j]) {
 			yo_free(m[j]);
 			m[j] = 0;
@@ -177,6 +178,72 @@ void	mass_random_malloc_and_free() {
 	show_alloc_mem();
 }
 
+void	realloc_basic() {
+	char*	mem = yo_realloc(NULL, 11);
+	strcpy(mem, "helloworld");
+	printf("%p: %s\n", mem, mem);
+
+	mem = yo_realloc(mem, 16);
+	strcat(mem, "tokyo");
+	printf("%p: %s\n", mem, mem);
+
+	mem = yo_realloc(mem, 250);
+	strcat(mem, "-oden-oden");
+	printf("%p: %s\n", mem, mem);
+
+	yo_free(mem);
+}
+
+void	realloc_shrink() {
+	char*	mem = yo_realloc(NULL, 51);
+	for (int i = 0; i < 50; ++i) {
+		mem[i] = 'a' + (i % 26);
+	}
+	mem[50] = 0;
+	printf("%p: %s\n", mem, mem);
+	mem = yo_realloc(mem, 10);
+	printf("%p: %s\n", mem, mem);
+	char*	mem2 = yo_realloc(NULL, 50);
+	for (int i = 0; i < 50; ++i) {
+		mem2[i] = 'A' + (i % 26);
+	}
+	mem2[50] = 0;
+	printf("%p: %s\n", mem, mem);
+	printf("%p: %s\n", mem2, mem2);
+	yo_free(mem2);
+	mem = yo_realloc(mem, 50);
+	printf("%p: %s\n", mem, mem);
+	yo_free(mem);
+}
+
+void	realloc_relocate_tiny_small_large() {
+	char*	mem = yo_realloc(NULL, 51);
+	for (int i = 0; i < 50; ++i) {
+		mem[i] = 'a' + (i % 26);
+	}
+	mem[50] = 0;
+	printf("%p: %s\n", mem, mem);
+	mem = yo_realloc(mem, 1000);
+	printf("%p: %s\n", mem, mem);
+	mem = yo_realloc(mem, 100000);
+	printf("%p: %s\n", mem, mem);
+	yo_free(mem);
+}
+
+void	realloc_relocate_large_small_tiny() {
+	char*	mem = yo_realloc(NULL, 100000);
+	for (int i = 0; i < 50; ++i) {
+		mem[i] = 'a' + (i % 26);
+	}
+	mem[50] = 0;
+	printf("%p: %s\n", mem, mem);
+	mem = yo_realloc(mem, 1000);
+	printf("%p: %s\n", mem, mem);
+	mem = yo_realloc(mem, 51);
+	printf("%p: %s\n", mem, mem);
+	yo_free(mem);
+}
+
 int main() {
 	setvbuf(stdout, NULL, _IONBF, 0);
 	// test1();
@@ -186,5 +253,9 @@ int main() {
 	// test5();
 	// mass_filo();
 	// mass_random_free();
-	mass_random_malloc_and_free();
+	// mass_random_malloc_and_free();
+	realloc_basic();
+	realloc_shrink();
+	realloc_relocate_tiny_small_large();
+	realloc_relocate_large_small_tiny();
 }
