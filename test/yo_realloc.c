@@ -1,73 +1,69 @@
 #include "yo_internal.h"
 
-// n バイトが入るチャンクを新しく確保し, チャンク head の内容をコピーし, head を破棄する.
-// 新しいチャンクを返す.
-void*	_yo_relocate_chunk(t_block_header* head, size_t n) {
-	void*	new_mem = yo_malloc(n);
-	if (new_mem == NULL) {
-		DEBUGOUT("malloc(%zu) failed\n", n);
-		return NULL;
+void*	yo_relocate(void* addr, size_t n) {
+	DEBUGSTR("REALOCATE");
+	void*	relocated = yo_malloc_actual(n);
+	if (relocated == NULL) {
+		return (NULL);
 	}
-	t_block_header*	new_head = new_mem;
-	--new_head;
-	DEBUGOUT("yo_memcpy(%p, %p, %zu)\n", new_head + 1, head + 1, head->blocks * BLOCK_UNIT_SIZE);
-	yo_memcpy(new_head + 1, head + 1, head->blocks * BLOCK_UNIT_SIZE);
-	DEBUGOUT("freeing %p\n", head);
-	COPYFLAGS(new_head->next, head->next);
-	yo_free_actual(head);
-	return new_mem;
+	t_block_header*	head_to = relocated;
+	--head_to;
+	DEBUGOUT("head_to: (%zu, %p, %p)", head_to->blocks, head_to, head_to->next);
+	t_block_header*	head_from = addr;
+	--head_from;
+	const size_t	bytes_current = YO_MIN(head_from->blocks, head_to->blocks) * BLOCK_UNIT_SIZE;
+	yo_memcpy(relocated, addr, bytes_current);
+	yo_free_actual(addr);
+	return relocated;
 }
 
-// 
-void*	_yo_try_extend_chunk(t_yo_zone* zone, t_block_header* head, size_t n) {
-	// フリーチャンクは隣接していない(隣接しているなら合体している)はずなので,
-	// 1つ後のフリーチャンクだけを調べればよい
-	t_block_header*	right = head + head->blocks + 1;
-	t_block_header*	prev = find_item(zone->frees, right);
-	t_block_header*	cand = prev == NULL ? zone->frees : ADDRESS(prev->next);
-	if (cand == NULL || cand != right) {
-		DEBUGSTR("no candidate free chunk\n");
-		return NULL;
+void	yo_extend_chunk(t_yo_zone* zone, t_block_header* head, size_t n) {
+	const size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
+	const size_t	blocks_current = head->blocks;
+	assert(yo_zone_for_bytes(n) == yo_zone_for_addr(head + 1));
+	assert(blocks_needed > blocks_current);
+	t_block_header*	adjacent = head + head->blocks + 1;
+	t_listcursor	cursor = find_fit_cursor(zone->frees, adjacent);
+	assert(cursor.curr == adjacent);
+	const size_t	blocks_capable = blocks_current + adjacent->blocks + 1;
+	assert(blocks_capable >= blocks_needed);
+	if (blocks_capable - blocks_needed > 1) {
+		DEBUGSTR("SPLIT");
+		t_block_header*	new_free = head + blocks_needed + 1;
+		*new_free = (t_block_header) {
+			.blocks = blocks_capable - (blocks_needed + 1),
+			.next = cursor.curr->next,
+		};
+		head->blocks = blocks_needed;
+		if (cursor.prev != NULL) {
+			concat_item(cursor.prev, new_free);
+		} else {
+			zone->frees = new_free;
+		}
+		nullify_chunk(cursor.curr);
+	} else {
+		DEBUGSTR("EXHAUST");
+		remove_item(&cursor.prev, cursor.curr);
+		assimilate_chunk(head, cursor.curr);
 	}
-	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
-	size_t	whole_blocks = head->blocks + cand->blocks + 2;
-	// 保存量
-	// 前チャンクのブロック + 1 + 後チャンクのブロック + 1 = whole_blocks = const.
-	if (whole_blocks < blocks_needed + 1) {
-		DEBUGWARN("candidate chunk %p has not enough blocks: %zu\n", cand, cand->blocks);
-		return NULL;
-	}
-	DEBUGOUT("candidate chunk %p has not enough blocks: %zu\n", cand, cand->blocks);
-	t_block_header*	new_free = head + blocks_needed + 1;
-	new_free->blocks = whole_blocks - 2 - blocks_needed;
-	new_free->next = NULL;
-	head->blocks = blocks_needed;
-	remove_item(&zone->frees, cand);
-	insert_item(&zone->frees, new_free);
-	DEBUGSTR("** EXTENDED **\n");
-	return head;
 }
 
-void*	_yo_shrink_chunk(t_block_header* head, size_t n) {
-	if (GET_IS_LARGE(head->next)) {
-		// LARGEの時はなにもしない
-		DEBUGSTR("do nothing for large chunk\n");
-		return head + 1;
-	}
+void	yo_shrink_chunk(t_block_header* head, size_t n) {
+	assert(!GET_IS_LARGE(head->next));
 
 	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
 	assert(head->blocks >= blocks_needed);
-	if (head->blocks - blocks_needed >= 2) {
-		DEBUGOUT("shrinking chunk %zu blocks -> %zu blocks\n", head->blocks, blocks_needed);
-		// shrink することで有効な空きチャンクができるなら shrink する
-		// -> head から blocks_needed + 1 ブロック後ろに新しいブロックヘッダを作る 
-		head->blocks = blocks_needed;
-		t_block_header	*free_head = head + head->blocks + 1;
-		free_head->blocks = head->blocks - blocks_needed - 1;
-		free_head->next = NULL;
-		yo_free_actual(free_head + 1);
-	} else {
-		DEBUGOUT("** MAINTAIN(%zu, %p) **\n", head->blocks, head);
+	if (head->blocks < blocks_needed + 2) {
+		DEBUGOUT("** MAINTAIN(%zu, %p, %p) **", head->blocks, head, head->next);
+		return;
 	}
-	return head + 1;
+	DEBUGOUT("SHRINK chunk %zu blocks -> %zu blocks", head->blocks, blocks_needed);
+	t_block_header	*new_free = head + blocks_needed + 1;
+	*new_free = (t_block_header) {
+		.blocks	= head->blocks - (blocks_needed + 1),
+		.next	= COPYFLAGS(NULL, head->next),
+	};
+	DEBUGOUT("new_free: (%zu, %p, %p)", new_free->blocks, new_free, new_free->next);
+	head->blocks = blocks_needed;
+	yo_free_actual(new_free + 1);
 }
