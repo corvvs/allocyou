@@ -36,10 +36,10 @@ t_block_header*	unify_chunk(t_block_header *b1, t_block_header *b2);
 t_block_header*	assimilate_chunk(t_block_header *b1, t_block_header *b2);
 
 void	show_list(t_block_header *list);
-void*	yo_malloc_actual(size_t n);
-void	yo_free_actual(void *addr);
-void*	yo_realloc_actual(void *addr, size_t n);
-void	show_alloc_mem_actual(void);
+void*	yo_actual_malloc(size_t n);
+void	yo_actual_free(void *addr);
+void*	yo_actual_realloc(void *addr, size_t n);
+void	actual_show_alloc_mem(void);
 
 void	yo_free_large_chunk(t_block_header *head);
 void*	yo_large_malloc(size_t n);

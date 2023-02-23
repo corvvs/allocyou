@@ -5,9 +5,9 @@
 # define actual_free free
 # define actual_realloc realloc
 #else
-# define actual_malloc yo_malloc_actual
-# define actual_free yo_free_actual
-# define actual_realloc yo_realloc_actual
+# define actual_malloc yo_actual_malloc
+# define actual_free yo_actual_free
+# define actual_realloc yo_actual_realloc
 #endif
 
 void*	yo_malloc(size_t n) {
@@ -41,7 +41,7 @@ void*	yo_realloc(void *addr, size_t n) {
 
 void	show_alloc_mem(void) {
 	SPRINT_START;
-	show_alloc_mem_actual();
+	actual_show_alloc_mem();
 	SPRINT_END;
 	DEBUGSTR("** realloc end **");
 }

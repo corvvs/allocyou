@@ -2,7 +2,7 @@
 
 void*	yo_relocate(void* addr, size_t n) {
 	DEBUGSTR("REALOCATE");
-	void*	relocated = yo_malloc_actual(n);
+	void*	relocated = yo_actual_malloc(n);
 	if (relocated == NULL) {
 		return (NULL);
 	}
@@ -13,7 +13,7 @@ void*	yo_relocate(void* addr, size_t n) {
 	--head_from;
 	const size_t	bytes_current = YO_MIN(head_from->blocks, head_to->blocks) * BLOCK_UNIT_SIZE;
 	yo_memcpy(relocated, addr, bytes_current);
-	yo_free_actual(addr);
+	yo_actual_free(addr);
 	return relocated;
 }
 
@@ -65,5 +65,5 @@ void	yo_shrink_chunk(t_block_header* head, size_t n) {
 	};
 	DEBUGOUT("new_free: (%zu, %p, %p)", new_free->blocks, new_free, new_free->next);
 	head->blocks = blocks_needed;
-	yo_free_actual(new_free + 1);
+	yo_actual_free(new_free + 1);
 }

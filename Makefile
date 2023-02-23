@@ -10,7 +10,10 @@ SRCDIR	:=	.
 OBJDIR	:=	objs
 SRCS	:=\
 			yo_malloc.c\
-			yo_actuals.c\
+			yo_actual_free.c\
+			yo_actual_malloc.c\
+			yo_actual_realloc.c\
+			yo_actual_show_alloc_mem.c\
 			yo_list.c\
 			yo_allocation.c\
 			yo_realloc.c\
