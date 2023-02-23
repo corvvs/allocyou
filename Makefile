@@ -9,8 +9,8 @@ endif
 SRCDIR	:=	.
 OBJDIR	:=	objs
 SRCS	:=\
-			yo_front.c\
 			yo_malloc.c\
+			yo_actuals.c\
 			yo_list.c\
 			yo_allocation.c\
 			yo_realloc.c\
