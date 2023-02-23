@@ -24,7 +24,7 @@ void	*set_for_zone(void *addr, t_yo_zone_class zone)
 	}
 }
 
-bool	is_relocation_needed(void *addr, size_t n) {
+static bool	is_relocation_needed(void *addr, size_t n) {
 	const size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
 	const t_yo_zone_class	zone_class_needed = yo_zone_for_bytes(n);
 
@@ -316,73 +316,17 @@ void*	yo_realloc_actual(void *addr, size_t n) {
 	return addr;
 }
 
-static double	get_fragmentation_rate(t_block_header *list)
-{
-	size_t	blocks = 0;
-	size_t	headers = 0;
-	while (list != NULL) {
-		blocks += list->blocks;
-		headers += 1;
-		list = list_next_head(list);
-	}
-	return blocks > 0 ? (double)headers / (double)blocks : 0;
-}
-
 static void	show_zone(t_yo_zone *zone) {
 	DEBUGSTRN("  allocated: "); show_list(zone->allocated);
 	DEBUGSTRN("  free:      "); show_list(zone->frees);
-	DEBUGOUT( "  fragmentation: %1.4f%%", get_fragmentation_rate(zone->frees) * 100);
 }
 
-void	show_alloc_mem(void) {
+void	show_alloc_mem_actual(void) {
 	DEBUGSTR("TINY:");
 	show_zone(&g_root.tiny);
 	DEBUGSTR("SMALL:");
 	show_zone(&g_root.small);
 	DEBUGSTR("LARGE:  ");
 	DEBUGSTRN("  used: "); show_list(g_root.large);
-}
-
-void	check_zone_consistency(t_yo_zone *zone) {
-	t_block_header	*h;
-	size_t block_in_use = 0;
-	size_t block_free = 0;
-	h = zone->frees;
-	while (h) {
-		// DEBUGOUT("(%zu, %p, %p)", h->blocks, h, h->next);
-		assert(h->blocks > 0);
-		block_free += h->blocks + 1;
-		h = list_next_head(h);
-	}
-	h = zone->allocated;
-	while (h) {
-		assert(h->blocks > 0);
-		block_in_use += h->blocks + 1;
-		h = list_next_head(h);
-	}
-	ssize_t block_diff = zone->cons.total_blocks - (block_free + block_in_use);
-	DEBUGOUT("total: %zu, free: %zu, in use: %zu, diff: %zd blocks",
-			zone->cons.total_blocks, block_free, block_in_use, block_diff);
-	DEBUGOUT("fragmentation: %1.4f%%", get_fragmentation_rate(zone->frees) * 100);
-	// DEBUGSTRN("  free:      "); show_list(zone->frees);
-	if (block_diff) {
-		// show_alloc_mem();
-		// DEBUGSTRN("  free:      "); show_list(zone->frees);
-		DEBUGERR("consistency KO!!: zone %p", zone);
-		assert(zone->cons.total_blocks == block_free + block_in_use);
-	}
-}
-
-void	check_consistency(void) {
-	if (g_root.tiny.frees) {
-		DEBUGSTR("check consistency: TINY");
-		check_zone_consistency(&g_root.tiny);
-		DEBUGSTR("-> ok.");
-	}
-	if (g_root.small.frees) {
-		DEBUGSTR("check consistency: SMALL");
-		check_zone_consistency(&g_root.small);
-		DEBUGSTR("-> ok.");
-	}
 }
 

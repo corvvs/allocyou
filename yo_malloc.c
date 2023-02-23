@@ -38,3 +38,10 @@ void*	yo_realloc(void *addr, size_t n) {
 	check_consistency();
 	return mem;
 }
+
+void	show_alloc_mem(void) {
+	SPRINT_START;
+	show_alloc_mem_actual();
+	SPRINT_END;
+	DEBUGSTR("** realloc end **");
+}

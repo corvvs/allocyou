@@ -39,6 +39,8 @@ void	show_list(t_block_header *list);
 void*	yo_malloc_actual(size_t n);
 void	yo_free_actual(void *addr);
 void*	yo_realloc_actual(void *addr, size_t n);
+void	show_alloc_mem_actual(void);
+
 void	yo_free_large_chunk(t_block_header *head);
 void*	yo_large_malloc(size_t n);
 void*	yo_relocate(void* addr, size_t n);
