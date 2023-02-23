@@ -244,6 +244,23 @@ void	realloc_relocate_large_small_tiny() {
 	yo_free(mem);
 }
 
+void	mass_realloc_random() {
+	void	*m[5000] = {};
+
+	srand(111111107);
+	for (int i = 0; i < MASS_RANDOM_N; ++i) {
+		int j = rand() % 5000;
+		int n = (int[]){10, 1000, 1000000}[rand() % 3];
+		m[j] = yo_realloc(m[j], n);
+	}
+	for (int i = 0; i < 5000; ++i) {
+		if (m[i]) {
+			yo_free(m[i]);
+		}
+	}
+	show_alloc_mem();
+}
+
 int main() {
 	setvbuf(stdout, NULL, _IONBF, 0);
 	// test1();
@@ -254,8 +271,9 @@ int main() {
 	// mass_filo();
 	// mass_random_free();
 	// mass_random_malloc_and_free();
-	realloc_basic();
-	realloc_shrink();
-	realloc_relocate_tiny_small_large();
-	realloc_relocate_large_small_tiny();
+	// realloc_basic();
+	// realloc_shrink();
+	// realloc_relocate_tiny_small_large();
+	// realloc_relocate_large_small_tiny();
+	mass_realloc_random();
 }

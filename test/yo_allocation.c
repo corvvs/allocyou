@@ -3,7 +3,7 @@
 extern t_yo_malloc_root	g_root;
 
 // 要求サイズに対応するメモリゾーンクラスを返す
-t_yo_zone_class	_yo_zone_for_bytes(size_t n) {
+t_yo_zone_class	yo_zone_for_bytes(size_t n) {
 	size_t	block_needed = BLOCKS_FOR_SIZE(n);
 	if (block_needed > SMALL_MAX_CHUNK_BLOCK) {
 		DEBUGWARN("zone for %zu B: LARGE", n);
@@ -26,7 +26,7 @@ static t_yo_zone	init_zone(t_yo_zone_class zone, size_t max_chunk_bytes, size_t 
 		.cons = {},
 	};
 	z.heap_blocks = (z.heap_bytes - 1) / BLOCK_UNIT_SIZE;
-	z.frees = _yo_allocate_heap(z.heap_blocks, zone);
+	z.frees = yo_allocate_heap(z.heap_blocks, zone);
 	z.free_p = z.frees;
 	if (z.frees != NULL) {
 		z.cons.total_blocks += z.frees->blocks + 1;
@@ -35,7 +35,7 @@ static t_yo_zone	init_zone(t_yo_zone_class zone, size_t max_chunk_bytes, size_t 
 }
 
 // メモリゾーンクラスに対応するメモリゾーン(へのポインタ)を返す
-t_yo_zone*		_yo_retrieve_zone_for_class(t_yo_zone_class zone) {
+t_yo_zone*		yo_retrieve_zone_for_class(t_yo_zone_class zone) {
 	switch (zone) {
 		case YO_ZONE_TINY: {
 			if (g_root.tiny.max_chunk_bytes == 0) {
@@ -59,7 +59,7 @@ t_yo_zone*		_yo_retrieve_zone_for_class(t_yo_zone_class zone) {
 }
 
 // アドレス(mallocが返したポインタの値と仮定)に対応するメモリゾーン(へのポインタ)を返す
-t_yo_zone_class		_yo_zone_for_addr(void *addr) {
+t_yo_zone_class		yo_zone_for_addr(void *addr) {
 	t_block_header	*head = addr;
 	--head;
 	void	*flags = head->next;
@@ -77,7 +77,7 @@ t_yo_zone_class		_yo_zone_for_addr(void *addr) {
 
 // n + 1 個分のブロックを mmap で確保して返す
 // 失敗した場合は NULL が返る
-void	*_yo_allocate_heap(size_t n, t_yo_zone_class zone) {
+void	*yo_allocate_heap(size_t n, t_yo_zone_class zone) {
 	void	*mapped = mmap(
 		NULL,
 		(n + 1) * BLOCK_UNIT_SIZE,
@@ -97,7 +97,7 @@ void	*_yo_allocate_heap(size_t n, t_yo_zone_class zone) {
 	return mapped;
 }
 
-void	_yo_free_large_chunk(t_block_header *head) {
+void	yo_free_large_chunk(t_block_header *head) {
 	remove_item(&g_root.large, head);
 	size_t bytes = (head->blocks + 1) * BLOCK_UNIT_SIZE;
 	if (munmap(head, bytes) < 0) {
@@ -108,10 +108,10 @@ void	_yo_free_large_chunk(t_block_header *head) {
 	return;
 }
 
-void	*_yo_large_malloc(size_t n) {
+void	*yo_large_malloc(size_t n) {
 	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
 	DEBUGOUT("** bytes: B:%zu, blocks: %zu **", n, blocks_needed);
-	t_block_header	*head = _yo_allocate_heap(blocks_needed, YO_ZONE_LARGE);
+	t_block_header	*head = yo_allocate_heap(blocks_needed, YO_ZONE_LARGE);
 	if (head == NULL) {
 		return NULL;
 	}

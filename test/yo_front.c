@@ -1,14 +1,5 @@
 #include "yo_internal.h"
 
-void	yo_free(void *addr) {
-	DEBUGOUT("** addr: %p **", addr);
-	SPRINT_START;
-	yo_free_actual(addr);
-	SPRINT_END;
-	DEBUGSTR("** free end **");
-	check_consistency();
-}
-
 void*	yo_malloc(size_t n) {
 	DEBUGOUT("** bytes: %zu **", n);
 	SPRINT_START;
@@ -17,6 +8,15 @@ void*	yo_malloc(size_t n) {
 	DEBUGSTR("** malloc end **");
 	check_consistency();
 	return mem;
+}
+
+void	yo_free(void *addr) {
+	DEBUGOUT("** addr: %p **", addr);
+	SPRINT_START;
+	yo_free_actual(addr);
+	SPRINT_END;
+	DEBUGSTR("** free end **");
+	check_consistency();
 }
 
 void*	yo_realloc(void *addr, size_t n) {

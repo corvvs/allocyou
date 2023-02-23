@@ -14,10 +14,10 @@
 
 t_yo_malloc_root	g_root;
 
-t_yo_zone_class	_yo_zone_for_bytes(size_t n);
-t_yo_zone_class	_yo_zone_for_addr(void* n);
-t_yo_zone*		_yo_retrieve_zone_for_class(t_yo_zone_class zone);
-void*			_yo_allocate_heap(size_t n, t_yo_zone_class zone);
+t_yo_zone_class	yo_zone_for_bytes(size_t n);
+t_yo_zone_class	yo_zone_for_addr(void* n);
+t_yo_zone*		yo_retrieve_zone_for_class(t_yo_zone_class zone);
+void*			yo_allocate_heap(size_t n, t_yo_zone_class zone);
 void*			set_for_zone(void *addr, t_yo_zone_class zone);
 
 
@@ -39,12 +39,11 @@ void	show_list(t_block_header *list);
 void*	yo_malloc_actual(size_t n);
 void	yo_free_actual(void *addr);
 void*	yo_realloc_actual(void *addr, size_t n);
-void	_yo_free_large_chunk(t_block_header *head);
-void*	_yo_large_malloc(size_t n);
-void*	_yo_relocate_chunk(t_block_header* head, size_t n);
-void*	_yo_relocate(void* addr, size_t n);
-void	_yo_shrink_chunk(t_block_header* head, size_t n);
-void	_yo_extend_chunk(t_yo_zone* zone, t_block_header* head, size_t n);
+void	yo_free_large_chunk(t_block_header *head);
+void*	yo_large_malloc(size_t n);
+void*	yo_relocate(void* addr, size_t n);
+void	yo_shrink_chunk(t_block_header* head, size_t n);
+void	yo_extend_chunk(t_yo_zone* zone, t_block_header* head, size_t n);
 
 void	check_consistency(void);
 
