@@ -55,7 +55,7 @@ void*	yo_actual_malloc(size_t n) {
 	}
 
 	// [retrieve zone]
-	t_yo_zone	*zone = yo_retrieve_zone_for_class(zone_class);
+	t_yo_zone	*zone = yo_retrieve_zone(zone_class);
 	if (zone->frees == NULL) {
 		errno = ENOMEM;
 		DEBUGERR("FAIL: zone-allocation for class: %d", zone_class);

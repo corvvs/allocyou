@@ -46,12 +46,12 @@ void	yo_actual_free(void *addr) {
 	t_yo_zone_class	zone_class = yo_zone_for_addr(addr);
 	if (zone_class == YO_ZONE_LARGE) {
 		// [for LARGE zone]
-		yo_free_large_chunk(head);
+		yo_large_free(addr);
 		return;
 	}
 
 	// [retrieve zone]
-	t_yo_zone*		zone = yo_retrieve_zone_for_class(zone_class);
+	t_yo_zone*		zone = yo_retrieve_zone(zone_class);
 	t_block_header*	prev_free = find_inf_item(zone->frees, head);
 	t_block_header*	next_free = prev_free == NULL ? zone->frees : list_next_head(prev_free);
 

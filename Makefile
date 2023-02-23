@@ -14,8 +14,10 @@ SRCS	:=\
 			yo_actual_malloc.c\
 			yo_actual_realloc.c\
 			yo_actual_show_alloc_mem.c\
+			yo_zone.c\
 			yo_list.c\
-			yo_allocation.c\
+			yo_heap.c\
+			yo_large.c\
 			yo_realloc.c\
 			yo_utils.c\
 			yo_predicates.c\

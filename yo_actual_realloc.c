@@ -30,7 +30,7 @@ static bool	is_relocation_needed(void *addr, size_t n) {
 		return false;
 	}
 	// ブロック数を増やせる(エクステンション可能)かどうか確認
-	t_yo_zone*	zone = yo_retrieve_zone_for_class(zone_class_current);
+	t_yo_zone*	zone = yo_retrieve_zone(zone_class_current);
 	assert(zone != NULL);
 	t_block_header*	left_adjacent = head + head->blocks + 1;
 	t_listcursor	cursor = find_fit_cursor(zone->frees, left_adjacent);
@@ -117,7 +117,7 @@ void*	yo_actual_realloc(void *addr, size_t n) {
 	} else if (blocks_current < blocks_needed) {
 		DEBUGSTR("EXTEND");
 		t_yo_zone_class	zone_class = yo_zone_for_addr(addr);
-		t_yo_zone*	zone = yo_retrieve_zone_for_class(zone_class);
+		t_yo_zone*	zone = yo_retrieve_zone(zone_class);
 		assert(zone != NULL);
 		yo_extend_chunk(zone, head, n);
 	} else {

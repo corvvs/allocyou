@@ -16,7 +16,7 @@ t_yo_malloc_root	g_root;
 
 t_yo_zone_class	yo_zone_for_bytes(size_t n);
 t_yo_zone_class	yo_zone_for_addr(void* n);
-t_yo_zone*		yo_retrieve_zone_for_class(t_yo_zone_class zone);
+t_yo_zone*		yo_retrieve_zone(t_yo_zone_class zone);
 void*			yo_allocate_heap(size_t n, t_yo_zone_class zone);
 void*			set_for_zone(void *addr, t_yo_zone_class zone);
 
@@ -41,7 +41,7 @@ void	yo_actual_free(void *addr);
 void*	yo_actual_realloc(void *addr, size_t n);
 void	actual_show_alloc_mem(void);
 
-void	yo_free_large_chunk(t_block_header *head);
+void	yo_large_free(void* addr);
 void*	yo_large_malloc(size_t n);
 void*	yo_relocate(void* addr, size_t n);
 void	yo_shrink_chunk(t_block_header* head, size_t n);

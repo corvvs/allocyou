@@ -1,5 +1,9 @@
 #include "yo_internal.h"
 
+// 整合性チェック
+
+extern t_yo_malloc_root	g_root;
+
 static double	get_fragmentation_rate(t_block_header *list)
 {
 	size_t	blocks = 0;

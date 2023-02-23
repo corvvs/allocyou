@@ -1,5 +1,8 @@
 #include "yo_internal.h"
 
+// ユーザに直接見せるラッパー関数の定義
+// 実際の定義は yo_actual_***.c を見ること.
+
 #ifdef USE_LIBC
 # define actual_malloc malloc
 # define actual_free free
