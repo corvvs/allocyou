@@ -101,7 +101,7 @@ void*	yo_actual_malloc(size_t n) {
 		zone->frees = rest_free;
 	}
 	zone->free_p = (cursor.prev != NULL) ? cursor.prev : zone->frees;
-	cursor.curr->next = set_for_zone(NULL, zone_class);
+	cursor.curr->next = COPYFLAGS(NULL, cursor.curr->next);
 	insert_item(&zone->allocated, cursor.curr);
 	return rv;
 }

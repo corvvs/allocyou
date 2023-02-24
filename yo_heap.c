@@ -1,5 +1,17 @@
 #include "yo_internal.h"
 
+static void*	set_for_zone(void *addr, t_yo_zone_class zone)
+{
+	switch (zone) {
+		case YO_ZONE_TINY:
+			return SET_IS_TINY(addr);
+		case YO_ZONE_SMALL:
+			return SET_IS_SMALL(addr);
+		case YO_ZONE_LARGE:
+			return SET_IS_LARGE(addr);
+	}
+}
+
 // n + 1 個分のブロックを mmap で確保して返す
 // 失敗した場合は NULL が返る
 void	*yo_allocate_heap(size_t n, t_yo_zone_class zone) {

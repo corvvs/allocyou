@@ -1,17 +1,5 @@
 #include "yo_internal.h"
 
-void	*set_for_zone(void *addr, t_yo_zone_class zone)
-{
-	switch (zone) {
-		case YO_ZONE_TINY:
-			return SET_IS_TINY(addr);
-		case YO_ZONE_SMALL:
-			return SET_IS_SMALL(addr);
-		case YO_ZONE_LARGE:
-			return SET_IS_LARGE(addr);
-	}
-}
-
 static bool	is_relocation_needed(void *addr, size_t n) {
 	const size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
 	const t_yo_zone_class	zone_class_needed = yo_zone_for_bytes(n);
