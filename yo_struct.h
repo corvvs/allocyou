@@ -16,24 +16,26 @@ typedef struct s_block_header {
 	// next をアドレスとして用いる場合は下3ビットを落とすこと(ADDRESSマクロを使う)
 	struct s_block_header*	next;
 
-	// このチャンクの長さ
+	// このチャンクのブロック数
 	size_t					blocks;
 } t_block_header;
 
 typedef struct s_listcursor {
-	t_block_header	*curr;
-	t_block_header	*prev;
+	t_block_header*	curr;
+	t_block_header*	prev;
 
-	t_block_header	*head;
-	t_block_header	*start;
+	t_block_header*	head;
+	t_block_header*	start;
 	bool			visited_once;
 }	t_listcursor;
 
 // n in PDF
 # define TINY_MAX_CHUNK_BYTE ((size_t)992)
+// n as blocks
 # define TINY_MAX_CHUNK_BLOCK (BLOCKS_FOR_SIZE(TINY_MAX_CHUNK_BYTE))
 // m in PDF
 # define SMALL_MAX_CHUNK_BYTE ((size_t)15360)
+// m as blocks
 # define SMALL_MAX_CHUNK_BLOCK (BLOCKS_FOR_SIZE(SMALL_MAX_CHUNK_BYTE))
 
 // N in PDF
@@ -50,17 +52,24 @@ typedef enum e_yo_zone_class {
 typedef struct s_yo_zone_consistency {
 	// ヘッダも含めた当該ゾーンの全ブロック数
 	// ヒープアロケートにより追加される.
-	size_t	total_blocks;
+	size_t			total_blocks;
 }	t_yo_zone_consistency;
 
 typedef struct s_yo_zone {
-	t_yo_zone_class			zone_class;
-	size_t					max_chunk_bytes;
-	size_t					heap_bytes;
-	size_t					heap_blocks;
-	t_block_header*			frees;
-	t_block_header*			free_p;
-	t_block_header*			allocated;
+	// ゾーン種別
+	t_yo_zone_class	zone_class;
+	// このゾーンに割り当てられる最大の要求バイトサイズ
+	size_t			max_chunk_bytes;
+	// このゾーンのヒープのバイトサイズ
+	size_t			heap_bytes;
+	// このゾーンのヒープのブロックサイズ
+	size_t			heap_blocks;
+	// このゾーンのフリーリスト
+	t_block_header*	frees;
+	t_block_header*	free_p;
+	// このゾーンのアロケーションリスト
+	t_block_header*	allocated;
+	// 整合性情報
 	t_yo_zone_consistency	cons;
 }	t_yo_zone;
 
