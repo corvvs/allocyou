@@ -89,10 +89,7 @@ t_block_header*	find_inf_item(t_block_header* list, t_block_header *item) {
 }
 
 void	insert_item(t_block_header **list, t_block_header *item) {
-	if (list == NULL) {
-		DEBUGSTR("SOMETHING WRONG: list is null");
-		return;
-	}
+	assert(list != NULL);
 	if (*list == NULL) {
 		*list = item;
 		concat_item(item, NULL);
@@ -110,14 +107,12 @@ void	insert_item(t_block_header **list, t_block_header *item) {
 	}
 }
 
-void	remove_item(t_block_header **list, t_block_header *item) {
-	if (list == NULL) {
-		DEBUGSTR("SOMETHING WRONG: list is null");
-		return;
-	}
+// 削除が実施されたかどうかを bool で返す
+bool	remove_item(t_block_header **list, t_block_header *item) {
+	assert(list != NULL);
 	t_listcursor	cursor = find_fit_cursor(*list, item);
 	if (cursor.curr == NULL) {
-		return;
+		return false;
 	}
 	assert(cursor.curr == item);
 	// concat: cursor.prev and cursor.curr->next
@@ -128,6 +123,7 @@ void	remove_item(t_block_header **list, t_block_header *item) {
 	}
 	// isolate: cursor.curr
 	concat_item(cursor.curr, NULL);
+	return true;
 }
 
 void	nullify_chunk(t_block_header *chunk) {
@@ -164,4 +160,3 @@ void	show_list(t_block_header *list) {
 	}
 	dprintf(STDERR_FILENO, TX_RST "\n");
 }
-

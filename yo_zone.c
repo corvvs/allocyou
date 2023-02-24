@@ -39,16 +39,15 @@ static t_yo_zone	init_zone(t_yo_zone_class zone, size_t max_chunk_bytes, size_t 
 		.zone_class = zone,
 		.max_chunk_bytes = max_chunk_bytes,
 		.heap_bytes = QUANTIZE(max_heap_bytes, QUANTIZE(getpagesize(), BLOCK_UNIT_SIZE)),
+		.allocated = NULL,
 		.frees = NULL,
 		.free_p = NULL,
 		.cons = {},
 	};
 	z.heap_blocks = (z.heap_bytes - 1) / BLOCK_UNIT_SIZE;
-	z.frees = yo_allocate_heap(z.heap_blocks, zone);
+	z.frees = yo_allocate_heap(z.heap_blocks, &z);
+	z.cons.free_blocks += z.heap_blocks + 1;
 	z.free_p = z.frees;
-	if (z.frees != NULL) {
-		z.cons.total_blocks += z.frees->blocks + 1;
-	}
 	return z;
 }
 
@@ -68,10 +67,21 @@ t_yo_zone*		yo_retrieve_zone(t_yo_zone_class zone) {
 			}
 			return &g_root.small;
 		}
-		default: {
-			DEBUGERR("SOMETHING WRONG: %d", zone);
-			assert(0);
-			return NULL;
+
+		case YO_ZONE_LARGE: {
+			if (g_root.large.max_chunk_bytes == 0) {
+				g_root.large = (t_yo_zone) {
+					.zone_class = zone,
+					.max_chunk_bytes = SIZE_MAX,
+					.heap_bytes = SIZE_MAX,
+					.heap_blocks = SIZE_MAX,
+					.allocated = NULL,
+					.frees = NULL,
+					.free_p = NULL,
+					.cons = {},
+				};
+			}
+			return &g_root.large;
 		}
 	}
 }

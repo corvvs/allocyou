@@ -26,7 +26,8 @@ t_yo_zone_class	yo_zone_for_addr(void* n);
 t_yo_zone*		yo_retrieve_zone(t_yo_zone_class zone);
 
 // yo_heap.c
-void*			yo_allocate_heap(size_t n, t_yo_zone_class zone);
+void*			yo_allocate_heap(size_t n, t_yo_zone* zone);
+void			yo_deallocate_heap(t_block_header* heap, t_yo_zone* zone);
 
 // yo_list.c
 t_listcursor	init_cursor(t_block_header *list);
@@ -35,7 +36,7 @@ t_block_header*	list_next_head(t_block_header *head);
 void			concat_item(t_block_header *head, t_block_header *item);
 void			increment_cursor(t_listcursor *cursor);
 void			insert_item(t_block_header **list, t_block_header *item);
-void			remove_item(t_block_header **list, t_block_header *item);
+bool			remove_item(t_block_header **list, t_block_header *item);
 t_block_header*	find_inf_item(t_block_header* list, t_block_header *item);
 t_listcursor	find_cross_cursor(t_block_header* list, t_block_header *item);
 t_listcursor	find_fit_cursor(t_block_header* list, t_block_header *item);

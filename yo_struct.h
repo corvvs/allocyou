@@ -53,6 +53,8 @@ typedef struct s_yo_zone_consistency {
 	// ヘッダも含めた当該ゾーンの全ブロック数
 	// ヒープアロケートにより追加される.
 	size_t			total_blocks;
+	size_t			free_blocks;
+	size_t			used_blocks;
 }	t_yo_zone_consistency;
 
 typedef struct s_yo_zone {
@@ -76,7 +78,7 @@ typedef struct s_yo_zone {
 typedef struct s_yo_malloc_root {
 	t_yo_zone		tiny;
 	t_yo_zone		small;
-	t_block_header*	large;
+	t_yo_zone		large;
 }	t_yo_malloc_root;
 
 // 1ブロックのサイズ
