@@ -1,7 +1,6 @@
 #include "yo_internal.h"
 
-static void*	set_for_zone(void *addr, t_yo_zone_class zone)
-{
+static void*	set_for_zone(void *addr, t_yo_zone_class zone) {
 	switch (zone) {
 		case YO_ZONE_TINY:
 			return SET_IS_TINY(addr);

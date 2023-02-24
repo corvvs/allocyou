@@ -4,8 +4,7 @@
 
 extern t_yo_malloc_root	g_root;
 
-static double	get_fragmentation_rate(t_block_header *list)
-{
+static double	get_fragmentation_rate(t_block_header *list) {
 	size_t	blocks = 0;
 	size_t	headers = 0;
 	while (list != NULL) {
@@ -47,12 +46,12 @@ static void	check_zone_consistency(t_yo_zone *zone) {
 }
 
 void	check_consistency(void) {
-	if (g_root.tiny.frees) {
+	if (g_root.tiny.frees != NULL) {
 		DEBUGSTR("check consistency: TINY");
 		check_zone_consistency(&g_root.tiny);
 		DEBUGSTR("-> ok.");
 	}
-	if (g_root.small.frees) {
+	if (g_root.small.frees != NULL) {
 		DEBUGSTR("check consistency: SMALL");
 		check_zone_consistency(&g_root.small);
 		DEBUGSTR("-> ok.");
