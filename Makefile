@@ -18,7 +18,6 @@ SRCS	:=\
 			yo_list.c\
 			yo_heap.c\
 			yo_large.c\
-			yo_realloc.c\
 			yo_utils.c\
 			yo_predicates.c\
 			yo_consistency.c

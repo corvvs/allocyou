@@ -43,9 +43,6 @@ void	actual_show_alloc_mem(void);
 
 void	yo_large_free(void* addr);
 void*	yo_large_malloc(size_t n);
-void*	yo_relocate(void* addr, size_t n);
-void	yo_shrink_chunk(t_block_header* head, size_t n);
-void	yo_extend_chunk(t_yo_zone* zone, t_block_header* head, size_t n);
 
 void	check_consistency(void);
 
