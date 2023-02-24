@@ -62,7 +62,11 @@ void	yo_actual_free(void *addr) {
 	check_double_free(head, next_free);
 	check_free_invalid_address(head, prev_free);
 
-	remove_item(&zone->allocated, head);
+	const size_t	blocks_freed = head->blocks + 1;
+	const bool	removed = remove_item(&zone->allocated, head);
+	if (removed) {
+		zone->cons.used_blocks -= blocks_freed;
+	}
 
 	if (prev_free) {
 		const bool is_unifiable = (prev_free + (prev_free->blocks + 1)) == head;
@@ -85,6 +89,6 @@ void	yo_actual_free(void *addr) {
 			concat_item(head, next_free);
 		}
 	}
-
+	zone->cons.free_blocks += blocks_freed;
 	zone->free_p = head;
 }

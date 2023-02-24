@@ -1,12 +1,11 @@
 #include "yo_internal.h"
 
 static bool	extend_zone(t_yo_zone *zone) {
-	t_block_header	*new_heap = yo_allocate_heap(zone->heap_blocks, zone->zone_class);
+	t_block_header	*new_heap = yo_allocate_heap(zone->heap_blocks, zone);
 	if (new_heap == NULL) {
 		errno = ENOMEM;
 		return false;
 	}
-	zone->cons.total_blocks += new_heap->blocks + 1;
 	yo_actual_free(new_heap + 1);
 	return true;
 }
@@ -56,10 +55,17 @@ void*	yo_actual_malloc(size_t n) {
 
 	// [retrieve zone]
 	t_yo_zone	*zone = yo_retrieve_zone(zone_class);
-	if (zone->frees == NULL) {
+	if (zone->max_chunk_bytes == 0) {
 		errno = ENOMEM;
 		DEBUGERR("FAIL: zone-allocation for class: %d", zone_class);
 		return NULL;
+	}
+	if (zone->frees == NULL) {
+		DEBUGOUT("NO FREE CHUNK -> extend current zone: %p", zone);
+		if (!extend_zone(zone)) {
+			DEBUGERR("FAIL: zone-extention for class: %d", zone_class);
+			return NULL;
+		}
 	}
 	assert(zone->frees != NULL);
 	assert(zone->free_p != NULL);
@@ -103,5 +109,8 @@ void*	yo_actual_malloc(size_t n) {
 	zone->free_p = (cursor.prev != NULL) ? cursor.prev : zone->frees;
 	cursor.curr->next = COPYFLAGS(NULL, cursor.curr->next);
 	insert_item(&zone->allocated, cursor.curr);
+	const size_t	blocks_allocated = cursor.curr->blocks + 1;
+	zone->cons.free_blocks -= blocks_allocated;
+	zone->cons.used_blocks += blocks_allocated;
 	return rv;
 }

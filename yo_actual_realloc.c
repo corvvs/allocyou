@@ -78,6 +78,9 @@ static void	yo_extend_chunk(t_yo_zone* zone, t_block_header* head, size_t n) {
 		remove_item(&cursor.prev, cursor.curr);
 		assimilate_chunk(head, cursor.curr);
 	}
+	const size_t	block_extended = blocks_needed - blocks_current;
+	zone->cons.used_blocks += block_extended;
+	zone->cons.free_blocks -= block_extended;
 }
 
 static void	yo_shrink_chunk(t_block_header* head, size_t n) {
@@ -85,6 +88,7 @@ static void	yo_shrink_chunk(t_block_header* head, size_t n) {
 
 	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
 	assert(head->blocks >= blocks_needed);
+	const size_t	blocks_shrinked = head->blocks - blocks_needed;
 	if (head->blocks < blocks_needed + 2) {
 		DEBUGOUT("** MAINTAIN(%zu, %p, %p) **", head->blocks, head, head->next);
 		return;
@@ -98,6 +102,10 @@ static void	yo_shrink_chunk(t_block_header* head, size_t n) {
 	DEBUGOUT("new_free: (%zu, %p, %p)", new_free->blocks, new_free, new_free->next);
 	head->blocks = blocks_needed;
 	yo_actual_free(new_free + 1);
+	t_yo_zone*	zone = yo_retrieve_zone(yo_zone_for_addr(head + 1));
+	assert(zone != NULL);
+	zone->cons.free_blocks += blocks_shrinked;
+	zone->cons.used_blocks -= blocks_shrinked;
 }
 
 // void* yo_actual_realloc(void *addr, size_t n)

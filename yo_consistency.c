@@ -35,13 +35,19 @@ static void	check_zone_consistency(t_yo_zone *zone) {
 	const ssize_t diff_blocks = zone->cons.total_blocks - (blocks_free + blocks_in_use);
 	DEBUGOUT("total: %zu, free: %zu, in use: %zu, diff: %zd blocks",
 			zone->cons.total_blocks, blocks_free, blocks_in_use, diff_blocks);
+	(void)get_fragmentation_rate;
 	DEBUGOUT("fragmentation: %1.4f%%", get_fragmentation_rate(zone->frees) * 100);
-	// DEBUGSTRN("  free:      "); show_list(zone->frees);
 	if (diff_blocks) {
-		// show_alloc_mem();
-		// DEBUGSTRN("  free:      "); show_list(zone->frees);
 		DEBUGERR("consistency KO!!: zone %p", zone);
 		assert(zone->cons.total_blocks == blocks_free + blocks_in_use);
+	}
+	if (zone->cons.free_blocks != blocks_free) {
+		DEBUGERR("consistency KO!!: zone %p", zone);
+		assert(zone->cons.free_blocks == blocks_free);
+	}
+	if (zone->cons.used_blocks != blocks_in_use) {
+		DEBUGERR("consistency KO!!: zone %p", zone);
+		assert(zone->cons.used_blocks == blocks_in_use);
 	}
 }
 
