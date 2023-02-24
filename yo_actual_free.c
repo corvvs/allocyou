@@ -3,11 +3,15 @@
 void	check_double_free(t_block_header *to_free, t_block_header *next_free)
 {
 	// head が next_free と一致している -> なんかおかしい
+	(void)to_free;
+	(void)next_free;
 	assert(to_free != next_free);
 }
 
 void	check_free_invalid_address(t_block_header *to_free, t_block_header *header)
 {
+	(void)to_free;
+	(void)header;
 	// header が別のチャンクの中にあるっぽい -> なんかおかしい
 	assert(header == NULL || (header + header->blocks) < to_free);
 }
