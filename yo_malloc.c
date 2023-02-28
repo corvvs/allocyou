@@ -47,3 +47,8 @@ void*	yo_realloc(void *addr, size_t n) {
 void	show_alloc_mem(void) {
 	actual_show_alloc_mem();
 }
+
+__attribute__((constructor))
+void	yo_startup(void) {
+	DEBUGSTR("START");
+}

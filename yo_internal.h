@@ -11,6 +11,8 @@
 # include <sys/mman.h>
 # include <errno.h>
 # include <assert.h>
+# include <pthread.h>
+
 
 t_yo_malloc_root	g_root;
 
@@ -24,6 +26,7 @@ void	actual_show_alloc_mem(void);
 t_yo_zone_class	yo_zone_for_bytes(size_t n);
 t_yo_zone_class	yo_zone_for_addr(void* n);
 t_yo_zone*		yo_retrieve_zone(t_yo_zone_class zone);
+size_t			blocks_for_size(size_t n);
 
 // yo_heap.c
 void*			yo_allocate_heap(size_t n, t_yo_zone* zone);

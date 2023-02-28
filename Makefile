@@ -1,6 +1,7 @@
 
-CC		:= gcc
-CFLAGS	:= -Wall -Wextra -Werror -g -fsanitize=address
+CC		:= clang
+CFLAGS	:= -Wall -Wextra -Werror -O2 -g -D SPRINT
+# CFLAGS	:= -Wall -Wextra -Werror -g -D USE_LIBC -D NDEBUG
 
 ifeq ($(HOSTTYPE),)
 	HOSTTYPE := $(shell uname -m)_$(shell uname -s)

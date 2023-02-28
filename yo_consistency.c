@@ -33,8 +33,11 @@ static void	check_zone_consistency(t_yo_zone *zone) {
 		h = list_next_head(h);
 	}
 	const ssize_t diff_blocks = zone->cons.total_blocks - (blocks_free + blocks_in_use);
-	DEBUGOUT("total: %zu, free: %zu, in use: %zu, diff: %zd blocks",
-			zone->cons.total_blocks, blocks_free, blocks_in_use, diff_blocks);
+	DEBUGOUT("total: %zu(%zukB), free: %zu(%zukB), in use: %zu(%zukB), diff: %zd blocks",
+			zone->cons.total_blocks, zone->cons.total_blocks * BLOCK_UNIT_SIZE / 1024,
+			blocks_free, blocks_free * BLOCK_UNIT_SIZE / 1024,
+			blocks_in_use, blocks_in_use * BLOCK_UNIT_SIZE / 1024,
+			diff_blocks);
 	(void)get_fragmentation_rate;
 	DEBUGOUT("fragmentation: %1.4f%%", get_fragmentation_rate(zone->frees) * 100);
 	if (diff_blocks) {
