@@ -32,3 +32,7 @@ void*	allocate_aligned_memory(size_t bytes) {
 	assert(((uintptr_t)mem & ((uintptr_t)bytes - 1)) == 0); // mem は bytes アラインされている
 	return mem;
 }
+
+void	deallocate_memory(void* start, size_t size) {
+	unmap_range(start, start + size);
+}

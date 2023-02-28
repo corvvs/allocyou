@@ -23,6 +23,7 @@ bool	init_arena(t_yoyo_arena* arena, bool multi_thread) {
 			return false;
 		}
 	}
+	arena->multi_thread = multi_thread;
 	arena->initialized = true;
 	arena->tiny.head = NULL;
 	arena->small.head = NULL;

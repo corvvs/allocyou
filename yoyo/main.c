@@ -19,16 +19,6 @@ int main() {
 	printf("bytes: %zu\n", heap_bytes_for_zone_bytes(zone_tiny_bytes));
 	printf("bytes: %zu\n", heap_bytes_for_zone_bytes(zone_small_bytes));
 
-	void* tiny = allocate_aligned_memory(ZONE_TINY_BYTE);
+	t_yoyo_zone* tiny = allocate_zone(&g_yoyo_realm.arenas[0], YOYO_ZONE_TINY);
 	printf("%p\n", tiny);
-	printf("%d\n", *(char*)tiny);
-	memset(tiny, '9', ZONE_TINY_BYTE);
-	// memset(tiny, '9', ZONE_TINY_BYTE + 1); // The signal is caused by a WRITE memory access.
-	printf("%d\n", *(char*)tiny);
-	void* small = allocate_aligned_memory(ZONE_SMALL_BYTE);
-	printf("%p\n", small);
-	printf("%d\n", *(char*)small);
-	memset(small, '9', ZONE_SMALL_BYTE);
-	// memset(small, '9', ZONE_SMALL_BYTE + 1); // The signal is caused by a WRITE memory access.
-	printf("%d\n", *(char*)small);
 }
