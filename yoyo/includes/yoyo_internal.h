@@ -13,6 +13,9 @@
 
 t_yoyo_realm	g_yoyo_realm;
 
+// yoyo_memory_alloc.c
+void*	allocate_aligned_memory(size_t bytes);
+
 // yoyo_init_realm.c
 bool	init_realm(bool multi_thread);
 
