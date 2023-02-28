@@ -8,6 +8,8 @@ OBJDIR	:=	objs
 INCDIR	:=	includes
 FILES	:=	\
 			yoyo_malloc.c\
+			yoyo_actual_malloc.c\
+			yoyo_lock.c\
 			yoyo_memory_alloc.c\
 			yoyo_realm_initialize.c\
 			yoyo_arena_initialize.c\

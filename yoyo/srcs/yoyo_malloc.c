@@ -1,5 +1,6 @@
 #include "yoyo_malloc.h"
 
+
 void*	yoyo_malloc(size_t n) {
 	return malloc(n);
 }

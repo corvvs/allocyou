@@ -9,12 +9,12 @@ static void	unmap_range(void* begin, void* end) {
 		DEBUGERR("FAILED: errno = %d, %s", errno, strerror(errno));
 		return;
 	}
-	DEBUGOUT("unmapped: [%p, %p) (%zd)", begin, end, end - begin);
+	DEBUGOUT("unmapped: [%p, %p) (%zdB)", begin, end, end - begin);
 }
 
 // bytes バイトの領域を mmap して返す.
 // 領域は bytes バイトアラインされる.
-void*	allocate_aligned_memory(size_t bytes) {
+void*	allocate_memory(size_t bytes) {
 	assert((bytes & (bytes - 1)) == 0); // bytes は 2冪である
 	void	*bulk = mmap(
 		NULL,

@@ -32,7 +32,7 @@ bool	init_arena(t_yoyo_arena* arena, bool multi_thread) {
 	return true;
 }
 
-// 初期化済みの arena を実初期化に戻す.
+// 初期化済みの arena を未初期化に戻す.
 // 普通は使わないはず.
 void	destroy_arena(t_yoyo_arena* arena) {
 	if (!arena->initialized) {

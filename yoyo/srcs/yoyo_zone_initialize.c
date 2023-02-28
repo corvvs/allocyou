@@ -19,7 +19,7 @@ size_t	bitmap_bytes_for_zone_bytes(size_t zone_bytes) {
 
 t_yoyo_zone*	allocate_zone(const t_yoyo_arena* arena, t_yoyo_zone_class zone_class) {
 	const size_t zone_bytes = zone_bytes_for_zone_class(zone_class);
-	t_yoyo_zone* zone = allocate_aligned_memory(zone_bytes);
+	t_yoyo_zone* zone = allocate_memory(zone_bytes);
 	if (zone == NULL) {
 		DEBUGERR("failed for class: %d", zone_class);
 		return NULL;
