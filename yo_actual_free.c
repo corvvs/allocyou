@@ -56,16 +56,22 @@ void	yo_actual_free(void *addr) {
 
 	// [retrieve zone]
 	t_yo_zone*		zone = yo_retrieve_zone(zone_class);
+	SPRINT_START;
 	t_block_header*	prev_free = find_inf_item(zone->frees, head);
+	SPRINT_END("find_inf_item");
 	t_block_header*	next_free = prev_free == NULL ? zone->frees : list_next_head(prev_free);
 
 	check_double_free(head, next_free);
 	check_free_invalid_address(head, prev_free);
 
 	const size_t	blocks_freed = head->blocks + 1;
-	const bool	removed = remove_item(&zone->allocated, head);
-	if (removed) {
-		zone->cons.used_blocks -= blocks_freed;
+	{
+		SPRINT_START;
+		const bool	removed = remove_item(&zone->allocated, head);
+		if (removed) {
+			zone->cons.used_blocks -= blocks_freed;
+		}
+		SPRINT_END("remove_item_allocated");
 	}
 
 	if (prev_free) {

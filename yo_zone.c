@@ -6,11 +6,11 @@ extern t_yo_malloc_root	g_root;
 
 // 要求サイズに対応するゾーン種別を返す
 t_yo_zone_class	yo_zone_for_bytes(size_t n) {
-	size_t	block_needed = BLOCKS_FOR_SIZE(n);
-	if (block_needed > SMALL_MAX_CHUNK_BLOCK) {
+	size_t	blocks_needed = blocks_for_size(n);
+	if (blocks_needed > SMALL_MAX_CHUNK_BLOCK) {
 		DEBUGWARN("zone for %zu B: LARGE", n);
 		return YO_ZONE_LARGE;
-	} else if (block_needed > TINY_MAX_CHUNK_BLOCK) {
+	} else if (blocks_needed > TINY_MAX_CHUNK_BLOCK) {
 		DEBUGWARN("zone for %zu B: SMALL", n);
 		return YO_ZONE_SMALL;
 	}
@@ -84,4 +84,19 @@ t_yo_zone*		yo_retrieve_zone(t_yo_zone_class zone) {
 			return &g_root.large;
 		}
 	}
+}
+
+size_t	blocks_for_size(size_t n) {
+	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
+	if (blocks_needed > SMALL_MAX_CHUNK_BLOCK) {
+		return blocks_needed;
+	} else if (blocks_needed <= TINY_MAX_CHUNK_BLOCK) {
+		return blocks_needed;
+	}
+	// on SMALL
+	const size_t unit_ratio = 512 / BLOCK_UNIT_SIZE;
+	const size_t blocks_ceiled = ((blocks_needed - 1) / unit_ratio + 1) * unit_ratio;
+	assert(blocks_needed <= blocks_ceiled);
+	DEBUGOUT("%zu -> %zu", blocks_needed, blocks_ceiled);
+	return SMALL_MAX_CHUNK_BLOCK < blocks_ceiled ? blocks_needed : blocks_ceiled;
 }

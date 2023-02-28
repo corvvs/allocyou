@@ -88,4 +88,8 @@ typedef struct s_yo_malloc_root {
 // BLOCK_UNIT_SIZE をかけるとバイトサイズになる.
 // ※実際にmmapするのはこれより1つ多くなる
 
+#define BLOCKS_TO_B(n) (n * BLOCK_UNIT_SIZE)
+#define BLOCKS_TO_KB(n) (BLOCKS_TO_B(n) / 1024)
+#define BLOCKS_TO_MB(n) (BLOCKS_TO_KB(n) / 1024)
+
 #endif

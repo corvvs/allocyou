@@ -29,7 +29,7 @@ void	*yo_allocate_heap(size_t n, t_yo_zone* zone) {
 		.blocks = n,
 		.next = set_for_zone(NULL, zone->zone_class),
 	};
-	DEBUGOUT("allocated %zu blocks for addr %p", n, mapped);
+	DEBUGINFO("allocated %zu blocks(%zukB) for addr %p", n, BLOCKS_TO_KB(n), mapped);
 	const size_t	blocks_allocated = n + 1;
 	zone->cons.total_blocks += blocks_allocated;
 	return mapped;

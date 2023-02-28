@@ -31,11 +31,12 @@ void	test1() {
 void	test2() {
 	uintptr_t d = 0;
 	for (size_t i = 0; i < 300; ++i) {
-		char *s = malloc(100);
+		char *s = yo_malloc(100);
 		printf("s = %lu %lu\n", (uintptr_t)s, (uintptr_t)s - d);
 		d = (uintptr_t)s;
-		free(s);
+		yo_free(s);
 	}
+	show_alloc_mem();
 }
 
 void	test3() {
@@ -62,8 +63,10 @@ void	test4() {
 	a[n] = 0;
 	b[n] = 0;
 	printf("%c %c\n", a[n - 1], b[n - 1]);
+	show_alloc_mem();
 	PRINT_STATE_AFTER(yo_free(b));
 	PRINT_STATE_AFTER(yo_free(a));
+	show_alloc_mem();
 }
 
 void	test5() {
@@ -101,11 +104,13 @@ void	test5() {
 	write(STDERR_FILENO, b, m);
 	write(STDERR_FILENO, "\n", 1);
 	a = b;
+	show_alloc_mem();
 	yo_free(a);
 	yo_free(_);
+	show_alloc_mem();
 }
 
-#define MASS_RANDOM_N 100000
+#define MASS_RANDOM_N 40000
 
 // mallocした順にfree
 void	mass_fifo() {
@@ -168,6 +173,29 @@ void	mass_random_malloc_and_free() {
 			m[j] = 0;
 		} else {
 			m[j] = yo_malloc(rand() % 1000 + 1);
+		}
+	}
+	for (int i = 0; i < 5000; ++i) {
+		if (m[i]) {
+			yo_free(m[i]);
+		}
+	}
+	show_alloc_mem();
+}
+
+
+void	mass_random_malloc_and_free_tiny() {
+	void	*m[5000] = {};
+
+	srand(111111107);
+	for (int i = 0; i < MASS_RANDOM_N; ++i) {
+		int j = rand() % 5000;
+		DEBUGOUT("i = %d, j = %d", i, j);
+		if (m[j]) {
+			yo_free(m[j]);
+			m[j] = 0;
+		} else {
+			m[j] = yo_malloc(rand() % 123 + 1);
 		}
 	}
 	for (int i = 0; i < 5000; ++i) {
@@ -271,9 +299,10 @@ int main() {
 	// mass_filo();
 	// mass_random_free();
 	// mass_random_malloc_and_free();
+	// mass_random_malloc_and_free_tiny();
 	// realloc_basic();
 	// realloc_shrink();
 	// realloc_relocate_tiny_small_large();
 	// realloc_relocate_large_small_tiny();
-	mass_realloc_random();
+	// mass_realloc_random();
 }

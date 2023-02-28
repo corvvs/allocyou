@@ -3,15 +3,15 @@
 static void	show_zone(t_yo_zone *zone) {
 	if (zone->zone_class == YO_ZONE_LARGE) {
 		DEBUGSTRN("\tallocated: "); show_list(zone->allocated);
-		DEBUGOUT( "\t           %zu blocks (%zu B)", zone->cons.used_blocks, zone->cons.used_blocks * BLOCK_UNIT_SIZE);
-		DEBUGOUT( "\tfree:      %zu blocks (%zu B)", zone->cons.free_blocks, zone->cons.free_blocks * BLOCK_UNIT_SIZE);
-		DEBUGOUT( "\ttotal:     %zu blocks (%zu B)", zone->cons.total_blocks, zone->cons.total_blocks * BLOCK_UNIT_SIZE);
+		DEBUGOUT( "\t           %zu blocks (%zu kB)", zone->cons.used_blocks, BLOCKS_TO_KB(zone->cons.used_blocks));
+		DEBUGOUT( "\tfree:      %zu blocks (%zu kB)", zone->cons.free_blocks, BLOCKS_TO_KB(zone->cons.free_blocks));
+		DEBUGOUT( "\ttotal:     %zu blocks (%zu kB)", zone->cons.total_blocks, BLOCKS_TO_KB(zone->cons.total_blocks));
 	} else {
 		DEBUGSTRN("\tallocated: "); show_list(zone->allocated);
-		DEBUGOUT( "\t           %zu blocks (%zu B)", zone->cons.used_blocks, zone->cons.used_blocks * BLOCK_UNIT_SIZE);
+		DEBUGOUT( "\t           %zu blocks (%zu kB)", zone->cons.used_blocks, BLOCKS_TO_KB(zone->cons.used_blocks));
 		DEBUGSTRN("\tfree:      "); show_list(zone->frees);
-		DEBUGOUT( "\t           %zu blocks (%zu B)", zone->cons.free_blocks, zone->cons.free_blocks * BLOCK_UNIT_SIZE);
-		DEBUGOUT( "\ttotal:     %zu blocks (%zu B)", zone->cons.total_blocks, zone->cons.total_blocks * BLOCK_UNIT_SIZE);
+		DEBUGOUT( "\t           %zu blocks (%zu kB)", zone->cons.free_blocks, BLOCKS_TO_KB(zone->cons.free_blocks));
+		DEBUGOUT( "\ttotal:     %zu blocks (%zu kB)", zone->cons.total_blocks, BLOCKS_TO_KB(zone->cons.total_blocks));
 	}
 }
 

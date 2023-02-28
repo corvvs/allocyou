@@ -60,9 +60,12 @@ void	increment_cursor(t_listcursor *cursor) {
 t_listcursor	find_cross_cursor(t_block_header* list, t_block_header *item) {
 	assert(item != NULL);
 	t_listcursor	cursor = init_cursor(list);
+	size_t	n = 0;
 	while (cursor.curr != NULL && cursor.curr < item) {
 		increment_cursor(&cursor);
+		++n;
 	}
+	DEBUGOUT("n = %zu", n);
 	assert(cursor.curr != item);
 	return cursor;
 }
@@ -71,13 +74,16 @@ t_listcursor	find_cross_cursor(t_block_header* list, t_block_header *item) {
 t_listcursor	find_fit_cursor(t_block_header* list, t_block_header *item) {
 	assert(item != NULL);
 	t_listcursor	cursor = init_cursor(list);
+	size_t	n = 0;
 	while (cursor.curr != NULL && cursor.curr < item) {
 		increment_cursor(&cursor);
+		++n;
 	}
 	DEBUGOUT("cursor.curr = %p, item = %p", cursor.curr, item);
 	if (cursor.curr != item) {
 		cursor.curr = NULL;
 	}
+	DEBUGOUT("n = %zu", n);
 	// ↑ cursor.curr == NULL になるのは, 新しく確保したヒープを(free で) zone の末尾に追加するときのみ.
 	return cursor;
 }
@@ -88,7 +94,10 @@ t_block_header*	find_inf_item(t_block_header* list, t_block_header *item) {
 	return find_cross_cursor(list, item).prev;
 }
 
+
 void	insert_item(t_block_header **list, t_block_header *item) {
+	SPRINT_START;
+
 	assert(list != NULL);
 	if (*list == NULL) {
 		*list = item;
@@ -105,6 +114,7 @@ void	insert_item(t_block_header **list, t_block_header *item) {
 	} else {
 		*list = item;
 	}
+	SPRINT_END("insert_item");
 }
 
 // 削除が実施されたかどうかを bool で返す

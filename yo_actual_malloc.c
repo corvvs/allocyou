@@ -42,7 +42,7 @@ static bool	extend_zone(t_yo_zone *zone) {
 // 見つかったチャンクを前後に分割し, 後の方をフリーリストに残す.
 //
 void*	yo_actual_malloc(size_t n) {
-	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
+	size_t	blocks_needed = blocks_for_size(n);
 
 	// [determine zone class]
 	t_yo_zone_class	zone_class = yo_zone_for_bytes(n);
@@ -72,8 +72,12 @@ void*	yo_actual_malloc(size_t n) {
 	// [find vacant blocks for chunk]
 	t_listcursor	cursor = init_cursor_from_mid(zone->frees, zone->free_p);
 	assert(cursor.curr != NULL);
-	while (cursor.curr != NULL && cursor.curr->blocks < blocks_needed) {
-		increment_cursor(&cursor);
+	{
+		SPRINT_START;
+		while (cursor.curr != NULL && cursor.curr->blocks < blocks_needed) {
+			increment_cursor(&cursor);
+		}
+		SPRINT_END("find_fit");
 	}
 
 	if (cursor.curr == NULL) {
@@ -108,9 +112,14 @@ void*	yo_actual_malloc(size_t n) {
 	}
 	zone->free_p = (cursor.prev != NULL) ? cursor.prev : zone->frees;
 	cursor.curr->next = COPYFLAGS(NULL, cursor.curr->next);
-	insert_item(&zone->allocated, cursor.curr);
+	{
+		SPRINT_START;
+		insert_item(&zone->allocated, cursor.curr);
+		SPRINT_END("insert_to_allocated");
+	}
 	const size_t	blocks_allocated = cursor.curr->blocks + 1;
 	zone->cons.free_blocks -= blocks_allocated;
 	zone->cons.used_blocks += blocks_allocated;
 	return rv;
 }
+

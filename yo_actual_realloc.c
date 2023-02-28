@@ -1,7 +1,7 @@
 #include "yo_internal.h"
 
 static bool	is_relocation_needed(void *addr, size_t n) {
-	const size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
+	const size_t	blocks_needed = blocks_for_size(n);
 	const t_yo_zone_class	zone_class_needed = yo_zone_for_bytes(n);
 
 	t_block_header	*head = addr;
@@ -50,7 +50,7 @@ static void*	yo_relocate(void* addr, size_t n) {
 }
 
 static void	yo_extend_chunk(t_yo_zone* zone, t_block_header* head, size_t n) {
-	const size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
+	const size_t	blocks_needed = blocks_for_size(n);
 	const size_t	blocks_current = head->blocks;
 	assert(yo_zone_for_bytes(n) == yo_zone_for_addr(head + 1));
 	assert(blocks_needed > blocks_current);
@@ -86,7 +86,7 @@ static void	yo_extend_chunk(t_yo_zone* zone, t_block_header* head, size_t n) {
 static void	yo_shrink_chunk(t_block_header* head, size_t n) {
 	assert(!GET_IS_LARGE(head->next));
 
-	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
+	size_t	blocks_needed = blocks_for_size(n);
 	assert(head->blocks >= blocks_needed);
 	const size_t	blocks_shrinked = head->blocks - blocks_needed;
 	if (head->blocks < blocks_needed + 2) {
@@ -171,7 +171,7 @@ void*	yo_actual_realloc(void *addr, size_t n) {
 
 	t_block_header	*head = addr;
 	--head;
-	const size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
+	const size_t	blocks_needed = blocks_for_size(n);
 	const size_t	blocks_current = head->blocks;
 	assert(blocks_current > 0);
 	if (blocks_current - 1 <= blocks_needed && blocks_needed <= blocks_current) {
