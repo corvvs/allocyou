@@ -5,7 +5,8 @@
 // arena を初期化する.
 // multi_thread が true ならマルチスレッドモードとして初期化を行い, mutex を作成する.
 // mutex の作成に失敗した場合は false を返す.
-bool	init_arena(t_yoyo_arena* arena, bool multi_thread) {
+bool	init_arena(unsigned int index, bool multi_thread) {
+	t_yoyo_arena* arena = &g_yoyo_realm.arenas[index];
 	if (multi_thread) {
 		if (pthread_mutex_init(&arena->tiny.lock, NULL)) {
 			DEBUGERR("failed to init tiny lock: errno: %d (%s)", errno, strerror(errno));
@@ -23,12 +24,13 @@ bool	init_arena(t_yoyo_arena* arena, bool multi_thread) {
 			return false;
 		}
 	}
+	arena->index = index;
 	arena->multi_thread = multi_thread;
 	arena->initialized = true;
 	arena->tiny.head = NULL;
 	arena->small.head = NULL;
 	arena->large.head = NULL;
-	DEBUGINFO("initialized arena: %p, multi_thread: %s", arena, multi_thread ? "y" : "n");
+	DEBUGINFO("initialized arena: #%u(%p), multi_thread: %s", index, arena, multi_thread ? "y" : "n");
 	return true;
 }
 
@@ -47,3 +49,13 @@ void	destroy_arena(t_yoyo_arena* arena) {
 	arena->initialized = false;
 }
 
+t_yoyo_subarena*	get_subarena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class) {
+	switch (zone_class) {
+		case YOYO_ZONE_TINY:
+			return &arena->tiny;
+		case YOYO_ZONE_SMALL:
+			return &arena->small;
+		case YOYO_ZONE_LARGE:
+			return &arena->large;
+	}
+}

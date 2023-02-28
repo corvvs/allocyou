@@ -28,7 +28,7 @@ typedef struct	s_yoyo_chunk {
 }	t_yoyo_chunk;
 
 # define BLOCK_UNIT_SIZE (CEIL_BY(sizeof(t_yoyo_chunk), sizeof(size_t)))
-# define BLOCKS_FOR_SIZE(n) (QUANTIZE(n, BLOCK_UNIT_SIZE) / BLOCK_UNIT_SIZE)
+# define BLOCKS_FOR_SIZE(n) (CEIL_BY(n, BLOCK_UNIT_SIZE) / BLOCK_UNIT_SIZE)
 
 // n in PDF
 # define TINY_MAX_CHUNK_BYTE ((size_t)992)
@@ -48,43 +48,43 @@ typedef struct	s_yoyo_chunk {
 // ただし固定長の部分のみ. ビット配列部分はここに入っていない.
 typedef struct	s_yoyo_zone {
 	// 次の zone
-	struct s_yoyo_zone_*	next;
+	struct s_yoyo_zone*	next;
 
 	// zone ロック
-	pthread_mutex_t			lock;
+	pthread_mutex_t		lock;
 
 	// マルチスレッドモードかどうか
-	bool					multi_thread;
+	bool				multi_thread;
 
 	// free リスト
-	t_yoyo_chunk*			frees;
+	t_yoyo_chunk*		frees;
 
 	// previous free
-	t_yoyo_chunk*			free_prev;
+	t_yoyo_chunk*		free_prev;
 
 	// zone 全体のブロック数
-	unsigned int			blocks_zone;
+	unsigned int		blocks_zone;
 	// zone のうち heap 部分のブロック数
-	unsigned int			blocks_heap;
+	unsigned int		blocks_heap;
 
 	// heap のうち使用されていないブロック数
-	unsigned int			blocks_free;
+	unsigned int		blocks_free;
 
 	// heap のうち使用されているブロック数
-	unsigned int			blocks_used;
+	unsigned int		blocks_used;
 
 	// blocks_heap = blocks_free + blocks_used
 
 	// zone 先頭から heads ビット配列へのバイトオフセット
 	// heads ビット配列のバイト数は ceil(blocks_heap / 8)
-	unsigned int			offset_bitmap_heads;
+	unsigned int		offset_bitmap_heads;
 
 	// zone 先頭から used ビット配列へのバイトオフセット
 	// used ビット配列のバイト数は ceil(blocks_heap / 8)
-	unsigned int			offset_bitmap_used;
+	unsigned int		offset_bitmap_used;
 
 	// zone 先頭から ヒープ先頭へのバイトオフセット
-	unsigned int			offset_heap;
+	unsigned int		offset_heap;
 
 }	t_yoyo_zone;
 
@@ -95,14 +95,12 @@ typedef struct	s_yoyo_normal_arena {
 
 typedef struct	s_yoyo_large_arena {
 	pthread_mutex_t		lock;
+	t_yoyo_chunk*		allocated;
 }	t_yoyo_large_arena;
 
 typedef struct	s_yoyo_subarena {
 	// arena ロック
 	pthread_mutex_t	lock;
-	// 先頭 zone(TINY, SMALL) または chunk(LARGE) へのポインタ
-	// キャストして使うこと
-	void*			head;
 }	t_yoyo_subarena;
 
 // [arena 構造体]
@@ -111,12 +109,14 @@ typedef struct	s_yoyo_arena {
 	// マルチスレッドモードかどうか
 	bool			multi_thread;
 
+	unsigned int	index;
+
 	// TINY zone 管理ヘッダ
-	t_yoyo_subarena	tiny;
+	t_yoyo_normal_arena	tiny;
 	// SMALL zone 管理ヘッダ
-	t_yoyo_subarena	small;
+	t_yoyo_normal_arena	small;
 	// LARGE zone 管理ヘッダ
-	t_yoyo_subarena	large;
+	t_yoyo_large_arena	large;
 }	t_yoyo_arena;
 
 

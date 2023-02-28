@@ -1,5 +1,7 @@
 #include "includes/yoyo_structure.h"
 #include "includes/yoyo_internal.h"
+#include "includes/yoyo_malloc.h"
+
 
 #include <stdio.h>
 
@@ -21,4 +23,6 @@ int main() {
 
 	t_yoyo_zone* tiny = allocate_zone(&g_yoyo_realm.arenas[0], YOYO_ZONE_TINY);
 	printf("%p\n", tiny);
+
+	yoyo_malloc(100);
 }

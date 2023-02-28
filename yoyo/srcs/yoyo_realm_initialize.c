@@ -7,7 +7,7 @@ bool	init_realm(bool multi_thread) {
 	}
 	g_yoyo_realm.arena_count = multi_thread ? ARENA_MAX : 1;
 	for (unsigned int i = 0; i < g_yoyo_realm.arena_count; ++i) {
-		const bool ok = init_arena(&g_yoyo_realm.arenas[i], multi_thread);
+		const bool ok = init_arena(i, multi_thread);
 		if (!ok) {
 			for (unsigned int j = 0; j < i; ++j) {
 				destroy_arena(&g_yoyo_realm.arenas[j]);

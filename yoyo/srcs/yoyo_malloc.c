@@ -1,8 +1,14 @@
 #include "yoyo_malloc.h"
+#include "yoyo_internal.h"
 
 
 void*	yoyo_malloc(size_t n) {
-	return malloc(n);
+	DEBUGOUT("** bytes: %zu **", n);
+	SPRINT_START;
+	void	*mem = actual_malloc(n);
+	SPRINT_END("malloc");
+	DEBUGSTR("** malloc end **");
+	return mem;
 }
 
 void	yoyo_free(void* addr) {

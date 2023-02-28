@@ -13,8 +13,8 @@
 
 t_yoyo_realm	g_yoyo_realm;
 
-// yoyo_actual_malloc.c
-void	yoyo_actual_malloc(size_t n);
+// actual_malloc.c
+void*	actual_malloc(size_t n);
 
 // yoyo_lock.c
 bool	lock_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class);
@@ -31,8 +31,10 @@ void	deallocate_memory(void* start, size_t size);
 bool	init_realm(bool multi_thread);
 
 // yoyo_arena_initialize.c
-bool	init_arena(t_yoyo_arena* arena, bool multi_thread);
-void	destroy_arena(t_yoyo_arena* arena);
+bool				init_arena(unsigned int index, bool multi_thread);
+void				destroy_arena(t_yoyo_arena* arena);
+t_yoyo_subarena*	get_subarena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class);
+
 
 // yoyo_zone_initialize.c
 size_t			heap_bytes_for_zone_bytes(size_t zone_bytes);
@@ -41,6 +43,7 @@ t_yoyo_zone*	allocate_zone(const t_yoyo_arena* arena, t_yoyo_zone_class zone_cla
 
 // yoyo_zone_utils.c
 size_t	zone_bytes_for_zone_class(t_yoyo_zone_class zone_class);
+t_yoyo_zone_class	zone_class_for_bytes(size_t n);
 
 
 
