@@ -20,6 +20,7 @@ void*	actual_malloc(size_t n);
 bool	lock_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class);
 bool	try_lock_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class);
 bool	lock_zone(t_yoyo_zone* zone);
+bool	try_lock_zone(t_yoyo_zone* zone);
 bool	unlock_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class);
 bool	unlock_zone(t_yoyo_zone* zone);
 

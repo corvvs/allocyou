@@ -43,6 +43,19 @@ bool	lock_zone(t_yoyo_zone* zone) {
 	return true;
 }
 
+bool	try_lock_zone(t_yoyo_zone* zone) {
+	if (!zone->multi_thread) {
+		DEBUGOUT("skip: in single-thread mode: %p", zone);
+		return true;
+	}
+	if (pthread_mutex_trylock(&zone->lock)) {
+		DEBUGERR("failed to try lock: %d(%s)", errno, strerror(errno));
+		return false;
+	}
+	DEBUGOUT("locked: %p", zone);
+	return true;
+}
+
 bool	unlock_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class) {
 	if (!arena->multi_thread) {
 		DEBUGOUT("skip: in single-thread mode: #%u(%p)", arena->index, arena);

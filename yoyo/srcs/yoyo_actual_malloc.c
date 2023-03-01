@@ -117,6 +117,7 @@ void*	try_allocate_from_zone(t_yoyo_zone* zone, size_t n) {
 		}
 		list = &head->next;
 	}
+	DEBUGWARN("FAILED from: %p - %zuB", zone, n);
 	return NULL;
 }
 
@@ -124,7 +125,7 @@ void*	allocate_from_zone_list(t_yoyo_arena* arena, t_yoyo_zone_class zone_class,
 	t_yoyo_normal_arena* subarena = (t_yoyo_normal_arena*)get_subarena(arena, zone_class);
 	t_yoyo_zone*	head = subarena->head;
 	while (head != NULL) {
-		if (lock_zone(head)) {
+		if (try_lock_zone(head)) {
 			// zone ロックが取れた -> アロケートを試みる
 			void*	mem = try_allocate_from_zone(head, n);
 			unlock_zone(head);
@@ -138,6 +139,7 @@ void*	allocate_from_zone_list(t_yoyo_arena* arena, t_yoyo_zone_class zone_class,
 	}
 
 	// どの zone からもアロケートできなかった -> zone を増やしてもう一度
+	DEBUGWARN("ALLOCATE ZONE NEWLY for %zuB", n);
 	t_yoyo_zone*	new_zone = allocate_zone(arena, zone_class);
 	if (new_zone == NULL) {
 		return NULL;
