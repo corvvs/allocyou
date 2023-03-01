@@ -24,7 +24,7 @@ t_yoyo_zone*	allocate_zone(const t_yoyo_arena* arena, t_yoyo_zone_class zone_cla
 		DEBUGERR("failed for class: %d", zone_class);
 		return NULL;
 	}
-	DEBUGOUT("allocated %zu bytes region at %p", zone_bytes, zone);
+	DEBUGOUT("ALLOCATED %zu bytes region at %p", zone_bytes, zone);
 	if (!init_zone(arena, zone, zone_class)) {
 		deallocate_memory(zone, zone_bytes);
 		return NULL;
@@ -43,6 +43,7 @@ bool	init_zone(const t_yoyo_arena* arena, t_yoyo_zone* zone, t_yoyo_zone_class z
 		DEBUGOUT("%s", "@multi_thread");
 	}
 	zone->multi_thread = arena->multi_thread;
+	zone->zone_class = zone_class;
 	const size_t zone_bytes = zone_bytes_for_zone_class(zone_class);
 	const size_t heap_bytes = heap_bytes_for_zone_bytes(zone_bytes);
 	const size_t bitmap_bytes = bitmap_bytes_for_zone_bytes(zone_bytes);
@@ -62,5 +63,9 @@ bool	init_zone(const t_yoyo_arena* arena, t_yoyo_zone* zone, t_yoyo_zone_class z
 	DEBUGOUT("offset_bitmap_heads: %uB", zone->offset_bitmap_heads);
 	DEBUGOUT("offset_bitmap_used:  %uB", zone->offset_bitmap_used);
 	DEBUGOUT("offset_heap:         %uB", zone->offset_heap);
+	t_yoyo_chunk* head = (void*)zone + zone->offset_heap;
+	mark_chunk_as_free(zone, head);
+	head->blocks = zone->blocks_free;
+	zone->frees = head;
 	return true;
 }

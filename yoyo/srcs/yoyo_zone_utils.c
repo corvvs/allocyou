@@ -11,6 +11,16 @@ size_t	zone_bytes_for_zone_class(t_yoyo_zone_class zone_class) {
 	}
 }
 
+size_t	max_chunk_blocks_for_zone_class(t_yoyo_zone_class zone_class) {
+	switch (zone_class) {
+		case YOYO_ZONE_TINY:
+			return TINY_MAX_CHUNK_BLOCK;
+		case YOYO_ZONE_SMALL:
+			return SMALL_MAX_CHUNK_BLOCK;
+		default:
+			return SIZE_MAX;
+	}
+}
 
 t_yoyo_zone_class	zone_class_for_bytes(size_t n) {
 	size_t	block_needed = BLOCKS_FOR_SIZE(n);
@@ -23,4 +33,10 @@ t_yoyo_zone_class	zone_class_for_bytes(size_t n) {
 	}
 	DEBUGWARN("zone for %zu B: TINY", n);
 	return YOYO_ZONE_TINY;
+}
+
+// head にあるブロックの, その zone (の heap)におけるインデックスを求める.
+unsigned int	get_block_index(t_yoyo_zone* zone, t_yoyo_chunk* head) {
+	t_yoyo_chunk*	heap_start = (void*)zone + zone->offset_heap;
+	return head - heap_start;
 }

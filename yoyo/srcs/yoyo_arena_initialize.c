@@ -29,7 +29,7 @@ bool	init_arena(unsigned int index, bool multi_thread) {
 	arena->initialized = true;
 	arena->tiny.head = NULL;
 	arena->small.head = NULL;
-	arena->large.head = NULL;
+	arena->large.allocated = NULL;
 	DEBUGINFO("initialized arena: #%u(%p), multi_thread: %s", index, arena, multi_thread ? "y" : "n");
 	return true;
 }
@@ -52,10 +52,10 @@ void	destroy_arena(t_yoyo_arena* arena) {
 t_yoyo_subarena*	get_subarena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class) {
 	switch (zone_class) {
 		case YOYO_ZONE_TINY:
-			return &arena->tiny;
+			return (t_yoyo_subarena*)&arena->tiny;
 		case YOYO_ZONE_SMALL:
-			return &arena->small;
+			return (t_yoyo_subarena*)&arena->small;
 		case YOYO_ZONE_LARGE:
-			return &arena->large;
+			return (t_yoyo_subarena*)&arena->large;
 	}
 }

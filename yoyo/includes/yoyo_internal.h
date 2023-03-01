@@ -43,8 +43,13 @@ t_yoyo_zone*	allocate_zone(const t_yoyo_arena* arena, t_yoyo_zone_class zone_cla
 
 // yoyo_zone_utils.c
 size_t	zone_bytes_for_zone_class(t_yoyo_zone_class zone_class);
+size_t	max_chunk_blocks_for_zone_class(t_yoyo_zone_class zone_class);
 t_yoyo_zone_class	zone_class_for_bytes(size_t n);
+unsigned int	get_block_index(t_yoyo_zone* zone, t_yoyo_chunk* head);
 
+// yoyo_zone_operation.c
+void	mark_chunk_as_free(t_yoyo_zone* zone, t_yoyo_chunk* chunk);
+void	mark_chunk_as_used(t_yoyo_zone* zone, t_yoyo_chunk* chunk);
 
 
 #endif

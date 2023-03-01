@@ -44,6 +44,8 @@ typedef struct	s_yoyo_chunk {
 // M in PDF
 # define ZONE_SMALL_BYTE ((size_t)(8 * 1024 * 1024))
 
+typedef unsigned int block_index_t;
+
 // [TINY/SMALL zone 構造体]
 // ただし固定長の部分のみ. ビット配列部分はここに入っていない.
 typedef struct	s_yoyo_zone {
@@ -55,6 +57,9 @@ typedef struct	s_yoyo_zone {
 
 	// マルチスレッドモードかどうか
 	bool				multi_thread;
+
+	// ゾーン種別
+	t_yoyo_zone_class	zone_class;
 
 	// free リスト
 	t_yoyo_chunk*		frees;

@@ -35,11 +35,88 @@ static void	zone_push_front(t_yoyo_zone** list, t_yoyo_zone* zone) {
 	*list = zone;
 }
 
+// このブロックが chunk のヘッダかどうか
+bool	is_head(const t_yoyo_zone* zone, unsigned int block_index) {
+	unsigned int	byte_index = block_index / 8;
+	unsigned int	bit_index = block_index % 8;
+	unsigned char*	heads = (void*)zone + zone->offset_bitmap_heads;
+	return !!(heads[byte_index] & (1 << bit_index));
+}
+
+// このブロックがヘッダになっている chunk が使用中かどうか
+bool	is_used(const t_yoyo_zone* zone, unsigned int block_index) {
+	unsigned int	byte_index = block_index / 8;
+	unsigned int	bit_index = block_index % 8;
+	unsigned char*	used = (void*)zone + zone->offset_bitmap_used;
+	return !!(used[byte_index] & (1 << bit_index));
+}
+
+
+// blocks_needed 要求されているとき, chunk を分割することで要求に応えられるか?
+static bool	is_separatable(const t_yoyo_chunk* chunk, size_t blocks_needed) {
+	assert(chunk->blocks > 1);
+	const size_t	whole_needed = blocks_needed + 1;
+	if (chunk->blocks < whole_needed) {
+		DEBUGOUT("no: not enough blocks: %zu < %zu", chunk->blocks, whole_needed);
+		return false;
+	}
+	const size_t	whole_rest = chunk->blocks - whole_needed;
+	if (whole_rest >= whole_needed) {
+		DEBUGOUT("yes : %zu >= %zu", whole_rest, whole_needed);
+		return true;
+	}
+	t_yoyo_zone_class needed_class = zone_class_for_bytes(blocks_needed * BLOCK_UNIT_SIZE);
+	t_yoyo_zone_class needed_rest = zone_class_for_bytes((whole_rest - 1) * BLOCK_UNIT_SIZE);
+	if (needed_class != needed_rest) {
+		DEBUGOUT("no: not enough rest blocks: %zu < %zu", chunk->blocks, whole_needed);
+		return false;
+	}
+	DEBUGOUT("yes: has enough rest blocks: %zu < %zu", whole_rest, whole_needed);
+	return true;
+}
+
+// blocks_needed 要求されているとき, chunk を占有することで要求に応えられるか?
+static bool	is_exhaustible(const t_yoyo_chunk* chunk, size_t blocks_needed) {
+	const bool just_fit = chunk->blocks == blocks_needed + 1;
+	const bool semi_just_fit = chunk->blocks == blocks_needed + 2;
+	return just_fit || semi_just_fit;
+}
+
 // zone からサイズ n の chunk を取得しようとする.
 void*	try_allocate_from_zone(t_yoyo_zone* zone, size_t n) {
 	(void)zone;
 	(void)n;
 	DEBUGOUT("try from: %p - %zu", zone, n);
+
+	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
+	t_yoyo_chunk**	list = &zone->frees;
+	while (*list != NULL) {
+		t_yoyo_chunk*	head = *list;
+		unsigned int	bi = get_block_index(zone, head);
+		(void)bi;
+		assert(is_head(zone, bi));
+		assert(!is_used(zone, bi));
+		if (is_exhaustible(head, blocks_needed)) {
+			// head をすべて使用中にする.
+			DEBUGSTR("EXHAUSTIBLE");
+			*list = head->next;
+			mark_chunk_as_used(zone, head);
+			return (void*)head + BLOCK_UNIT_SIZE;
+		}
+		if (is_separatable(head, blocks_needed)) {
+			// head の先頭を分離して blocks_needed + 1 の使用中ブロックを生成する.
+			DEBUGSTR("SEPARATABLE");
+			t_yoyo_chunk*	rest = (void*)head + (blocks_needed + 1) * BLOCK_UNIT_SIZE;
+			rest->blocks = head->blocks - (blocks_needed + 1);
+			head->blocks = blocks_needed + 1;
+			rest->next = head->next;
+			*list = rest;
+			mark_chunk_as_free(zone, rest);
+			mark_chunk_as_used(zone, head);
+			return (void*)head + BLOCK_UNIT_SIZE;
+		}
+		list = &head->next;
+	}
 	return NULL;
 }
 
@@ -59,12 +136,14 @@ void*	allocate_from_zone_list(t_yoyo_arena* arena, t_yoyo_zone_class zone_class,
 		// zone ロックを取らなくても zone->next を触っていいはず. たぶん.
 		head = head->next;
 	}
+
 	// どの zone からもアロケートできなかった -> zone を増やしてもう一度
 	t_yoyo_zone*	new_zone = allocate_zone(arena, zone_class);
 	if (new_zone == NULL) {
 		return NULL;
 	}
 	zone_push_front(&subarena->head, new_zone);
+
 	// new_zone はロック取らなくていい.
 	return try_allocate_from_zone(new_zone, n);
 }
