@@ -4,6 +4,7 @@
 # include "yoyo_common.h"
 # include "yoyo_time.h"
 # include "yoyo_structure.h"
+# include "yoyo_flag.h"
 # include <stdio.h>
 # include <unistd.h>
 # include <string.h>
@@ -25,8 +26,8 @@ bool	unlock_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class);
 bool	unlock_zone(t_yoyo_zone* zone);
 
 // yoyo_memory_alloc.c
-void*	allocate_memory(size_t bytes);
-void	deallocate_memory(void* start, size_t size);
+void*	map_memory(size_t bytes);
+void	unmap_memory(void* start, size_t size);
 
 // yoyo_init_realm.c
 bool	init_realm(bool multi_thread);

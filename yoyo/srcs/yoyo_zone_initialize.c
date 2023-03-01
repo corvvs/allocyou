@@ -17,16 +17,17 @@ size_t	bitmap_bytes_for_zone_bytes(size_t zone_bytes) {
 	return h / BLOCK_UNIT_SIZE / 8;
 }
 
+// TINY / SMALL zone を mmap で確保し, 初期化して返す.
 t_yoyo_zone*	allocate_zone(const t_yoyo_arena* arena, t_yoyo_zone_class zone_class) {
 	const size_t zone_bytes = zone_bytes_for_zone_class(zone_class);
-	t_yoyo_zone* zone = allocate_memory(zone_bytes);
+	t_yoyo_zone* zone = map_memory(zone_bytes);
 	if (zone == NULL) {
 		DEBUGERR("failed for class: %d", zone_class);
 		return NULL;
 	}
 	DEBUGOUT("ALLOCATED %zu bytes region at %p", zone_bytes, zone);
 	if (!init_zone(arena, zone, zone_class)) {
-		deallocate_memory(zone, zone_bytes);
+		unmap_memory(zone, zone_bytes);
 		return NULL;
 	}
 	return zone;
@@ -66,6 +67,7 @@ bool	init_zone(const t_yoyo_arena* arena, t_yoyo_zone* zone, t_yoyo_zone_class z
 	t_yoyo_chunk* head = (void*)zone + zone->offset_heap;
 	mark_chunk_as_free(zone, head);
 	head->blocks = zone->blocks_free;
+	head->next = SET_FLAGS(NULL, 0);
 	zone->frees = head;
 	return true;
 }

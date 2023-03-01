@@ -10,11 +10,31 @@ static void init_yoyo() {
 	init_realm(true);
 }
 
+void	malloc_tiny_basic() {
+	void* mem;
+	mem = yoyo_malloc(1);
+	printf("%p\n", mem);
+	mem = yoyo_malloc(10);
+	printf("%p\n", mem);
+	mem = yoyo_malloc(100);
+	printf("%p\n", mem);
+}
+
 void	malloc_tiny_all() {
 	for (int i = 0; i < 1025; ++i) {
 		void* mem = yoyo_malloc(992);
 		printf("%d -> %p\n", i, mem);
 	}
+}
+
+void	malloc_large_basic() {
+	void* mem;
+	mem = yoyo_malloc(100000);
+	printf("%p\n", mem);
+	mem = yoyo_malloc(500000);
+	printf("%p\n", mem);
+	mem = yoyo_malloc(100000000);
+	printf("%p\n", mem);
 }
 
 int main() {
@@ -30,5 +50,7 @@ int main() {
 
 	// t_yoyo_zone* tiny = allocate_zone(&g_yoyo_realm.arenas[0], YOYO_ZONE_TINY);
 	// printf("%p\n", tiny);
-	malloc_tiny_all();
+	malloc_tiny_basic();
+	// malloc_tiny_all();
+	malloc_large_basic();
 }

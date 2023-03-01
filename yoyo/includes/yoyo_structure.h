@@ -6,7 +6,9 @@
 # include <pthread.h>
 
 # define ARENA_MAX	5
+// a を bの倍数に切り上げる
 # define CEIL_BY(a, b) (a ? ((a - 1) / b + 1) * b : b)
+// a を bの倍数に切り下げる
 # define FLOOR_BY(a, b) (a / b * b)
 
 typedef enum e_yoyo_zone_class {
@@ -15,10 +17,16 @@ typedef enum e_yoyo_zone_class {
 	YOYO_ZONE_LARGE,
 }	t_yoyo_zone_class;
 
-typedef unsigned long	t_bitfield;
+typedef unsigned char	t_bitfield;
 
 
-// [chunk 構造体]
+// [chunk ヘッダ構造体]
+// 
+// 
+//         t_yoyo_chunk        |    (chunk body)     
+// +-------------+-------------+---------//---------+
+// |    blocks   |     next    |                    |
+// +-------------+-------------+---------//---------+
 typedef struct	s_yoyo_chunk {
 	// chunk のブロック数(ヘッダ含む)
 	size_t					blocks;
@@ -27,8 +35,28 @@ typedef struct	s_yoyo_chunk {
 	struct s_yoyo_chunk*	next;
 }	t_yoyo_chunk;
 
+// [LARGE chunk ヘッダ構造体]
+// 
+// 
+//             t_yoyo_large_chunk          |       t_yoyo_chunk        |    (chunk body)     
+// +------------+-------------+------------+-------------+-------------+---------//---------+
+// |  subarena  | memory_byte | large_next |    blocks   |     next    |                    |
+// +------------+-------------+------------+-------------+-------------+---------//---------+
+typedef struct s_yoyo_large_chunk {
+	// この chunk が所属する LARGE subarena への参照
+	void*						subarena;
+	// mmap された正味のバイト数
+	size_t						memory_byte;
+	// LARGE chunk の使用中リストにおける次の chunk への参照
+	struct s_yoyo_large_chunk*	large_next;
+}	t_yoyo_large_chunk;
+
 # define BLOCK_UNIT_SIZE (CEIL_BY(sizeof(t_yoyo_chunk), sizeof(size_t)))
 # define BLOCKS_FOR_SIZE(n) (CEIL_BY(n, BLOCK_UNIT_SIZE) / BLOCK_UNIT_SIZE)
+
+# define CEILED_LARGE_CHUNK_SIZE CEIL_BY(sizeof(t_yoyo_large_chunk), BLOCK_UNIT_SIZE)
+# define CEILED_CHUNK_SIZE CEIL_BY(sizeof(t_yoyo_chunk), BLOCK_UNIT_SIZE)
+# define LARGE_OFFSET_USABLE (CEILED_LARGE_CHUNK_SIZE + CEILED_CHUNK_SIZE)
 
 // n in PDF
 # define TINY_MAX_CHUNK_BYTE ((size_t)992)
@@ -94,18 +122,24 @@ typedef struct	s_yoyo_zone {
 }	t_yoyo_zone;
 
 typedef struct	s_yoyo_normal_arena {
+	// arena ロック
 	pthread_mutex_t		lock;
+	// zone リスト
 	t_yoyo_zone*		head;
 }	t_yoyo_normal_arena;
 
 typedef struct	s_yoyo_large_arena {
+	// arena ロック
 	pthread_mutex_t		lock;
-	t_yoyo_chunk*		allocated;
+	// 使用済み LARGE chunk リスト
+	t_yoyo_large_chunk*	allocated;
 }	t_yoyo_large_arena;
 
 typedef struct	s_yoyo_subarena {
 	// arena ロック
 	pthread_mutex_t	lock;
+	// なんかしらのポインタ
+	void*			some;
 }	t_yoyo_subarena;
 
 // [arena 構造体]
