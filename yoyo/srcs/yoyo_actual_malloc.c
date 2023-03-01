@@ -84,11 +84,15 @@ static bool	is_exhaustible(const t_yoyo_chunk* chunk, size_t blocks_needed) {
 
 // zone からサイズ n の chunk を取得しようとする.
 void*	try_allocate_from_zone(t_yoyo_zone* zone, size_t n) {
-	(void)zone;
-	(void)n;
 	DEBUGOUT("try from: %p - %zu", zone, n);
 
-	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
+	const size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
+	DEBUGOUT("blocks needed: %zu, rest: %u", blocks_needed, zone->blocks_free);
+	const size_t	whole_needed = blocks_needed + 1;
+	if (zone->blocks_free < whole_needed) {
+		DEBUGWARN("no enough blocks in this zone: %u", zone->blocks_free);
+		return NULL;
+	}
 	t_yoyo_chunk**	list = &zone->frees;
 	while (*list != NULL) {
 		t_yoyo_chunk*	head = *list;
@@ -101,18 +105,22 @@ void*	try_allocate_from_zone(t_yoyo_zone* zone, size_t n) {
 			DEBUGSTR("EXHAUSTIBLE");
 			*list = head->next;
 			mark_chunk_as_used(zone, head);
+			zone->blocks_free -= head->blocks;
+			zone->blocks_used += head->blocks;
 			return (void*)head + BLOCK_UNIT_SIZE;
 		}
 		if (is_separatable(head, blocks_needed)) {
 			// head の先頭を分離して blocks_needed + 1 の使用中ブロックを生成する.
 			DEBUGSTR("SEPARATABLE");
-			t_yoyo_chunk*	rest = (void*)head + (blocks_needed + 1) * BLOCK_UNIT_SIZE;
-			rest->blocks = head->blocks - (blocks_needed + 1);
-			head->blocks = blocks_needed + 1;
+			t_yoyo_chunk*	rest = (void*)head + whole_needed * BLOCK_UNIT_SIZE;
+			rest->blocks = head->blocks - whole_needed;
+			head->blocks = whole_needed;
 			rest->next = head->next;
 			*list = rest;
 			mark_chunk_as_free(zone, rest);
 			mark_chunk_as_used(zone, head);
+			zone->blocks_free -= whole_needed;
+			zone->blocks_used += whole_needed;
 			return (void*)head + BLOCK_UNIT_SIZE;
 		}
 		list = &head->next;

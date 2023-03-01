@@ -5,7 +5,13 @@ static void	unmap_range(void* begin, void* end) {
 		DEBUGOUT("skipped: [%p, %p)", begin, end);
 		return;
 	}
-	if (munmap(begin, (size_t)end - (size_t)begin)) {
+	int rv;
+	{
+		SPRINT_START;
+		rv = munmap(begin, (size_t)end - (size_t)begin);
+		SPRINT_END("munmap");
+	}
+	if (rv) {
 		DEBUGERR("FAILED: errno = %d, %s", errno, strerror(errno));
 		return;
 	}
@@ -16,12 +22,17 @@ static void	unmap_range(void* begin, void* end) {
 // 領域は bytes バイトアラインされる.
 void*	allocate_memory(size_t bytes) {
 	assert((bytes & (bytes - 1)) == 0); // bytes は 2冪である
-	void	*bulk = mmap(
-		NULL,
-		bytes * 2,
-		PROT_READ | PROT_WRITE,
-		MAP_ANON | MAP_PRIVATE,
-		-1, 0);
+	void*	bulk;
+	{
+		SPRINT_START;
+		bulk = mmap(
+			NULL,
+			bytes * 2,
+			PROT_READ | PROT_WRITE,
+			MAP_ANON | MAP_PRIVATE,
+			-1, 0);
+		SPRINT_END("mmap");
+	}
 	if (bulk == MAP_FAILED) {
 		return NULL;
 	}
