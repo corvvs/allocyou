@@ -75,13 +75,69 @@ static void	free_from_normal_zone(t_yoyo_chunk* chunk) {
 	}
 }
 
+static void	free_from_large_zone(t_yoyo_chunk* chunk) {
+	// [LARGE ヘッダを見る]
+	t_yoyo_large_chunk*	large_chunk = (void*)chunk - CEILED_LARGE_CHUNK_SIZE;
+	DEBUGOUT("LARGE chunk: %p", large_chunk);
+
+	// [LARGEヘッダのto_zoneからLARGE zoneに飛ぶ]
+	t_yoyo_large_arena*	subarena = large_chunk->subarena;
+	DEBUGOUT("LARGE subarena: %p", subarena);
+
+	// [LARGE zone のロックを取る]
+	if (!lock_subarena((t_yoyo_subarena*)subarena)) {
+		DEBUGERR("FAILED to lock LARGE subarena: %p", subarena);
+		return;
+	}
+
+	// [LARGE zoneのchunk_listを見る]
+	t_yoyo_large_chunk**	list = &(subarena->allocated);
+	DEBUGOUT("subarena: %p", subarena);
+	DEBUGOUT("subarena->allocated: %p", subarena->allocated);
+
+	// [LARGEヘッダのactual_nextを見ながら元々freeしたいchunkを見つける]
+	while (true) {
+		t_yoyo_large_chunk*	head = *list;
+		DEBUGOUT("head: %p", head);
+		if (head == NULL) {
+			DEBUGERR("FATAL: not found in the list: %p", &subarena->allocated);
+			unlock_subarena((t_yoyo_subarena*)subarena);
+			return;
+		}
+		if (head == large_chunk) {
+			DEBUGOUT("POP FRONT chunk %p from the list: %p", large_chunk, &subarena->allocated);
+			list = NULL;
+			break;
+		}
+		t_yoyo_large_chunk*	next = head->large_next;
+		if (next == large_chunk) {
+			DEBUGOUT("REMOVE chunk %p next of %p", large_chunk, head);
+			break;
+		}
+		list = &(head->large_next);
+	}
+
+	// [freeしたいchunkをchunk listから切り離す]
+	if (list == NULL) {
+		subarena->allocated = large_chunk->large_next;
+	} else {
+		(*list)->large_next = large_chunk->large_next;
+	}
+	large_chunk->large_next = NULL;
+
+	// [chunkをmunmapする]
+	unmap_memory(large_chunk, large_chunk->memory_byte);
+
+	// [LARGE zoneのロックを離す]
+	unlock_subarena((t_yoyo_subarena*)subarena);
+}
 
 void	actual_free(void* addr) {
-	t_yoyo_chunk*	chunk = addr;
-	--chunk;
+	t_yoyo_chunk*	chunk = addr - CEILED_CHUNK_SIZE;
 
 	if (IS_LARGE_CHUNK(chunk)) {
-		// TODO: LARGE chunk を解放する.
+		// LARGE chunk を解放する.
+		free_from_large_zone(chunk);
 		return;
 	}
 	// TINY / SMALL の解放処理

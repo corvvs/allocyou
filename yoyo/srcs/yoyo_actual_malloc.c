@@ -23,11 +23,10 @@ static t_yoyo_arena*	occupy_arena(t_yoyo_zone_class zone_class) {
 
 // LARGE chunk を mmap でアロケートする.
 static t_yoyo_large_chunk*	map_large_chunk(t_yoyo_large_arena* subarena, size_t n) {
-	const size_t		large_chunk_size = CEIL_BY(sizeof(t_yoyo_large_chunk), BLOCK_UNIT_SIZE);
-	const size_t		chunk_size = CEIL_BY(sizeof(t_yoyo_chunk), BLOCK_UNIT_SIZE);
+# define CEILED_LARGE_CHUNK_SIZE CEIL_BY(sizeof(t_yoyo_large_chunk), BLOCK_UNIT_SIZE)
 	const size_t		blocks_needed = BLOCKS_FOR_SIZE(n);
 	const size_t		usable_size = blocks_needed * BLOCK_UNIT_SIZE;
-	const size_t		mem_size = large_chunk_size + chunk_size + usable_size;
+	const size_t		mem_size = LARGE_OFFSET_USABLE + usable_size;
 	t_yoyo_large_chunk*	large_chunk = map_memory(mem_size);
 	if (large_chunk == NULL) {
 		DEBUGERR("failed for %zuB", n);
@@ -36,7 +35,7 @@ static t_yoyo_large_chunk*	map_large_chunk(t_yoyo_large_arena* subarena, size_t 
 	large_chunk->subarena = subarena;
 	large_chunk->memory_byte = mem_size;
 	large_chunk->large_next = NULL;
-	t_yoyo_chunk*		chunk = (void*)large_chunk + large_chunk_size;
+	t_yoyo_chunk*		chunk = (void*)large_chunk + CEILED_LARGE_CHUNK_SIZE;
 	chunk->next = SET_FLAGS(NULL, YOYO_FLAG_LARGE);
 	chunk->blocks = blocks_needed + 1;
 	return large_chunk;
@@ -49,7 +48,7 @@ static void*	allocate_from_large(t_yoyo_large_arena* subarena, size_t n) {
 	t_yoyo_large_chunk**	list = &(subarena->allocated);
 
 	while (true) {
-		t_yoyo_large_chunk*	head = ADDRESS_OF(*list);
+		t_yoyo_large_chunk*	head = *list;
 		DEBUGOUT("head: %p", head);
 		if (head == NULL) {
 			DEBUGOUT("PUSH BACK a chunk %p to %p", large_chunk, list);
@@ -79,6 +78,8 @@ static void*	allocate_from_large(t_yoyo_large_arena* subarena, size_t n) {
 		large_chunk->large_next = NULL;
 	}
 	*list = large_chunk;
+	DEBUGOUT("subarena: %p", subarena);
+	DEBUGOUT("subarena->allocated: %p", subarena->allocated);
 	// 使用可能領域を返す
 	return (void*)large_chunk + LARGE_OFFSET_USABLE;
 }

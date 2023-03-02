@@ -46,6 +46,15 @@ void	free_tiny_basic() {
 	yoyo_free(mem2);
 }
 
+void	free_large_basic() {
+	void* mem1 = yoyo_malloc(100000);
+	printf("mem1 = %p\n", mem1);
+	void* mem2 = yoyo_malloc(500000);
+	printf("mem2 = %p\n", mem2);
+	yoyo_free(mem2);
+	yoyo_free(mem1);
+}
+
 int main() {
 	// printf("%zu\n", sizeof(bool));
 	// printf("%zu\n", sizeof(unsigned int));
@@ -63,5 +72,6 @@ int main() {
 	// malloc_tiny_all();
 	// malloc_large_basic();
 
-	free_tiny_basic();
+	// free_tiny_basic();
+	free_large_basic();
 }

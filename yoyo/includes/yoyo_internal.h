@@ -23,9 +23,12 @@ void	actual_free(void* addr);
 // yoyo_lock.c
 bool	lock_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class);
 bool	try_lock_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class);
+bool	lock_subarena(t_yoyo_subarena* subarena);
+bool	try_lock_subarena(t_yoyo_subarena* subarena);
 bool	lock_zone(t_yoyo_zone* zone);
 bool	try_lock_zone(t_yoyo_zone* zone);
 bool	unlock_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class);
+bool	unlock_subarena(t_yoyo_subarena* subarena);
 bool	unlock_zone(t_yoyo_zone* zone);
 
 // yoyo_memory_alloc.c

@@ -123,14 +123,18 @@ typedef struct	s_yoyo_zone {
 
 typedef struct	s_yoyo_normal_arena {
 	// arena ロック
-	pthread_mutex_t		lock;
+	pthread_mutex_t	lock;
+	// マルチスレッドモードかどうか
+	bool			multi_thread;
 	// zone リスト
-	t_yoyo_zone*		head;
+	t_yoyo_zone*	head;
 }	t_yoyo_normal_arena;
 
 typedef struct	s_yoyo_large_arena {
 	// arena ロック
 	pthread_mutex_t		lock;
+	// マルチスレッドモードかどうか
+	bool				multi_thread;
 	// 使用済み LARGE chunk リスト
 	t_yoyo_large_chunk*	allocated;
 }	t_yoyo_large_arena;
@@ -138,6 +142,8 @@ typedef struct	s_yoyo_large_arena {
 typedef struct	s_yoyo_subarena {
 	// arena ロック
 	pthread_mutex_t	lock;
+	// マルチスレッドモードかどうか
+	bool			multi_thread;
 	// なんかしらのポインタ
 	void*			some;
 }	t_yoyo_subarena;
