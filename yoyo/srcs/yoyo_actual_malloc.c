@@ -101,23 +101,6 @@ static void	zone_push_front(t_yoyo_zone** list, t_yoyo_zone* zone) {
 	*list = zone;
 }
 
-// このブロックが chunk のヘッダかどうか
-static bool	is_head(const t_yoyo_zone* zone, unsigned int block_index) {
-	unsigned int	byte_index = block_index / 8;
-	unsigned int	bit_index = block_index % 8;
-	unsigned char*	heads = (void*)zone + zone->offset_bitmap_heads;
-	return !!(heads[byte_index] & (1 << bit_index));
-}
-
-// このブロックがヘッダになっている chunk が使用中かどうか
-static bool	is_used(const t_yoyo_zone* zone, unsigned int block_index) {
-	unsigned int	byte_index = block_index / 8;
-	unsigned int	bit_index = block_index % 8;
-	unsigned char*	used = (void*)zone + zone->offset_bitmap_used;
-	return !!(used[byte_index] & (1 << bit_index));
-}
-
-
 // blocks_needed 要求されているとき, chunk を分割することで要求に応えられるか?
 static bool	is_separatable(const t_yoyo_chunk* chunk, size_t blocks_needed) {
 	assert(chunk->blocks > 1);
@@ -201,8 +184,10 @@ static void*	allocate_memory_from_zone_list(t_yoyo_arena* arena, t_yoyo_zone_typ
 		if (try_lock_zone(current_zone)) {
 			// zone ロックが取れた -> アロケートを試みる
 			print_zone_state(current_zone);
+			print_zone_bitmap_state(current_zone);
 			void*	mem = try_allocate_chunk_from_zone(current_zone, n);
 			print_zone_state(current_zone);
+			print_zone_bitmap_state(current_zone);
 			unlock_zone(current_zone);
 			if (mem != NULL) {
 				return mem;

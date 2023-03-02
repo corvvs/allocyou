@@ -47,6 +47,10 @@ t_yoyo_subarena*	get_subarena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
 // yoyo_zone_initialize.c
 t_yoyo_zone*	allocate_zone(const t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
 
+// yoyo_zone_bitmap.c
+bool	is_head(const t_yoyo_zone* zone, unsigned int block_index);
+bool	is_used(const t_yoyo_zone* zone, unsigned int block_index);
+
 // yoyo_zone_utils.c
 size_t	zone_bytes_for_zone_type(t_yoyo_zone_type zone_type);
 size_t	max_chunk_blocks_for_zone_type(t_yoyo_zone_type zone_type);
@@ -59,5 +63,8 @@ void	mark_chunk_as_used(t_yoyo_zone* zone, t_yoyo_chunk* chunk);
 
 // yoyo_debug.c
 void	print_zone_state(const t_yoyo_zone* zone);
+void	print_zone_bitmap_state(const t_yoyo_zone* zone);
+void	print_memory_state(const void* addr);
+
 
 #endif

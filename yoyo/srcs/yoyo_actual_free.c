@@ -64,6 +64,7 @@ static void	free_from_tiny_small_zone(t_yoyo_chunk* chunk) {
 		return;
 	}
 	print_zone_state(zone);
+	print_zone_bitmap_state(zone);
 	// [zone のfreeマップの状態を変更する]
 	mark_chunk_as_free(zone, chunk);
 	// head ビットマップの状態は合体で変わるかもしれない
@@ -74,6 +75,7 @@ static void	free_from_tiny_small_zone(t_yoyo_chunk* chunk) {
 	zone->blocks_used -= chunk->blocks;
 	// [zone のロックを離す]
 	print_zone_state(zone);
+	print_zone_bitmap_state(zone);
 	if (!unlock_zone(zone)) {
 		DEBUGERR("FAILED to unlock zone: %p", zone);
 	}

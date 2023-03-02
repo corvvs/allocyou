@@ -15,6 +15,7 @@ FILES	:=	\
 			yoyo_memory_alloc.c\
 			yoyo_realm_initialize.c\
 			yoyo_zone_initialize.c\
+			yoyo_zone_bitmap.c\
 			yoyo_zone_operation.c\
 			yoyo_zone_utils.c\
 			yoyo_debug.c\
