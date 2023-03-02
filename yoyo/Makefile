@@ -17,6 +17,8 @@ FILES	:=	\
 			yoyo_zone_initialize.c\
 			yoyo_zone_operation.c\
 			yoyo_zone_utils.c\
+			yoyo_debug.c\
+
 
 SRCS	:=	$(FILES:%.c=$(SRCDIR)/%.c)
 OBJS	:=	$(FILES:%.c=$(OBJDIR)/%.o)

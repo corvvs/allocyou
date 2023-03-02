@@ -2,12 +2,12 @@
 
 // [ロックを取る/解除する]
 
-bool	lock_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class) {
+bool	lock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type) {
 	if (!arena->multi_thread) {
 		DEBUGOUT("SKIP: in single-thread mode: #%u(%p)", arena->index, arena);
 		return true;
 	}
-	t_yoyo_subarena*	subarena = get_subarena(arena, zone_class);
+	t_yoyo_subarena*	subarena = get_subarena(arena, zone_type);
 	if (!lock_subarena(subarena)) {
 		DEBUGERR("FAILED to lock: %d(%s)", errno, strerror(errno));
 		return false;
@@ -16,12 +16,12 @@ bool	lock_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class) {
 	return true;
 }
 
-bool	try_lock_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class) {
+bool	try_lock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type) {
 	if (!arena->multi_thread) {
 		DEBUGOUT("SKIP: in single-thread mode: #%u(%p)", arena->index, arena);
 		return true;
 	}
-	t_yoyo_subarena*	subarena = get_subarena(arena, zone_class);
+	t_yoyo_subarena*	subarena = get_subarena(arena, zone_type);
 	if (!try_lock_subarena(subarena)) {
 		DEBUGERR("FAILED to try lock: %d(%s)", errno, strerror(errno));
 		return false;
@@ -82,12 +82,12 @@ bool	try_lock_zone(t_yoyo_zone* zone) {
 	return true;
 }
 
-bool	unlock_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class) {
+bool	unlock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type) {
 	if (!arena->multi_thread) {
 		DEBUGOUT("SKIP: in single-thread mode: #%u(%p)", arena->index, arena);
 		return true;
 	}
-	t_yoyo_subarena*	subarena = get_subarena(arena, zone_class);
+	t_yoyo_subarena*	subarena = get_subarena(arena, zone_type);
 	if (pthread_mutex_unlock(&subarena->lock)) {
 		DEBUGERR("FAILED to unlock: %d(%s)", errno, strerror(errno));
 		return false;

@@ -52,8 +52,8 @@ void	destroy_arena(t_yoyo_arena* arena) {
 	arena->initialized = false;
 }
 
-t_yoyo_subarena*	get_subarena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class) {
-	switch (zone_class) {
+t_yoyo_subarena*	get_subarena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type) {
+	switch (zone_type) {
 		case YOYO_ZONE_TINY:
 			return (t_yoyo_subarena*)&arena->tiny;
 		case YOYO_ZONE_SMALL:

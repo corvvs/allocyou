@@ -51,7 +51,10 @@ void	free_large_basic() {
 	printf("mem1 = %p\n", mem1);
 	void* mem2 = yoyo_malloc(500000);
 	printf("mem2 = %p\n", mem2);
+	void* mem3 = yoyo_malloc(12500000);
+	printf("mem3 = %p\n", mem2);
 	yoyo_free(mem2);
+	yoyo_free(mem3);
 	yoyo_free(mem1);
 }
 
@@ -72,6 +75,6 @@ int main() {
 	// malloc_tiny_all();
 	// malloc_large_basic();
 
-	// free_tiny_basic();
-	free_large_basic();
+	free_tiny_basic();
+	// free_large_basic();
 }

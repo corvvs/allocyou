@@ -11,11 +11,11 @@
 // a を bの倍数に切り下げる
 # define FLOOR_BY(a, b) (a / b * b)
 
-typedef enum e_yoyo_zone_class {
+typedef enum e_yoyo_zone_type {
 	YOYO_ZONE_TINY,
 	YOYO_ZONE_SMALL,
 	YOYO_ZONE_LARGE,
-}	t_yoyo_zone_class;
+}	t_yoyo_zone_type;
 
 typedef unsigned char	t_bitfield;
 
@@ -87,7 +87,7 @@ typedef struct	s_yoyo_zone {
 	bool				multi_thread;
 
 	// ゾーン種別
-	t_yoyo_zone_class	zone_class;
+	t_yoyo_zone_type	zone_type;
 
 	// free リスト
 	t_yoyo_chunk*		frees;
