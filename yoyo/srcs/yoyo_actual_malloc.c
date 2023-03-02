@@ -22,7 +22,7 @@ static t_yoyo_arena*	occupy_arena(t_yoyo_zone_class zone_class) {
 }
 
 // LARGE chunk を mmap でアロケートする.
-t_yoyo_large_chunk*	map_large_chunk(t_yoyo_large_arena* subarena, size_t n) {
+static t_yoyo_large_chunk*	map_large_chunk(t_yoyo_large_arena* subarena, size_t n) {
 	const size_t		large_chunk_size = CEIL_BY(sizeof(t_yoyo_large_chunk), BLOCK_UNIT_SIZE);
 	const size_t		chunk_size = CEIL_BY(sizeof(t_yoyo_chunk), BLOCK_UNIT_SIZE);
 	const size_t		blocks_needed = BLOCKS_FOR_SIZE(n);
@@ -43,32 +43,42 @@ t_yoyo_large_chunk*	map_large_chunk(t_yoyo_large_arena* subarena, size_t n) {
 }
 
 // LARGE chunk をアロケートし, subarena に接続し, 使用可能領域のアドレスを返す.
-void*	allocate_from_large(t_yoyo_large_arena* subarena, size_t n) {
+static void*	allocate_from_large(t_yoyo_large_arena* subarena, size_t n) {
 	t_yoyo_large_chunk*	large_chunk = map_large_chunk(subarena, n);
 	if (large_chunk == NULL) { return NULL; }
-	t_yoyo_large_chunk**	head = &(subarena->allocated);
+	t_yoyo_large_chunk**	list = &(subarena->allocated);
 
-	// [ finding s.t. ]
-	// !(*head)			||	*head < large_chunk
-	// !((*head)->next)	||	large_chunk < (*head)->next
-	while (*head != NULL) {
-		t_yoyo_large_chunk*	next = (*head)->large_next;
-		if ((uintptr_t)*head < (uintptr_t)large_chunk) {
-			if (next == NULL || (uintptr_t)large_chunk < (uintptr_t)next) {
-				break;
-			}
+	while (true) {
+		t_yoyo_large_chunk*	head = ADDRESS_OF(*list);
+		DEBUGOUT("head: %p", head);
+		if (head == NULL) {
+			DEBUGOUT("PUSH BACK a chunk %p to %p", large_chunk, list);
+			break;
 		}
-		head = &((*head)->large_next);
+		if ((uintptr_t)large_chunk < (uintptr_t)head) {
+			DEBUGOUT("PUSH FRONT a chunk %p of %p", large_chunk, list);
+			list = NULL;
+			break;
+		}
+		t_yoyo_large_chunk*	next = head->large_next;
+		if ((uintptr_t)large_chunk < (uintptr_t)next) {
+			DEBUGOUT("INSERT a chunk %p next of %p", large_chunk, list);
+			break;
+		}
+		list = &(head->large_next);
 	}
-	// *head と (*head)->large_next の間に入れる.
-	DEBUGOUT("insert new large-chunk next of %p", *head);
-	if (*head != NULL) {
-		large_chunk->large_next = (*head)->large_next;
+	if (list == NULL) {
+		// PUSH FRONT
+		large_chunk->large_next = subarena->allocated;
+		list = &(subarena->allocated);
+	} else if (*list != NULL) {
+		// INSERT
+		large_chunk->large_next = (*list)->large_next;
 	} else {
+		// PUSH BACK
 		large_chunk->large_next = NULL;
 	}
-	*head = large_chunk;
-
+	*list = large_chunk;
 	// 使用可能領域を返す
 	return (void*)large_chunk + LARGE_OFFSET_USABLE;
 }
@@ -80,7 +90,7 @@ static void	zone_push_front(t_yoyo_zone** list, t_yoyo_zone* zone) {
 }
 
 // このブロックが chunk のヘッダかどうか
-bool	is_head(const t_yoyo_zone* zone, unsigned int block_index) {
+static bool	is_head(const t_yoyo_zone* zone, unsigned int block_index) {
 	unsigned int	byte_index = block_index / 8;
 	unsigned int	bit_index = block_index % 8;
 	unsigned char*	heads = (void*)zone + zone->offset_bitmap_heads;
@@ -88,7 +98,7 @@ bool	is_head(const t_yoyo_zone* zone, unsigned int block_index) {
 }
 
 // このブロックがヘッダになっている chunk が使用中かどうか
-bool	is_used(const t_yoyo_zone* zone, unsigned int block_index) {
+static bool	is_used(const t_yoyo_zone* zone, unsigned int block_index) {
 	unsigned int	byte_index = block_index / 8;
 	unsigned int	bit_index = block_index % 8;
 	unsigned char*	used = (void*)zone + zone->offset_bitmap_used;
@@ -127,7 +137,7 @@ static bool	is_exhaustible(const t_yoyo_chunk* chunk, size_t blocks_needed) {
 }
 
 // zone からサイズ n の chunk を取得しようとする.
-void*	try_allocate_from_zone(t_yoyo_zone* zone, size_t n) {
+static void*	try_allocate_from_zone(t_yoyo_zone* zone, size_t n) {
 	DEBUGOUT("try from: %p - %zu", zone, n);
 
 	const size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
@@ -167,13 +177,13 @@ void*	try_allocate_from_zone(t_yoyo_zone* zone, size_t n) {
 			zone->blocks_used += whole_needed;
 			return (void*)head + BLOCK_UNIT_SIZE;
 		}
-		list = &head->next;
+		list = &(head->next);
 	}
 	DEBUGWARN("FAILED from: %p - %zuB", zone, n);
 	return NULL;
 }
 
-void*	allocate_from_zone_list(t_yoyo_arena* arena, t_yoyo_zone_class zone_class, size_t n) {
+static void*	allocate_from_zone_list(t_yoyo_arena* arena, t_yoyo_zone_class zone_class, size_t n) {
 	t_yoyo_normal_arena* subarena = (t_yoyo_normal_arena*)get_subarena(arena, zone_class);
 	t_yoyo_zone*	head = subarena->head;
 	while (head != NULL) {
@@ -191,7 +201,7 @@ void*	allocate_from_zone_list(t_yoyo_arena* arena, t_yoyo_zone_class zone_class,
 	}
 
 	// どの zone からもアロケートできなかった -> zone を増やしてもう一度
-	DEBUGWARN("ALLOCATE ZONE NEWLY for %zuB", n);
+	DEBUGWARN("ALLOCATE A ZONE NEWLY for %zuB", n);
 	t_yoyo_zone*	new_zone = allocate_zone(arena, zone_class);
 	if (new_zone == NULL) {
 		return NULL;
@@ -202,7 +212,7 @@ void*	allocate_from_zone_list(t_yoyo_arena* arena, t_yoyo_zone_class zone_class,
 	return try_allocate_from_zone(new_zone, n);
 }
 
-void*	allocate_from_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class, size_t n) {
+static void*	allocate_from_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class, size_t n) {
 	if (zone_class == YOYO_ZONE_LARGE) {
 		// LARGE からアロケートする
 		return allocate_from_large(&arena->large, n);

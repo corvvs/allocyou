@@ -20,4 +20,7 @@
 // アドレス dst のフラグをアドレス src のフラグにしたものを返す
 # define COPY_FLAGS(dst, src) ((void *)((uintptr_t)ADDRESS_OF(dst) | (uintptr_t)ADDRESS_OF(src)))
 
+// この chunk が LARGE かどうかを判定する
+# define IS_LARGE_CHUNK(chunk) (!!((uintptr_t)((chunk)->next) & YOYO_FLAG_LARGE))
+
 #endif

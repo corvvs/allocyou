@@ -8,6 +8,7 @@ OBJDIR	:=	objs
 INCDIR	:=	includes
 FILES	:=	\
 			yoyo_actual_malloc.c\
+			yoyo_actual_free.c\
 			yoyo_arena_initialize.c\
 			yoyo_lock.c\
 			yoyo_malloc.c\
@@ -23,7 +24,7 @@ NAME	:=	libmalloc.a
 RM		:=	rm -rf
 
 CC		:=	gcc
-CFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR) -g -fsanitize=address
+CFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR) -g -fsanitize=undefined
 
 SONAME	:= 
 

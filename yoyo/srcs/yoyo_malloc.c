@@ -12,8 +12,13 @@ void*	yoyo_malloc(size_t n) {
 }
 
 void	yoyo_free(void* addr) {
-	free(addr);
+	DEBUGOUT("** addr: %p **", addr);
+	SPRINT_START;
+	actual_free(addr);
+	SPRINT_END("free");
+	DEBUGSTR("** free end **");
 }
+
 void*	yoyo_realloc(void* addr, size_t n) {
 	return realloc(addr, n);
 }

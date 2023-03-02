@@ -14,8 +14,11 @@
 
 t_yoyo_realm	g_yoyo_realm;
 
-// actual_malloc.c
+// yoyo_actual_malloc.c
 void*	actual_malloc(size_t n);
+
+// yoyo_actual_free.c
+void	actual_free(void* addr);
 
 // yoyo_lock.c
 bool	lock_arena(t_yoyo_arena* arena, t_yoyo_zone_class zone_class);

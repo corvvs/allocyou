@@ -37,6 +37,15 @@ void	malloc_large_basic() {
 	printf("%p\n", mem);
 }
 
+void	free_tiny_basic() {
+	void* mem1 = yoyo_malloc(1);
+	printf("mem1 = %p\n", mem1);
+	void* mem2 = yoyo_malloc(1);
+	printf("mem2 = %p\n", mem2);
+	yoyo_free(mem1);
+	yoyo_free(mem2);
+}
+
 int main() {
 	// printf("%zu\n", sizeof(bool));
 	// printf("%zu\n", sizeof(unsigned int));
@@ -50,7 +59,9 @@ int main() {
 
 	// t_yoyo_zone* tiny = allocate_zone(&g_yoyo_realm.arenas[0], YOYO_ZONE_TINY);
 	// printf("%p\n", tiny);
-	malloc_tiny_basic();
+	// malloc_tiny_basic();
 	// malloc_tiny_all();
-	malloc_large_basic();
+	// malloc_large_basic();
+
+	free_tiny_basic();
 }
