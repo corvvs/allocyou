@@ -51,9 +51,10 @@ static void	insert_large_chunk_to_subarena(
 ) {
 	t_yoyo_large_chunk**	current_lot = &(subarena->allocated);
 	t_yoyo_large_chunk*		front = NULL;
+	(void)front;
 
 	// [挿入場所を見つける]
-	while (*current_lot != NULL) {
+	while (true) {
 		t_yoyo_large_chunk*	back = *current_lot;
 		DEBUGOUT("front: %p, back: %p", front, back);
 		if (back == NULL) {
@@ -159,6 +160,8 @@ static void*	try_allocate_chunk_from_zone(t_yoyo_zone* zone, size_t n) {
 			mark_chunk_as_used(zone, current_free_chunk);
 			zone->blocks_free -= whole_needed;
 			zone->blocks_used += whole_needed;
+			print_zone_state(zone);
+			print_zone_bitmap_state(zone);
 			return (void*)current_free_chunk + BLOCK_UNIT_SIZE;
 		}
 		current_lot = &(current_free_chunk->next);

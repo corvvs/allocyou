@@ -15,3 +15,4 @@ bool	is_used(const t_yoyo_zone* zone, unsigned int block_index) {
 	unsigned char*	used = (void*)zone + zone->offset_bitmap_used;
 	return !!(used[byte_index] & (1 << bit_index));
 }
+

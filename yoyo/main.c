@@ -67,6 +67,23 @@ void	free_large_basic() {
 	yoyo_free(mem1);
 }
 
+void	realloc_basic() {
+	void*	mem1 = yoyo_realloc(NULL, 60);
+	printf("mem1 = %p\n", mem1);
+	void*	mem2 = yoyo_realloc(mem1, 20);
+	printf("mem2 = %p\n", mem2);
+	void*	mem3 = yoyo_realloc(mem2, 24);
+	printf("mem3 = %p\n", mem3);
+	void*	mem4 = yoyo_realloc(mem3, 4000);
+	printf("mem4 = %p\n", mem4);
+	void*	mem5 = yoyo_realloc(mem4, 40000);
+	printf("mem5 = %p\n", mem5);
+	void*	mem6 = yoyo_realloc(mem5, 20000);
+	printf("mem6 = %p\n", mem6);
+	void*	mem7 = yoyo_realloc(mem6, 1);
+	printf("mem7 = %p\n", mem7);
+}
+
 int main() {
 	// printf("%zu\n", sizeof(bool));
 	// printf("%zu\n", sizeof(unsigned int));
@@ -85,5 +102,7 @@ int main() {
 	// malloc_large_basic();
 
 	// free_tiny_basic();
-	free_large_basic();
+	// free_large_basic();
+
+	realloc_basic();
 }

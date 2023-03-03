@@ -40,3 +40,24 @@ unsigned int	get_block_index(const t_yoyo_zone* zone, const t_yoyo_chunk* head) 
 	const t_yoyo_chunk*	heap_start = (void*)zone + zone->offset_heap;
 	return head - heap_start;
 }
+
+// TINY / SMALL chunk の所属する zone を返す.
+// chunk が LARGE だった場合は NULL を返す.
+t_yoyo_zone*	get_zone_of_chunk(const t_yoyo_chunk* chunk) {
+	const size_t whole_blocks = chunk->blocks;
+	DEBUGOUT("whole_blocks: %zu", whole_blocks);
+	assert(whole_blocks > 0);
+	const size_t usable_blocks = whole_blocks - 1;
+	DEBUGOUT("usable_blocks: %zu", usable_blocks);
+	assert(usable_blocks > 0);
+
+	const t_yoyo_zone_type zone_type = zone_type_for_bytes(usable_blocks * BLOCK_UNIT_SIZE);
+	DEBUGOUT("zone_type is %d", zone_type);
+	if (zone_type == YOYO_ZONE_LARGE) {
+		return NULL;
+	}
+
+	const uintptr_t zone_addr_mask = ~((zone_type == YOYO_ZONE_TINY ? ZONE_TINY_BYTE : ZONE_SMALL_BYTE) - 1);
+	DEBUGOUT("zone_addr_mask is %lx", zone_addr_mask);
+	return (t_yoyo_zone*)((uintptr_t)chunk & zone_addr_mask);
+}

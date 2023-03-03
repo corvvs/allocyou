@@ -20,6 +20,9 @@ void*	actual_malloc(size_t n);
 // yoyo_actual_free.c
 void	actual_free(void* addr);
 
+// yoyo_actual_realloc.c
+void*	actual_realloc(void* addr, size_t n);
+
 // yoyo_lock.c
 bool	lock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
 bool	try_lock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
@@ -56,6 +59,7 @@ size_t	zone_bytes_for_zone_type(t_yoyo_zone_type zone_type);
 size_t	max_chunk_blocks_for_zone_type(t_yoyo_zone_type zone_type);
 t_yoyo_zone_type	zone_type_for_bytes(size_t n);
 unsigned int	get_block_index(const t_yoyo_zone* zone, const t_yoyo_chunk* head);
+t_yoyo_zone*	get_zone_of_chunk(const t_yoyo_chunk* chunk);
 
 // yoyo_zone_operation.c
 void	unmark_chunk(t_yoyo_zone* zone, const t_yoyo_chunk* chunk);

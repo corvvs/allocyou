@@ -20,5 +20,10 @@ void	yoyo_free(void* addr) {
 }
 
 void*	yoyo_realloc(void* addr, size_t n) {
-	return realloc(addr, n);
+	DEBUGOUT("** addr: %p, n: %zu **", addr, n);
+	SPRINT_START;
+	void*	mem = actual_realloc(addr, n);
+	SPRINT_END("realloc");
+	DEBUGSTR("** realloc end **");
+	return mem;
 }

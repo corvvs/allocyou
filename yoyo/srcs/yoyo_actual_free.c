@@ -1,21 +1,5 @@
 #include "yoyo_internal.h"
 
-
-static t_yoyo_zone*	get_zone_of_chunk(const t_yoyo_chunk* chunk) {
-	const size_t whole_blocks = chunk->blocks;
-	assert(whole_blocks > 0);
-	const size_t usable_blocks = whole_blocks - 1;
-	assert(usable_blocks > 0);
-
-	const t_yoyo_zone_type zone_type = zone_type_for_bytes(usable_blocks * BLOCK_UNIT_SIZE);
-	DEBUGOUT("zone_type is %d", zone_type);
-	assert(zone_type != YOYO_ZONE_LARGE);
-
-	const uintptr_t zone_addr_mask = ~((zone_type == YOYO_ZONE_TINY ? ZONE_TINY_BYTE : ZONE_SMALL_BYTE) - 1);
-	DEBUGOUT("zone_addr_mask is %lx", zone_addr_mask);
-	return (t_yoyo_zone*)((uintptr_t)chunk & zone_addr_mask);
-}
-
 // フリーリスト上のチャンク front_chunk とその次の chunk を可能なら統合する
 static void	try_unite_free_chunks(t_yoyo_zone* zone, t_yoyo_chunk* front_chunk) {
 	// [連結可能性を判定]
@@ -36,9 +20,9 @@ static void	try_unite_free_chunks(t_yoyo_zone* zone, t_yoyo_chunk* front_chunk) 
 static void insert_chunk_to_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
 	DEBUGOUT("zone->frees: %p", zone->frees);
 	DEBUGOUT("chunk      : %p", chunk);
+	const size_t	chunk_blocks = chunk->blocks; // 後で使う
 	t_yoyo_chunk**	current_lot = &(zone->frees);
 	t_yoyo_chunk*	front = NULL;
-	const size_t	chunk_blocks = chunk->blocks; // 後で使う
 
 	// [挿入場所を見つける]
 	while (true) {
@@ -70,6 +54,7 @@ static void insert_chunk_to_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chu
 static void	free_from_tiny_small_zone(t_yoyo_chunk* chunk) {
 	// chunk の所属 zone に飛ぶ
 	t_yoyo_zone*	zone = get_zone_of_chunk(chunk);
+	assert(zone != NULL);
 	DEBUGOUT("zone: %p", zone);
 	// [ロックを取る]
 	if (!lock_zone(zone)) {
