@@ -8,7 +8,7 @@ void	unmark_chunk(t_yoyo_zone* zone, const t_yoyo_chunk* chunk) {
 	unsigned char*		heads = (void*)zone + zone->offset_bitmap_heads;
 	unsigned char*		used = (void*)zone + zone->offset_bitmap_used;
 	const unsigned char	mask = (1u << bit_index);
-	heads[byte_index] |= mask;
+	heads[byte_index] &= ~mask;
 	used[byte_index] &= ~mask;
 }
 

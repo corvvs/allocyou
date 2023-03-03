@@ -16,42 +16,55 @@ static t_yoyo_zone*	get_zone_of_chunk(const t_yoyo_chunk* chunk) {
 	return (t_yoyo_zone*)((uintptr_t)chunk & zone_addr_mask);
 }
 
+// フリーリスト上のチャンク front_chunk とその次の chunk を可能なら統合する
+static void	try_unite_free_chunks(t_yoyo_zone* zone, t_yoyo_chunk* front_chunk) {
+	// [連結可能性を判定]
+	if (front_chunk == NULL) { return; }
+	t_yoyo_chunk*	back_chunk = NEXT_OF(front_chunk);
+	DEBUGOUT("TRY to unite %p (%zu) + %p", front_chunk, front_chunk->blocks, back_chunk);
+	if (back_chunk == NULL)	{ return; }
+	unsigned int	front_index = get_block_index(zone, front_chunk);
+	unsigned int	back_index = get_block_index(zone, back_chunk);
+	if (front_index + front_chunk->blocks != back_index) { return; }
+	// [連結可能なので連結する]
+	DEBUGOUT("UNITE %p (%zu) + %p", front_chunk, front_chunk->blocks, back_chunk);
+	front_chunk->next = back_chunk->next;
+	front_chunk->blocks += back_chunk->blocks;
+	unmark_chunk(zone, back_chunk);
+}
+
 static void insert_chunk_to_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
 	DEBUGOUT("zone->frees: %p", zone->frees);
 	DEBUGOUT("chunk      : %p", chunk);
 	t_yoyo_chunk**	current_lot = &(zone->frees);
+	t_yoyo_chunk*	front = NULL;
+	const size_t	chunk_blocks = chunk->blocks; // 後で使う
 
+	// [挿入場所を見つける]
 	while (true) {
-		t_yoyo_chunk*	head = ADDRESS_OF(*current_lot);
-		DEBUGOUT("head: %p", head);
-		if (head == NULL) {
-			DEBUGOUT("PUSH BACK a chunk %p to %p", chunk, current_lot);
+		t_yoyo_chunk*	back = ADDRESS_OF(*current_lot);
+		DEBUGOUT("front: %p, back: %p", front, back);
+		if (back == NULL) {
+			DEBUGOUT("PUSH BACK a chunk %p into %p (back of %p)", chunk, current_lot, front);
 			break;
 		}
-		if ((uintptr_t)chunk < (uintptr_t)head) {
-			DEBUGOUT("PUSH FRONT a chunk %p of %p", chunk, current_lot);
-			current_lot = NULL;
+		if ((uintptr_t)chunk < (uintptr_t)back) {
+			DEBUGOUT("INSERT a chunk %p between %p and %p", chunk, front, back);
 			break;
 		}
-		t_yoyo_chunk*	next = NEXT_OF(head);
-		if ((uintptr_t)chunk < (uintptr_t)next) {
-			DEBUGOUT("INSERT a chunk %p next of %p", chunk, current_lot);
-			break;
-		}
-		current_lot = &(head->next);
+		front = back;
+		current_lot = &(back->next);
 	}
-	if (current_lot == NULL) {
-		// PUSH FRONT
-		chunk->next = COPY_FLAGS(zone->frees, chunk->next);
-		current_lot = &(zone->frees);
-	} else if (*current_lot != NULL) {
-		// INSERT
-		chunk->next = COPY_FLAGS((*current_lot)->next, chunk->next);
-	} else {
-		// PUSH BACK
-		chunk->next = COPY_FLAGS(NULL, chunk->next);
-	}
+	// [後挿入操作]
+	chunk->next = COPY_FLAGS(ADDRESS_OF(*current_lot), chunk->next);
+	// [合体できるなら合体]
+	try_unite_free_chunks(zone, chunk);
+	// [前挿入操作]
 	*current_lot = chunk;
+	try_unite_free_chunks(zone, front);
+	// [zone のblocks を変更する]
+	zone->blocks_free += chunk_blocks;
+	zone->blocks_used -= chunk_blocks;
 }
 
 static void	free_from_tiny_small_zone(t_yoyo_chunk* chunk) {
@@ -67,12 +80,8 @@ static void	free_from_tiny_small_zone(t_yoyo_chunk* chunk) {
 	print_zone_bitmap_state(zone);
 	// [zone のfreeマップの状態を変更する]
 	mark_chunk_as_free(zone, chunk);
-	// head ビットマップの状態は合体で変わるかもしれない
 	// [zone のフリーリストに chunk を挿入する]
 	insert_chunk_to_tiny_small_zone(zone, chunk);
-	// [zone のblocks を変更する]
-	zone->blocks_free += chunk->blocks;
-	zone->blocks_used -= chunk->blocks;
 	// [zone のロックを離す]
 	print_zone_state(zone);
 	print_zone_bitmap_state(zone);

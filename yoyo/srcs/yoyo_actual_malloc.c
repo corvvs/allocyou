@@ -50,36 +50,26 @@ static void	insert_large_chunk_to_subarena(
 	t_yoyo_large_chunk* large_chunk
 ) {
 	t_yoyo_large_chunk**	current_lot = &(subarena->allocated);
+	t_yoyo_large_chunk*		front = NULL;
+
+	// [挿入場所を見つける]
 	while (*current_lot != NULL) {
-		t_yoyo_large_chunk*	head = *current_lot;
-		DEBUGOUT("head: %p", head);
-		if (head == NULL) {
-			DEBUGOUT("PUSH BACK a chunk %p to %p", large_chunk, current_lot);
+		t_yoyo_large_chunk*	back = *current_lot;
+		DEBUGOUT("front: %p, back: %p", front, back);
+		if (back == NULL) {
+			DEBUGOUT("PUSH BACK a chunk %p into %p (back of %p)", large_chunk, current_lot, front);
 			break;
 		}
-		if ((uintptr_t)large_chunk < (uintptr_t)head) {
-			DEBUGOUT("PUSH FRONT a chunk %p of %p", large_chunk, current_lot);
-			current_lot = NULL;
+		if ((uintptr_t)large_chunk < (uintptr_t)back) {
+			DEBUGOUT("INSERT a chunk %p between %p and %p", large_chunk, front, back);
 			break;
 		}
-		t_yoyo_large_chunk*	next = head->large_next;
-		if ((uintptr_t)large_chunk < (uintptr_t)next) {
-			DEBUGOUT("INSERT a chunk %p next of %p", large_chunk, current_lot);
-			break;
-		}
-		current_lot = &(head->large_next);
+		front = back;
+		current_lot = &(back->large_next);
 	}
-	if (current_lot == NULL) {
-		// PUSH FRONT
-		large_chunk->large_next = subarena->allocated;
-		current_lot = &(subarena->allocated);
-	} else if (*current_lot != NULL) {
-		// INSERT
-		large_chunk->large_next = (*current_lot)->large_next;
-	} else {
-		// PUSH BACK
-		large_chunk->large_next = NULL;
-	}
+	// [後挿入操作]
+	large_chunk->large_next = *current_lot;
+	// [前挿入操作]
 	*current_lot = large_chunk;
 }
 
@@ -204,6 +194,8 @@ static void*	allocate_memory_from_zone_list(t_yoyo_arena* arena, t_yoyo_zone_typ
 	if (new_zone == NULL) {
 		return NULL;
 	}
+	print_zone_state(new_zone);
+	print_zone_bitmap_state(new_zone);
 	zone_push_front(&subarena->head, new_zone);
 
 	// new_zone はロック取らなくていい.

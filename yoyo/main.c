@@ -42,9 +42,13 @@ void	free_tiny_basic() {
 	printf("mem1 = %p\n", mem1);
 	void* mem2 = yoyo_malloc(1);
 	printf("mem2 = %p\n", mem2);
+	void* mem3 = yoyo_malloc(1);
+	printf("mem3 = %p\n", mem3);
 	print_memory_state(mem1);
 	print_memory_state(mem2);
+	print_memory_state(mem3);
 	yoyo_free(mem1);
+	yoyo_free(mem3);
 	yoyo_free(mem2);
 }
 
