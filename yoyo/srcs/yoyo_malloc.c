@@ -27,3 +27,11 @@ void*	yoyo_realloc(void* addr, size_t n) {
 	DEBUGSTR("** realloc end **");
 	return mem;
 }
+
+void	show_alloc_mem(void) {
+	DEBUGSTR("** show_alloc_mem **");
+	SPRINT_START;
+	actual_show_alloc_mem();
+	SPRINT_END("realloc");
+	DEBUGSTR("** realloc end **");
+}

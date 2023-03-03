@@ -10,6 +10,7 @@ FILES	:=	\
 			yoyo_actual_malloc.c\
 			yoyo_actual_free.c\
 			yoyo_actual_realloc.c\
+			yoyo_visualize.c\
 			yoyo_arena_initialize.c\
 			yoyo_lock.c\
 			yoyo_malloc.c\

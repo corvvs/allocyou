@@ -23,6 +23,9 @@ void	actual_free(void* addr);
 // yoyo_actual_realloc.c
 void*	actual_realloc(void* addr, size_t n);
 
+// yoyo_visualize.c
+void	actual_show_alloc_mem(void);
+
 // yoyo_lock.c
 bool	lock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
 bool	try_lock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
@@ -51,8 +54,9 @@ t_yoyo_subarena*	get_subarena(const t_yoyo_arena* arena, t_yoyo_zone_type zone_t
 t_yoyo_zone*	allocate_zone(const t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
 
 // yoyo_zone_bitmap.c
-bool	is_head(const t_yoyo_zone* zone, unsigned int block_index);
-bool	is_used(const t_yoyo_zone* zone, unsigned int block_index);
+bool			is_head(const t_yoyo_zone* zone, unsigned int block_index);
+bool			is_used(const t_yoyo_zone* zone, unsigned int block_index);
+t_yoyo_chunk*	get_chunk_by_index(t_yoyo_zone* zone, unsigned int block_index);
 
 // yoyo_zone_utils.c
 size_t	zone_bytes_for_zone_type(t_yoyo_zone_type zone_type);

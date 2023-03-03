@@ -1,5 +1,7 @@
 #include "yoyo_internal.h"
 
+extern t_yoyo_realm	g_yoyo_realm;
+
 // arena を1つロックして返す.
 // どの arena もロックできなかった場合は NULL を返す.
 static t_yoyo_arena*	occupy_arena(t_yoyo_zone_type zone_type) {
@@ -146,13 +148,14 @@ static void*	try_allocate_chunk_from_zone(t_yoyo_zone* zone, size_t n) {
 			mark_chunk_as_used(zone, current_free_chunk);
 			zone->blocks_free -= current_free_chunk->blocks;
 			zone->blocks_used += current_free_chunk->blocks;
-			return (void*)current_free_chunk + BLOCK_UNIT_SIZE;
+			return (void*)current_free_chunk + CEILED_CHUNK_SIZE;
 		}
 		if (is_separatable(current_free_chunk, blocks_needed)) {
 			// current_free_chunk の先頭を分離して blocks_needed + 1 の使用中ブロックを生成する.
 			DEBUGSTR("SEPARATABLE");
 			t_yoyo_chunk*	rest = (void*)current_free_chunk + whole_needed * BLOCK_UNIT_SIZE;
 			rest->blocks = current_free_chunk->blocks - whole_needed;
+			assert(2 <= rest->blocks);
 			current_free_chunk->blocks = whole_needed;
 			rest->next = current_free_chunk->next;
 			*current_lot = COPY_FLAGS(rest, current_free_chunk->next);
@@ -162,7 +165,8 @@ static void*	try_allocate_chunk_from_zone(t_yoyo_zone* zone, size_t n) {
 			zone->blocks_used += whole_needed;
 			print_zone_state(zone);
 			print_zone_bitmap_state(zone);
-			return (void*)current_free_chunk + BLOCK_UNIT_SIZE;
+			DEBUGINFO("rest: %p - %zu", rest, rest->blocks);
+			return (void*)current_free_chunk + CEILED_CHUNK_SIZE;
 		}
 		current_lot = &(current_free_chunk->next);
 	}

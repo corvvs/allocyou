@@ -18,6 +18,7 @@ void	malloc_tiny_basic() {
 	printf("%p\n", mem);
 	mem = yoyo_malloc(100);
 	printf("%p\n", mem);
+	show_alloc_mem();
 }
 
 void	malloc_tiny_all() {
@@ -74,14 +75,18 @@ void	realloc_basic() {
 	printf("mem2 = %p\n", mem2);
 	void*	mem3 = yoyo_realloc(mem2, 24);
 	printf("mem3 = %p\n", mem3);
+	show_alloc_mem();
 	void*	mem4 = yoyo_realloc(mem3, 4000);
 	printf("mem4 = %p\n", mem4);
+	show_alloc_mem();
 	void*	mem5 = yoyo_realloc(mem4, 40000);
 	printf("mem5 = %p\n", mem5);
 	void*	mem6 = yoyo_realloc(mem5, 20000);
 	printf("mem6 = %p\n", mem6);
+	show_alloc_mem();
 	void*	mem7 = yoyo_realloc(mem6, 1);
 	printf("mem7 = %p\n", mem7);
+	show_alloc_mem();
 }
 
 int main() {
@@ -97,12 +102,13 @@ int main() {
 
 	// t_yoyo_zone* tiny = allocate_zone(&g_yoyo_realm.arenas[0], YOYO_ZONE_TINY);
 	// printf("%p\n", tiny);
-	// malloc_tiny_basic();
+	malloc_tiny_basic();
 	// malloc_tiny_all();
 	// malloc_large_basic();
 
 	// free_tiny_basic();
 	// free_large_basic();
 
-	realloc_basic();
+	show_alloc_mem();
+	// realloc_basic();
 }
