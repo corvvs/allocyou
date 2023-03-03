@@ -1,7 +1,7 @@
 #include "yoyo_internal.h"
 
 
-static t_yoyo_zone*	get_zone_of_chunk(t_yoyo_chunk* chunk) {
+static t_yoyo_zone*	get_zone_of_chunk(const t_yoyo_chunk* chunk) {
 	const size_t whole_blocks = chunk->blocks;
 	assert(whole_blocks > 0);
 	const size_t usable_blocks = whole_blocks - 1;

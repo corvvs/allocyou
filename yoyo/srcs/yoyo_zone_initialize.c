@@ -32,7 +32,7 @@ static bool	init_zone(const t_yoyo_arena* arena, t_yoyo_zone* zone, t_yoyo_zone_
 	const size_t zone_bytes = zone_bytes_for_zone_type(zone_type);
 	const size_t heap_bytes = heap_bytes_for_zone_bytes(zone_bytes);
 	const size_t bitmap_bytes = bitmap_bytes_for_zone_bytes(zone_bytes);
-	DEBUGOUT("heap: %zuB bitmap: %zuB", heap_bytes, bitmap_bytes);
+	DEBUGOUT("heap: %zu B bitmap: %zu B", heap_bytes, bitmap_bytes);
 	zone->next = NULL;
 	zone->frees = NULL;
 	zone->free_prev = NULL;
@@ -45,9 +45,9 @@ static bool	init_zone(const t_yoyo_arena* arena, t_yoyo_zone* zone, t_yoyo_zone_
 	zone->offset_bitmap_heads = sizeof(t_yoyo_zone);
 	zone->offset_bitmap_used = zone->offset_bitmap_heads + bitmap_bytes;
 	zone->offset_heap = zone_bytes - heap_bytes;
-	DEBUGOUT("offset_bitmap_heads: %uB", zone->offset_bitmap_heads);
-	DEBUGOUT("offset_bitmap_used:  %uB", zone->offset_bitmap_used);
-	DEBUGOUT("offset_heap:         %uB", zone->offset_heap);
+	DEBUGOUT("offset_bitmap_heads: %u B", zone->offset_bitmap_heads);
+	DEBUGOUT("offset_bitmap_used:  %u B", zone->offset_bitmap_used);
+	DEBUGOUT("offset_heap:         %u B", zone->offset_heap);
 	t_yoyo_chunk* head = (void*)zone + zone->offset_heap;
 	mark_chunk_as_free(zone, head);
 	head->blocks = zone->blocks_free;

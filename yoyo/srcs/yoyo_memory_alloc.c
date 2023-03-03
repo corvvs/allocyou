@@ -39,16 +39,16 @@ void*	map_memory(size_t bytes) {
 		return NULL;
 	}
 	if (should_align) {
-		DEBUGOUT("aligning region %p(%zuB) to %zuB", bulk, bulk_size, bytes);
+		DEBUGOUT("aligning region %p(%zu B) to %zu B", bulk, bulk_size, bytes);
 		void*	mem = (void*)CEIL_BY((size_t)bulk, bytes);
 		void*	end = mem + bytes;
 		unmap_range(bulk, mem);
 		unmap_range(end, bulk + bytes * 2);
 		assert(((uintptr_t)mem & ((uintptr_t)bytes - 1)) == 0); // mem は bytes アラインされている
-		DEBUGOUT("returning aligned region %p(%zuB)", mem, bytes);
+		DEBUGOUT("returning aligned region %p(%zu B)", mem, bytes);
 		return mem;
 	} else {
-		DEBUGOUT("returning bulk region %p(%zuB)", bulk, bulk_size);
+		DEBUGOUT("returning bulk region %p(%zu B)", bulk, bulk_size);
 		return bulk;
 	}
 }

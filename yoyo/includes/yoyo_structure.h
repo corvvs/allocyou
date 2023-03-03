@@ -21,7 +21,7 @@ typedef unsigned char	t_bitfield;
 
 
 // [chunk ヘッダ構造体]
-// 
+// chunk ヘッダ t_yoyo_chunk の後にユーザが使用可能な領域が続く.
 // 
 //         t_yoyo_chunk        |    (chunk body)     
 // +-------------+-------------+---------//---------+
@@ -36,7 +36,7 @@ typedef struct	s_yoyo_chunk {
 }	t_yoyo_chunk;
 
 // [LARGE chunk ヘッダ構造体]
-// 
+// LARGE chunk ヘッダ t_yoyo_large_chunk の後ろに通常の chunk が続く形になっている.
 // 
 //             t_yoyo_large_chunk          |       t_yoyo_chunk        |    (chunk body)     
 // +------------+-------------+------------+-------------+-------------+---------//---------+

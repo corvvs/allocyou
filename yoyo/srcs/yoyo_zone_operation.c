@@ -1,7 +1,7 @@
 #include "yoyo_internal.h"
 
 // ビットマップから chunk を消す
-void	unmark_chunk(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
+void	unmark_chunk(t_yoyo_zone* zone, const t_yoyo_chunk* chunk) {
 	const unsigned int	bi = get_block_index(zone, chunk);
 	const unsigned int	byte_index = bi / 8;
 	const unsigned int	bit_index = bi % 8;
@@ -13,7 +13,7 @@ void	unmark_chunk(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
 }
 
 // ビットマップにおいて chunk をフリー状態にする
-void	mark_chunk_as_free(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
+void	mark_chunk_as_free(t_yoyo_zone* zone, const t_yoyo_chunk* chunk) {
 	const unsigned int	bi = get_block_index(zone, chunk);
 	const unsigned int	byte_index = bi / 8;
 	const unsigned int	bit_index = bi % 8;
@@ -25,7 +25,7 @@ void	mark_chunk_as_free(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
 }
 
 // ビットマップにおいて chunk を使用中状態にする
-void	mark_chunk_as_used(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
+void	mark_chunk_as_used(t_yoyo_zone* zone, const t_yoyo_chunk* chunk) {
 	const unsigned int	bi = get_block_index(zone, chunk);
 	const unsigned int	byte_index = bi / 8;
 	const unsigned int	bit_index = bi % 8;

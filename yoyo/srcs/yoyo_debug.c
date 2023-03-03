@@ -35,7 +35,7 @@ void	print_memory_state(const void* addr) {
 		// chunk is LARGE
 		const t_yoyo_large_chunk* large_chunk = (void*)chunk - CEILED_LARGE_CHUNK_SIZE;
 		DEBUGINFO(
-			"chunk at %p is LARGE: %p, subarena: %p, total bytes: %zuB",
+			"chunk at %p is LARGE: %p, subarena: %p, total bytes: %zu B",
 			addr, large_chunk, large_chunk->subarena, large_chunk->memory_byte
 		);
 	} else {

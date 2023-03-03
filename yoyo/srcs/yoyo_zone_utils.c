@@ -36,7 +36,7 @@ t_yoyo_zone_type	zone_type_for_bytes(size_t n) {
 }
 
 // head にあるブロックの, その zone (の heap)におけるインデックスを求める.
-unsigned int	get_block_index(t_yoyo_zone* zone, t_yoyo_chunk* head) {
-	t_yoyo_chunk*	heap_start = (void*)zone + zone->offset_heap;
+unsigned int	get_block_index(const t_yoyo_zone* zone, const t_yoyo_chunk* head) {
+	const t_yoyo_chunk*	heap_start = (void*)zone + zone->offset_heap;
 	return head - heap_start;
 }

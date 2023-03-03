@@ -1,6 +1,8 @@
 #ifndef YOYO_COMMON_H
 # define YOYO_COMMON_H
 
+// [デバッグ用出力]
+
 # include <unistd.h>
 # include <stdio.h>
 

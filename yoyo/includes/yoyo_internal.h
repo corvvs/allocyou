@@ -41,7 +41,7 @@ bool	init_realm(bool multi_thread);
 // yoyo_arena_initialize.c
 bool				init_arena(unsigned int index, bool multi_thread);
 void				destroy_arena(t_yoyo_arena* arena);
-t_yoyo_subarena*	get_subarena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
+t_yoyo_subarena*	get_subarena(const t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
 
 
 // yoyo_zone_initialize.c
@@ -55,11 +55,12 @@ bool	is_used(const t_yoyo_zone* zone, unsigned int block_index);
 size_t	zone_bytes_for_zone_type(t_yoyo_zone_type zone_type);
 size_t	max_chunk_blocks_for_zone_type(t_yoyo_zone_type zone_type);
 t_yoyo_zone_type	zone_type_for_bytes(size_t n);
-unsigned int	get_block_index(t_yoyo_zone* zone, t_yoyo_chunk* head);
+unsigned int	get_block_index(const t_yoyo_zone* zone, const t_yoyo_chunk* head);
 
 // yoyo_zone_operation.c
-void	mark_chunk_as_free(t_yoyo_zone* zone, t_yoyo_chunk* chunk);
-void	mark_chunk_as_used(t_yoyo_zone* zone, t_yoyo_chunk* chunk);
+void	unmark_chunk(t_yoyo_zone* zone, const t_yoyo_chunk* chunk);
+void	mark_chunk_as_free(t_yoyo_zone* zone, const t_yoyo_chunk* chunk);
+void	mark_chunk_as_used(t_yoyo_zone* zone, const t_yoyo_chunk* chunk);
 
 // yoyo_debug.c
 void	print_zone_state(const t_yoyo_zone* zone);

@@ -31,7 +31,7 @@ static t_yoyo_large_chunk*	allocate_large_chunk(t_yoyo_large_arena* subarena, si
 	const size_t		bytes_large_chunk = LARGE_OFFSET_USABLE + bytes_usable;
 	t_yoyo_large_chunk*	large_chunk = map_memory(bytes_large_chunk);
 	if (large_chunk == NULL) {
-		DEBUGERR("FAILED for %zuB", bytes);
+		DEBUGERR("FAILED for %zu B", bytes);
 		return NULL;
 	}
 	// 初期化する.
@@ -173,7 +173,7 @@ static void*	try_allocate_chunk_from_zone(t_yoyo_zone* zone, size_t n) {
 		}
 		current_lot = &(current_free_chunk->next);
 	}
-	DEBUGWARN("FAILED from: %p - %zuB", zone, n);
+	DEBUGWARN("FAILED from: %p - %zu B", zone, n);
 	return NULL;
 }
 
@@ -199,7 +199,7 @@ static void*	allocate_memory_from_zone_list(t_yoyo_arena* arena, t_yoyo_zone_typ
 	}
 
 	// どの zone からもアロケートできなかった -> zone を増やしてもう一度
-	DEBUGWARN("ALLOCATE A ZONE NEWLY for %zuB", n);
+	DEBUGWARN("ALLOCATE A ZONE NEWLY for %zu B", n);
 	t_yoyo_zone*	new_zone = allocate_zone(arena, zone_type);
 	if (new_zone == NULL) {
 		return NULL;
