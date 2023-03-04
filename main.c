@@ -1,308 +1,114 @@
-#include "yo_common.h"
-#include "yo_malloc.h"
-#include <string.h>
-#include <assert.h>
+#include "includes/structure.h"
+#include "includes/internal.h"
+#include "includes/malloc.h"
 
-void	swap(void **a, void **b)
-{
-	void *c = *a;
-	*a = *b;
-	*b = c;
+#include <stdio.h>
+
+__attribute__((constructor))
+static void init_yoyo() {
+	init_realm(true);
 }
 
-void	test1() {
-	show_alloc_mem();
-	PRINT_STATE_AFTER(char *a = yo_malloc(1));
-	PRINT_STATE_AFTER(char *b = yo_malloc(20));
-	PRINT_STATE_AFTER(char *c = yo_malloc(50));
-	PRINT_STATE_AFTER(yo_free(b));
-	PRINT_STATE_AFTER(yo_free(a));
-	PRINT_STATE_AFTER(char *d = yo_malloc(72));
-	PRINT_STATE_AFTER(char *e = yo_malloc(1));
-	PRINT_STATE_AFTER(char *f = yo_malloc(1));
-	PRINT_STATE_AFTER(char *g = yo_malloc(123456789));
-	PRINT_STATE_AFTER(yo_free(c));
-	PRINT_STATE_AFTER(yo_free(e));
-	PRINT_STATE_AFTER(yo_free(g));
-	PRINT_STATE_AFTER(yo_free(f));
-	PRINT_STATE_AFTER(yo_free(d));
-}
-
-void	test2() {
-	uintptr_t d = 0;
-	for (size_t i = 0; i < 300; ++i) {
-		char *s = yo_malloc(100);
-		printf("s = %lu %lu\n", (uintptr_t)s, (uintptr_t)s - d);
-		d = (uintptr_t)s;
-		yo_free(s);
-	}
+void	malloc_tiny_basic() {
+	void* mem;
+	mem = yoyo_malloc(1);
+	yoyo_dprintf(STDOUT_FILENO, "%p\n", mem);
+	mem = yoyo_malloc(10);
+	yoyo_dprintf(STDOUT_FILENO, "%p\n", mem);
+	mem = yoyo_malloc(100);
+	yoyo_dprintf(STDOUT_FILENO, "%p\n", mem);
 	show_alloc_mem();
 }
 
-void	test3() {
-	PRINT_STATE_AFTER(char *a = yo_malloc(12345678));
-	printf("a = %p\n", a);
-	PRINT_STATE_AFTER(char *b = yo_malloc(12345678));
-	printf("b = %p\n", b);
-	PRINT_STATE_AFTER(char *c = yo_malloc(12345678));
-	printf("c = %p\n", c);
-	PRINT_STATE_AFTER(char *d = yo_malloc(12345678));
-	printf("d = %p\n", d);
-	PRINT_STATE_AFTER(yo_free(d));
-	PRINT_STATE_AFTER(yo_free(c));
-	PRINT_STATE_AFTER(yo_free(a));
-	PRINT_STATE_AFTER(yo_free(b));
+void	malloc_tiny_all() {
+	for (int i = 0; i < 1025; ++i) {
+		void* mem = yoyo_malloc(992);
+		yoyo_dprintf(STDOUT_FILENO, "%d -> %p\n", i, mem);
+	}
 }
 
-void	test4() {
-	size_t n = 123456789;
-	PRINT_STATE_AFTER(char *a = yo_malloc(n));
-	PRINT_STATE_AFTER(char *b = yo_malloc(n));
-	memset(a, 'a', n);
-	memset(b, 'b', n);
-	a[n] = 0;
-	b[n] = 0;
-	printf("%c %c\n", a[n - 1], b[n - 1]);
-	show_alloc_mem();
-	PRINT_STATE_AFTER(yo_free(b));
-	PRINT_STATE_AFTER(yo_free(a));
-	show_alloc_mem();
+void	malloc_large_basic() {
+	void* mem;
+	mem = yoyo_malloc(100000);
+	yoyo_dprintf(STDOUT_FILENO, "%p\n", mem);
+	mem = yoyo_malloc(500000);
+	yoyo_dprintf(STDOUT_FILENO, "%p\n", mem);
+	mem = yoyo_malloc(100000000);
+	yoyo_dprintf(STDOUT_FILENO, "%p\n", mem);
 }
 
-void	test5() {
-	size_t n = 1;
-	size_t m = 2;
-	char *a = yo_realloc(NULL, n);
-	char *_ = yo_realloc(NULL, 1);
-	memset(a, 'A', n);
-	char *b = yo_realloc(a, m);
-	DEBUGOUT("%p(%zu) -> %p(%zu)", a, n, b, m);
-	a = b;
-	a[0] = 'B';
-	a[m - 1] = 0;
-	m = 3;
-	b = yo_realloc(a, m);
-	DEBUGOUT("-> %p(%zu)", b, m);
-	write(STDERR_FILENO, b, m);
-	write(STDERR_FILENO, "\n", 1);
-	a = b;
-	m = 6;
-	b = yo_realloc(a, m);
-	DEBUGOUT("-> %p(%zu)", b, m);
-	write(STDERR_FILENO, b, m);
-	write(STDERR_FILENO, "\n", 1);
-	a = b;
-	m = 12;
-	b = yo_realloc(a, m);
-	DEBUGOUT("-> %p(%zu)", b, m);
-	write(STDERR_FILENO, b, m);
-	write(STDERR_FILENO, "\n", 1);
-	a = b;
-	m = 24;
-	b = yo_realloc(a, m);
-	DEBUGOUT("-> %p(%zu)", b, m);
-	write(STDERR_FILENO, b, m);
-	write(STDERR_FILENO, "\n", 1);
-	a = b;
+void	free_tiny_basic() {
+	void* mem1 = yoyo_malloc(1);
+	yoyo_dprintf(STDOUT_FILENO, "mem1 = %p\n", mem1);
+	void* mem2 = yoyo_malloc(1);
+	yoyo_dprintf(STDOUT_FILENO, "mem2 = %p\n", mem2);
+	void* mem3 = yoyo_malloc(1);
+	yoyo_dprintf(STDOUT_FILENO, "mem3 = %p\n", mem3);
 	show_alloc_mem();
-	yo_free(a);
-	yo_free(_);
+	yoyo_free(mem1);
+	yoyo_free(mem3);
+	yoyo_free(mem2);
 	show_alloc_mem();
 }
 
-#define MASS_RANDOM_N 40000
-
-// mallocした順にfree
-void	mass_fifo() {
-	void	*m[MASS_RANDOM_N];
-
-	srand(111111107);
-	for (int i = 0; i < MASS_RANDOM_N; ++i) {
-		m[i] = yo_malloc(rand() % 500 + 1);
-		assert(m[i] != NULL);
-	}
-	for (int i = 0; i < MASS_RANDOM_N; ++i) {
-		// show_alloc_mem();
-		yo_free(m[i]);
-	}
+void	free_large_basic() {
 	show_alloc_mem();
-}
-
-// mallocを逆順にfree
-void	mass_filo() {
-	void	*m[MASS_RANDOM_N];
-
-	srand(111111107);
-	for (int i = 0; i < MASS_RANDOM_N; ++i) {
-		m[i] = yo_malloc(rand() % 500 + 1);
-		assert(m[i] != NULL);
-	}
-	for (int i = MASS_RANDOM_N - 1; 0 <= i; --i) {
-		yo_free(m[i]);
-	}
+	void* mem1 = yoyo_malloc(100000);
+	yoyo_dprintf(STDOUT_FILENO, "mem1 = %p\n", mem1);
+	void* mem2 = yoyo_malloc(500000);
+	yoyo_dprintf(STDOUT_FILENO, "mem2 = %p\n", mem2);
+	void* mem3 = yoyo_malloc(12500000);
+	yoyo_dprintf(STDOUT_FILENO, "mem3 = %p\n", mem2);
 	show_alloc_mem();
-}
-
-void	mass_random_free() {
-	void	*m[MASS_RANDOM_N];
-
-	srand(111111107);
-	for (int i = 0; i < MASS_RANDOM_N; ++i) {
-		DEBUGOUT("i = %d", i);
-		m[i] = yo_malloc(rand() % 5000 + 1);
-		assert(m[i] != NULL);
-	}
-	for (int n = MASS_RANDOM_N; 0 < n; --n) {
-		int i = rand() % n;
-		DEBUGOUT("i = %d", i);
-		yo_free(m[i]);
-		swap(&m[i], &m[n - 1]);
-	}
-	show_alloc_mem();
-}
-
-void	mass_random_malloc_and_free() {
-	void	*m[5000] = {};
-
-	srand(111111107);
-	for (int i = 0; i < MASS_RANDOM_N; ++i) {
-		int j = rand() % 5000;
-		DEBUGOUT("i = %d, j = %d", i, j);
-		if (m[j]) {
-			yo_free(m[j]);
-			m[j] = 0;
-		} else {
-			m[j] = yo_malloc(rand() % 1000 + 1);
-		}
-	}
-	for (int i = 0; i < 5000; ++i) {
-		if (m[i]) {
-			yo_free(m[i]);
-		}
-	}
-	show_alloc_mem();
-}
-
-
-void	mass_random_malloc_and_free_tiny() {
-	void	*m[5000] = {};
-
-	srand(111111107);
-	for (int i = 0; i < MASS_RANDOM_N; ++i) {
-		int j = rand() % 5000;
-		DEBUGOUT("i = %d, j = %d", i, j);
-		if (m[j]) {
-			yo_free(m[j]);
-			m[j] = 0;
-		} else {
-			m[j] = yo_malloc(rand() % 123 + 1);
-		}
-	}
-	for (int i = 0; i < 5000; ++i) {
-		if (m[i]) {
-			yo_free(m[i]);
-		}
-	}
+	print_memory_state(mem1);
+	print_memory_state(mem2);
+	print_memory_state(mem3);
+	yoyo_free(mem2);
+	yoyo_free(mem3);
+	yoyo_free(mem1);
 	show_alloc_mem();
 }
 
 void	realloc_basic() {
-	char*	mem = yo_realloc(NULL, 11);
-	strcpy(mem, "helloworld");
-	printf("%p: %s\n", mem, mem);
-
-	mem = yo_realloc(mem, 16);
-	strcat(mem, "tokyo");
-	printf("%p: %s\n", mem, mem);
-
-	mem = yo_realloc(mem, 250);
-	strcat(mem, "-oden-oden");
-	printf("%p: %s\n", mem, mem);
-
-	yo_free(mem);
-}
-
-void	realloc_shrink() {
-	char*	mem = yo_realloc(NULL, 51);
-	for (int i = 0; i < 50; ++i) {
-		mem[i] = 'a' + (i % 26);
-	}
-	mem[50] = 0;
-	printf("%p: %s\n", mem, mem);
-	mem = yo_realloc(mem, 10);
-	printf("%p: %s\n", mem, mem);
-	char*	mem2 = yo_realloc(NULL, 50);
-	for (int i = 0; i < 50; ++i) {
-		mem2[i] = 'A' + (i % 26);
-	}
-	mem2[50] = 0;
-	printf("%p: %s\n", mem, mem);
-	printf("%p: %s\n", mem2, mem2);
-	yo_free(mem2);
-	mem = yo_realloc(mem, 50);
-	printf("%p: %s\n", mem, mem);
-	yo_free(mem);
-}
-
-void	realloc_relocate_tiny_small_large() {
-	char*	mem = yo_realloc(NULL, 51);
-	for (int i = 0; i < 50; ++i) {
-		mem[i] = 'a' + (i % 26);
-	}
-	mem[50] = 0;
-	printf("%p: %s\n", mem, mem);
-	mem = yo_realloc(mem, 1000);
-	printf("%p: %s\n", mem, mem);
-	mem = yo_realloc(mem, 100000);
-	printf("%p: %s\n", mem, mem);
-	yo_free(mem);
-}
-
-void	realloc_relocate_large_small_tiny() {
-	char*	mem = yo_realloc(NULL, 100000);
-	for (int i = 0; i < 50; ++i) {
-		mem[i] = 'a' + (i % 26);
-	}
-	mem[50] = 0;
-	printf("%p: %s\n", mem, mem);
-	mem = yo_realloc(mem, 1000);
-	printf("%p: %s\n", mem, mem);
-	mem = yo_realloc(mem, 51);
-	printf("%p: %s\n", mem, mem);
-	yo_free(mem);
-}
-
-void	mass_realloc_random() {
-	void	*m[5000] = {};
-
-	srand(111111107);
-	for (int i = 0; i < MASS_RANDOM_N; ++i) {
-		int j = rand() % 5000;
-		int n = (int[]){10, 1000, 1000000}[rand() % 3];
-		m[j] = yo_realloc(m[j], n);
-	}
-	for (int i = 0; i < 5000; ++i) {
-		if (m[i]) {
-			yo_free(m[i]);
-		}
-	}
+	void*	mem1 = yoyo_realloc(NULL, 60);
+	yoyo_dprintf(STDOUT_FILENO, "mem1 = %p\n", mem1);
+	void*	mem2 = yoyo_realloc(mem1, 20);
+	yoyo_dprintf(STDOUT_FILENO, "mem2 = %p\n", mem2);
+	void*	mem3 = yoyo_realloc(mem2, 24);
+	yoyo_dprintf(STDOUT_FILENO, "mem3 = %p\n", mem3);
+	show_alloc_mem();
+	void*	mem4 = yoyo_realloc(mem3, 4000);
+	yoyo_dprintf(STDOUT_FILENO, "mem4 = %p\n", mem4);
+	show_alloc_mem();
+	void*	mem5 = yoyo_realloc(mem4, 40000);
+	yoyo_dprintf(STDOUT_FILENO, "mem5 = %p\n", mem5);
+	void*	mem6 = yoyo_realloc(mem5, 20000);
+	yoyo_dprintf(STDOUT_FILENO, "mem6 = %p\n", mem6);
+	show_alloc_mem();
+	void*	mem7 = yoyo_realloc(mem6, 1);
+	yoyo_dprintf(STDOUT_FILENO, "mem7 = %p\n", mem7);
 	show_alloc_mem();
 }
 
 int main() {
-	setvbuf(stdout, NULL, _IONBF, 0);
-	// test1();
-	// test2();
-	// test3();
-	// test4();
-	// test5();
-	// mass_filo();
-	// mass_random_free();
-	// mass_random_malloc_and_free();
-	// mass_random_malloc_and_free_tiny();
+	// yoyo_dprintf(STDOUT_FILENO, "%zu\n", sizeof(bool));
+	// yoyo_dprintf(STDOUT_FILENO, "%zu\n", sizeof(unsigned int));
+	// yoyo_dprintf(STDOUT_FILENO, "%zu\n", sizeof(pthread_mutex_t));
+	// yoyo_dprintf(STDOUT_FILENO, "%zu\n", sizeof(t_yoyo_zone));
+
+	// size_t	zone_tiny_bytes = 1024 * 1024;
+	// size_t	zone_small_bytes = 8 * 1024 * 1024;
+	// yoyo_dprintf(STDOUT_FILENO, "bytes: %zu\n", heap_bytes_for_zone_bytes(zone_tiny_bytes));
+	// yoyo_dprintf(STDOUT_FILENO, "bytes: %zu\n", heap_bytes_for_zone_bytes(zone_small_bytes));
+
+	// t_yoyo_zone* tiny = allocate_zone(&g_yoyo_realm.arenas[0], YOYO_ZONE_TINY);
+	// yoyo_dprintf(STDOUT_FILENO, "%p\n", tiny);
+	// malloc_tiny_basic();
+	// malloc_tiny_all();
+	// malloc_large_basic();
+
+	free_tiny_basic();
+	// free_large_basic();
+
 	// realloc_basic();
-	// realloc_shrink();
-	// realloc_relocate_tiny_small_large();
-	// realloc_relocate_large_small_tiny();
-	// mass_realloc_random();
 }

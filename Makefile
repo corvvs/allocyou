@@ -1,31 +1,36 @@
 
-CC		:= clang
-CFLAGS	:= -Wall -Wextra -Werror -O2 -g -D SPRINT
-# CFLAGS	:= -Wall -Wextra -Werror -g -D USE_LIBC -D NDEBUG
-
 ifeq ($(HOSTTYPE),)
 	HOSTTYPE := $(shell uname -m)_$(shell uname -s)
 endif
 
-SRCDIR	:=	.
+SRCDIR	:=	srcs
 OBJDIR	:=	objs
-SRCS	:=\
-			yo_malloc.c\
-			yo_actual_free.c\
-			yo_actual_malloc.c\
-			yo_actual_realloc.c\
-			yo_actual_show_alloc_mem.c\
-			yo_zone.c\
-			yo_list.c\
-			yo_heap.c\
-			yo_large.c\
-			yo_utils.c\
-			yo_predicates.c\
-			yo_consistency.c
+INCDIR	:=	includes
+FILES	:=	\
+			actual_malloc.c\
+			actual_free.c\
+			actual_realloc.c\
+			visualize.c\
+			arena_initialize.c\
+			lock.c\
+			malloc.c\
+			memory_alloc.c\
+			realm_initialize.c\
+			zone_initialize.c\
+			zone_bitmap.c\
+			zone_operation.c\
+			zone_utils.c\
+			debug.c\
+			printf.c\
 
-OBJS	:= $(SRCS:%.c=$(OBJDIR)/%.o)
-NAME	:= libmalloc.a
-RM		:= rm -rf
+
+SRCS	:=	$(FILES:%.c=$(SRCDIR)/%.c)
+OBJS	:=	$(FILES:%.c=$(OBJDIR)/%.o)
+NAME	:=	libmalloc.a
+RM		:=	rm -rf
+
+CC		:=	gcc
+CFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR) -g# -fsanitize=undefined
 
 SONAME	:= 
 
