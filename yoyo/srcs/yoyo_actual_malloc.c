@@ -222,19 +222,20 @@ static void*	allocate_from_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type
 }
 
 void*	actual_malloc(size_t n) {
-	// ゾーン種別決定
+	// [ゾーン種別決定]
 	t_yoyo_zone_type zone_type = zone_type_for_bytes(n);
 
-	// 対応するアリーナを選択してロックする
+	// [アリーナを1つ選択してロックする]
 	t_yoyo_arena* arena = occupy_arena(zone_type);
 	if (arena == NULL) {
 		DEBUGWARN("%s", "failed: couldn't lock any arena");
 		return NULL;
 	}
 
+	// [アリーナからmalloc]
 	void*	mem = allocate_from_arena(arena, zone_type, n);
 
-	// アンロックする
+	// [アリーナをアンロックする]
 	unlock_arena(arena, zone_type);
 	return mem;
 }

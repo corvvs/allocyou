@@ -3,13 +3,13 @@
 extern t_yoyo_realm	g_yoyo_realm;
 
 static void	visualize_chunk(const t_yoyo_chunk* chunk) {
-	printf("\t\tchunk @ %p: %zu blocks (%zu B)\n", chunk, chunk->blocks, chunk->blocks * BLOCK_UNIT_SIZE);
+	yoyo_dprintf(STDOUT_FILENO, "\t\tchunk @ %p: %zu blocks (%zu B)\n", chunk, chunk->blocks, chunk->blocks * BLOCK_UNIT_SIZE);
 }
 
 // 指定した zone を可視化する
 static void	visualize_locked_zone(t_yoyo_zone* zone) {
-	printf("\t\t[zone: %p]\n", zone);
-	printf("\t\tusing %u blocks / %u blocks\n", zone->blocks_used, zone->blocks_zone);
+	yoyo_dprintf(STDOUT_FILENO, "\t\t[zone: %p]\n", zone);
+	yoyo_dprintf(STDOUT_FILENO, "\t\tusing %u blocks / %u blocks\n", zone->blocks_used, zone->blocks_zone);
 	// 使用中チャンクを表示していく
 	unsigned int	block_index = 0;
 	while (block_index < zone->blocks_heap) {
@@ -31,7 +31,7 @@ static void	visualize_locked_tiny_small_subarena(const char* zone_name, t_yoyo_a
 	if (subarena->head == NULL) {
 		return;
 	}
-	printf("\t< %s >\n", zone_name);
+	yoyo_dprintf(STDOUT_FILENO, "\t< %s >\n", zone_name);
 	t_yoyo_zone*	zone = subarena->head;
 	size_t	n_zone = 0;
 	while (zone != NULL) {
@@ -46,12 +46,12 @@ static void	visualize_locked_tiny_small_subarena(const char* zone_name, t_yoyo_a
 		zone = next;
 		n_zone += 1;
 	}
-	printf("\t%zu zones in this subarena\n", n_zone);
+	yoyo_dprintf(STDOUT_FILENO, "\t%zu zones in this subarena\n", n_zone);
 }
 
 static void	visualize_large_chunk(const t_yoyo_large_chunk* large_chunk) {
 	const t_yoyo_chunk* chunk = (void*)large_chunk + CEILED_LARGE_CHUNK_SIZE;
-	printf(
+	yoyo_dprintf(STDOUT_FILENO, 
 		"\tlarge chunk @ %p: %zu B (usable: %zu B)\n",
 		large_chunk, large_chunk->memory_byte, chunk->blocks * BLOCK_UNIT_SIZE - CEILED_CHUNK_SIZE
 	);
@@ -64,7 +64,7 @@ static void	visualize_locked_large_subarena(const char* zone_name, t_yoyo_arena*
 	if (subarena->allocated == NULL) {
 		return;
 	}
-	printf("\t< %s >\n", zone_name);
+	yoyo_dprintf(STDOUT_FILENO, "\t< %s >\n", zone_name);
 	t_yoyo_large_chunk*	large_chunk = subarena->allocated;
 	size_t	n_large_chunk = 0;
 	while (large_chunk != NULL) {
@@ -72,7 +72,7 @@ static void	visualize_locked_large_subarena(const char* zone_name, t_yoyo_arena*
 		large_chunk = large_chunk->large_next;
 		n_large_chunk += 1;
 	}
-	printf("\t%zu large chunk in this subarena\n", n_large_chunk);
+	yoyo_dprintf(STDOUT_FILENO, "\t%zu large chunk in this subarena\n", n_large_chunk);
 }
 
 // 指定した subarena を可視化する
@@ -92,7 +92,7 @@ static void	visualize_subarena(
 
 // 指定した arena を可視化する
 static void	visualize_arena(t_yoyo_arena* arena) {
-	printf("[arena #%u (%s)]\n", arena->index, arena->multi_thread ? "multi-thread mode" : "single-thread mode");
+	yoyo_dprintf(STDOUT_FILENO, "[arena #%u (%s)]\n", arena->index, arena->multi_thread ? "multi-thread mode" : "single-thread mode");
 	visualize_subarena("TINY", arena, YOYO_ZONE_TINY, visualize_locked_tiny_small_subarena);
 	visualize_subarena("SMALL", arena, YOYO_ZONE_SMALL, visualize_locked_tiny_small_subarena);
 	visualize_subarena("LARGE", arena, YOYO_ZONE_LARGE, visualize_locked_large_subarena);
