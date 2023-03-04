@@ -1,4 +1,4 @@
-#include "yoyo_internal.h"
+#include "internal.h"
 
 // [arena の初期化に使う関数]
 

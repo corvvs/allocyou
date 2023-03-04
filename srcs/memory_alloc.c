@@ -1,4 +1,4 @@
-#include "yoyo_internal.h"
+#include "internal.h"
 
 static void	unmap_range(void* begin, void* end) {
 	if((size_t)begin >= (size_t)end) {

@@ -1,4 +1,4 @@
-#include "yoyo_internal.h"
+#include "internal.h"
 
 // n個までの arena を破棄する
 static void	destroy_n_arenas(unsigned int n) {

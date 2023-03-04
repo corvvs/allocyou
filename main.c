@@ -1,6 +1,6 @@
-#include "includes/yoyo_structure.h"
-#include "includes/yoyo_internal.h"
-#include "includes/yoyo_malloc.h"
+#include "includes/structure.h"
+#include "includes/internal.h"
+#include "includes/malloc.h"
 
 #include <stdio.h>
 

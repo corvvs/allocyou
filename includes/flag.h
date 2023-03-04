@@ -2,7 +2,7 @@
 # define YOYO_FLAG_H
 
 # include <stdlib.h>
-# include "yoyo_structure.h"
+# include "structure.h"
 
 # define YOYO_FLAG_LARGE 1u
 # define YOYO_FLAG_MASK 7u

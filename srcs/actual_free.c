@@ -1,4 +1,4 @@
-#include "yoyo_internal.h"
+#include "internal.h"
 
 // フリーリスト上のチャンク front_chunk とその次の chunk を可能なら統合する
 static void	try_unite_free_chunks(t_yoyo_zone* zone, t_yoyo_chunk* front_chunk) {

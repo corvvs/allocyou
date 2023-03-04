@@ -1,4 +1,4 @@
-#include "yoyo_internal.h"
+#include "internal.h"
 
 static void	*yoyo_memcpy(void* dst, const void* src, size_t n) {
 	unsigned char*			ud;

@@ -1,4 +1,4 @@
-#include "yoyo_internal.h"
+#include "internal.h"
 
 // このブロックが chunk のヘッダかどうか
 bool	is_head(const t_yoyo_zone* zone, unsigned int block_index) {

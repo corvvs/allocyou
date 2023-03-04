@@ -1,4 +1,4 @@
-#include "yoyo_internal.h"
+#include "internal.h"
 
 extern t_yoyo_realm	g_yoyo_realm;
 

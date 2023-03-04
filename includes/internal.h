@@ -1,10 +1,10 @@
 #ifndef YOYO_INTERNAL_MALLOC_H
 # define YOYO_INTERNAL_MALLOC_H
 
-# include "yoyo_common.h"
-# include "yoyo_time.h"
-# include "yoyo_structure.h"
-# include "yoyo_flag.h"
+# include "common.h"
+# include "time.h"
+# include "structure.h"
+# include "flag.h"
 # include <stdio.h>
 # include <unistd.h>
 # include <string.h>

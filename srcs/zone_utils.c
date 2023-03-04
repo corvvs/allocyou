@@ -1,4 +1,4 @@
-#include "yoyo_internal.h"
+#include "internal.h"
 
 size_t	zone_bytes_for_zone_type(t_yoyo_zone_type zone_type) {
 	switch (zone_type) {

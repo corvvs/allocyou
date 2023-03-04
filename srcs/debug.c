@@ -1,4 +1,4 @@
-#include "yoyo_internal.h"
+#include "internal.h"
 
 // zone の状態を出力する.
 // ロックは必要なら取っておくこと.

@@ -1,4 +1,4 @@
-#include "yoyo_internal.h"
+#include "internal.h"
 
 // ビットマップから chunk を消す
 void	unmark_chunk(t_yoyo_zone* zone, const t_yoyo_chunk* chunk) {

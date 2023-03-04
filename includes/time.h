@@ -2,7 +2,7 @@
 # define YOYO_TIME_H
 
 # include <sys/time.h>
-# include "yoyo_printf.h"
+# include "printf.h"
 typedef struct timeval t_tv;
 # define STIME(t0) (1000000 * (unsigned long long)t0.tv_sec + (unsigned long long)t0.tv_usec)
 # define TIME_DIFF(t0, t1) (STIME(t1) - STIME(t0))

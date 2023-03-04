@@ -1,4 +1,4 @@
-#include "yoyo_printf_internal.h"
+#include "printf_internal.h"
 
 static char*	yoyo_strchr(char* s, char c) {
 	while (*s) {
