@@ -19,7 +19,6 @@ typedef enum e_yoyo_zone_type {
 
 typedef unsigned char	t_bitfield;
 
-
 // [chunk ヘッダ構造体]
 // chunk ヘッダ t_yoyo_chunk の後にユーザが使用可能な領域が続く.
 // 

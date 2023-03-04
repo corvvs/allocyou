@@ -137,7 +137,7 @@ void	actual_free(void* addr) {
 		DEBUGSTR("addr is NULL; DO NOTHING");
 		return;
 	}
-	t_yoyo_chunk*	chunk = addr - CEILED_CHUNK_SIZE;
+	t_yoyo_chunk*	chunk = (void*)addr - CEILED_CHUNK_SIZE;
 
 	if (IS_LARGE_CHUNK(chunk)) {
 		// LARGE chunk を解放する.

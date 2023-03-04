@@ -58,8 +58,8 @@ CFLAGS	:= -Wall -Wextra -Werror -O2 -D GO_FAST
 
 all		: $(NAME)
 
-$(NAME)	: $(OBJS)
-	ar rcs $(NAME) $(OBJS)
+$(NAME)	: $(OBJS) libmalloc.a
+	ar rcs $(NAME) $(OBJS) libmalloc.a
 
 clean	:
 	$(RM) $(OBJS) $(BOBJS)
@@ -68,6 +68,10 @@ fclean	:	clean
 	$(RM) $(NAME)
 
 re		:	fclean all
+
+libmalloc.a:
+	make -C .. libmalloc.a
+	cp ../libmalloc.a .
 
 bonus:
 	$(MAKE) all WITH_BONUS=1

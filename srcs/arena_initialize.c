@@ -61,4 +61,5 @@ t_yoyo_subarena*	get_subarena(const t_yoyo_arena* arena, t_yoyo_zone_type zone_t
 		case YOYO_ZONE_LARGE:
 			return (t_yoyo_subarena*)&arena->large;
 	}
+	return NULL;
 }

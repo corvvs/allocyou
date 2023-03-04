@@ -30,7 +30,7 @@ NAME	:=	libmalloc.a
 RM		:=	rm -rf
 
 CC		:=	gcc
-CFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR) -g -fsanitize=undefined
+CFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR) -g# -fsanitize=undefined
 
 SONAME	:= 
 

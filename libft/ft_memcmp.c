@@ -6,7 +6,7 @@
 /*   By: corvvs <corvvs@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/10 19:05:54 by corvvs            #+#    #+#             */
-/*   Updated: 2023/02/19 23:41:50 by corvvs           ###   ########.fr       */
+/*   Updated: 2023/03/05 05:37:28 by corvvs           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,12 +92,16 @@ int	ft_memcmp(const void *s1, const void *s2, size_t n)
 
 int	ft_memcmp(const void *s1, const void *s2, size_t n)
 {
-	const void	*u = mini_memcmp(s1, s2, n, n);
+	const unsigned char	*u1;
+	const unsigned char	*u2;
+	const unsigned char	*u = mini_memcmp(s1, s2, n, n);
 
-	if (u < s1 + n)
+	u1 = s1;
+	u2 = s2;
+	if (u < u1 + n)
 	{
-		s2 += u - s1;
-		return (*(const unsigned char *)u - *(const unsigned char *)s2);
+		u2 += u - u1;
+		return (*(const unsigned char *)u - *(const unsigned char *)u2);
 	}
 	return (0);
 }
