@@ -5,6 +5,7 @@
 
 # include <unistd.h>
 # include <stdio.h>
+# include "yoyo_printf.h"
 
 # define TX_RED "\e[31m"
 # define TX_GRN "\e[32m"
@@ -20,22 +21,14 @@
 #  define DEBUGINFO(format, ...) (0)
 #  define DEBUGWARN(format, ...) (0)
 #  define DEBUGERR(format, ...) (0)
-#  define OUT_VAR_INT(var) (0)
-#  define OUT_VAR_SIZE_T(var) (0)
-#  define OUT_VAR_ADDR(var) (0)
-#  define OUT_VAR_STR(var) (0)
 #  define PRINT_STATE_AFTER(proc) proc;
 # else
-#  define DEBUGSTRN(format) dprintf(STDERR_FILENO, "%s[%s:%d %s] " format "%s", TX_GRY, __FILE__, __LINE__, __func__, TX_RST)
-#  define DEBUGSTR(format) dprintf(STDERR_FILENO, "%s[%s:%d %s] " format "%s\n", TX_GRY, __FILE__, __LINE__, __func__, TX_RST)
-#  define DEBUGOUT(format, ...) dprintf(STDERR_FILENO, "%s[%s:%d %s] " format "%s\n", TX_GRY, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
-#  define DEBUGINFO(format, ...) dprintf(STDERR_FILENO, "[%s:%d %s] " format "\n", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#  define DEBUGWARN(format, ...) dprintf(STDERR_FILENO, "%s[%s:%d %s] " format "%s\n", TX_YLW, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
-#  define DEBUGERR(format, ...) dprintf(STDERR_FILENO, "%s[%s:%d %s] " format "%s\n", TX_RED, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
-#  define OUT_VAR_INT(var) printf(#var " = %d\n", var)
-#  define OUT_VAR_SIZE_T(var) printf(#var " = %zu\n", var)
-#  define OUT_VAR_ADDR(var) printf(#var " = %p\n", var)
-#  define OUT_VAR_STR(var) printf(#var " = \"%s\"\n", var)
+#  define DEBUGSTRN(format) yoyo_dprintf(STDERR_FILENO, "%s[%s:%d %s] " format "%s", TX_GRY, __FILE__, __LINE__, __func__, TX_RST)
+#  define DEBUGSTR(format) yoyo_dprintf(STDERR_FILENO, "%s[%s:%d %s] " format "%s\n", TX_GRY, __FILE__, __LINE__, __func__, TX_RST)
+#  define DEBUGOUT(format, ...) yoyo_dprintf(STDERR_FILENO, "%s[%s:%d %s] " format "%s\n", TX_GRY, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
+#  define DEBUGINFO(format, ...) yoyo_dprintf(STDERR_FILENO, "[%s:%d %s] " format "\n", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#  define DEBUGWARN(format, ...) yoyo_dprintf(STDERR_FILENO, "%s[%s:%d %s] " format "%s\n", TX_YLW, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
+#  define DEBUGERR(format, ...) yoyo_dprintf(STDERR_FILENO, "%s[%s:%d %s] " format "%s\n", TX_RED, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
 #  define PRINT_STATE_AFTER(proc) DEBUGSTR("DA: " #proc); proc; show_alloc_mem();
 # endif
 

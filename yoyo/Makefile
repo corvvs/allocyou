@@ -21,6 +21,7 @@ FILES	:=	\
 			yoyo_zone_operation.c\
 			yoyo_zone_utils.c\
 			yoyo_debug.c\
+			yoyo_printf.c\
 
 
 SRCS	:=	$(FILES:%.c=$(SRCDIR)/%.c)
