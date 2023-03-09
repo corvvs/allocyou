@@ -31,14 +31,15 @@ static t_yoyo_large_chunk*	allocate_large_chunk(t_yoyo_large_arena* subarena, si
 	const size_t		blocks_needed = BLOCKS_FOR_SIZE(bytes);
 	const size_t		bytes_usable = blocks_needed * BLOCK_UNIT_SIZE;
 	const size_t		bytes_large_chunk = LARGE_OFFSET_USABLE + bytes_usable;
-	t_yoyo_large_chunk*	large_chunk = map_memory(bytes_large_chunk);
+	const size_t		memory_byte = CEIL_BY(bytes_large_chunk, getpagesize());
+	t_yoyo_large_chunk*	large_chunk = map_memory(memory_byte, false);
 	if (large_chunk == NULL) {
 		DEBUGERR("FAILED for %zu B", bytes);
 		return NULL;
 	}
 	// 初期化する.
 	large_chunk->subarena = subarena;
-	large_chunk->memory_byte = bytes_large_chunk;
+	large_chunk->memory_byte = memory_byte;
 	large_chunk->large_next = NULL;
 	t_yoyo_chunk*		chunk = (void*)large_chunk + CEILED_LARGE_CHUNK_SIZE;
 	chunk->next = SET_FLAGS(NULL, YOYO_FLAG_LARGE);

@@ -15,14 +15,15 @@ static void	unmap_range(void* begin, void* end) {
 		DEBUGERR("FAILED: errno = %d, %s", errno, strerror(errno));
 		return;
 	}
-	DEBUGOUT("unmapped: [%p, %p) (%zdB)", begin, end, end - begin);
+	DEBUGINFO("unmapped: [%p, %p) (%zd B)", begin, end, end - begin);
 }
 
 // bytes バイトの領域を mmap して返す.
-// bytes が2冪なら, 領域は bytes バイトアラインされる.
-void*	map_memory(size_t bytes) {
-	const bool		should_align = ((bytes & (bytes - 1)) == 0);
-	const size_t	bulk_size = should_align ? 2 * bytes : bytes;
+// align がtrueなら領域は bytes バイトアラインされる.
+// ただしその場合 bytes が2冪でなければならない.
+void*	map_memory(size_t bytes, bool align) {
+	assert(!align || ((bytes & (bytes - 1)) == 0));
+	const size_t	bulk_size = align ? 2 * bytes : bytes;
 	void*	bulk;
 
 	{
@@ -38,17 +39,17 @@ void*	map_memory(size_t bytes) {
 	if (bulk == MAP_FAILED) {
 		return NULL;
 	}
-	if (should_align) {
+	if (align) {
 		DEBUGOUT("aligning region %p(%zu B) to %zu B", bulk, bulk_size, bytes);
 		void*	mem = (void*)CEIL_BY((size_t)bulk, bytes);
 		void*	end = mem + bytes;
 		unmap_range(bulk, mem);
 		unmap_range(end, bulk + bytes * 2);
 		assert(((uintptr_t)mem & ((uintptr_t)bytes - 1)) == 0); // mem は bytes アラインされている
-		DEBUGOUT("returning aligned region %p(%zu B)", mem, bytes);
+		DEBUGINFO("returning aligned region %p(%zu B)", mem, bytes);
 		return mem;
 	} else {
-		DEBUGOUT("returning bulk region %p(%zu B)", bulk, bulk_size);
+		DEBUGINFO("returning bulk region %p(%zu B)", bulk, bulk_size);
 		return bulk;
 	}
 }

@@ -44,7 +44,8 @@ typedef struct	s_yoyo_chunk {
 typedef struct s_yoyo_large_chunk {
 	// この chunk が所属する LARGE subarena への参照
 	void*						subarena;
-	// mmap された正味のバイト数
+	// mmap された正味のバイト数.
+	// この値は munmap だけに使うこと.
 	size_t						memory_byte;
 	// LARGE chunk の使用中リストにおける次の chunk への参照
 	struct s_yoyo_large_chunk*	large_next;

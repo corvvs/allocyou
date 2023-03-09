@@ -3,9 +3,9 @@
 size_t	zone_bytes_for_zone_type(t_yoyo_zone_type zone_type) {
 	switch (zone_type) {
 		case YOYO_ZONE_TINY:
-			return ZONE_TINY_BYTE;
+			return FLOOR_BY(ZONE_TINY_BYTE, getpagesize());
 		case YOYO_ZONE_SMALL:
-			return ZONE_SMALL_BYTE;
+			return FLOOR_BY(ZONE_SMALL_BYTE, getpagesize());
 		default:
 			return 0;
 	}
