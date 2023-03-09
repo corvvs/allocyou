@@ -32,6 +32,6 @@ void	show_alloc_mem(void) {
 	DEBUGSTR("** show_alloc_mem **");
 	SPRINT_START;
 	actual_show_alloc_mem();
-	SPRINT_END("realloc");
-	DEBUGSTR("** realloc end **");
+	SPRINT_END("show_alloc_mem");
+	DEBUGSTR("** show_alloc_mem end **");
 }

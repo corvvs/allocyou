@@ -103,7 +103,7 @@ static bool	resolve_u(t_yoyo_printf_buffer* buffer, t_yoyo_conversion* conversio
 static bool	resolve_x(t_yoyo_printf_buffer* buffer, t_yoyo_conversion* conversion, unsigned long long d) {
 	if (d / 16)
 		resolve_x(buffer, conversion, d / 16);
-	write_into_buffer(buffer, &("0123456789abcdefg"[d % 16]), 1);
+	write_into_buffer(buffer, &("0123456789abcdef"[d % 16]), 1);
 	return true;
 }
 
@@ -113,11 +113,16 @@ static bool	resolve_p(t_yoyo_printf_buffer* buffer, t_yoyo_conversion* conversio
 	return true;
 }
 
-static bool	resolve_b(t_yoyo_printf_buffer* buffer, t_yoyo_conversion* conversion, unsigned long long d) {
+static bool	resolve_b_val(t_yoyo_printf_buffer* buffer, t_yoyo_conversion* conversion, unsigned long long d) {
 	if (d / 2)
-		resolve_b(buffer, conversion, d / 2);
+		resolve_b_val(buffer, conversion, d / 2);
 	write_into_buffer(buffer, &("01"[d % 2]), 1);
 	return true;
+}
+
+static bool	resolve_b(t_yoyo_printf_buffer* buffer, t_yoyo_conversion* conversion, unsigned long long d) {
+	resolve_s(buffer, conversion, "0b");
+	return resolve_b_val(buffer, conversion, d);
 }
 
 static bool	resolve_conversion(t_yoyo_printf_buffer* buffer, t_yoyo_conversion* conversion, va_list* args) {

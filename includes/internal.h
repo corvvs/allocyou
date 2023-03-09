@@ -38,7 +38,7 @@ bool	unlock_subarena(t_yoyo_subarena* subarena);
 bool	unlock_zone(t_yoyo_zone* zone);
 
 // yoyo_memory_alloc.c
-void*	map_memory(size_t bytes);
+void*	map_memory(size_t bytes, bool align);
 void	unmap_memory(void* start, size_t size);
 
 // yoyo_init_realm.c
