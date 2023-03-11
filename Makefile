@@ -29,8 +29,16 @@ OBJS	:=	$(FILES:%.c=$(OBJDIR)/%.o)
 NAME	:=	libmalloc.a
 RM		:=	rm -rf
 
+FILES_TEST	:=\
+			main.c\
+			test_mass.c\
+			test_multithread.c\
+
+
+OBJS_TEST	:=	$(FILES_TEST:%.c=$(OBJDIR)/%.o)
+
 CC		:=	gcc
-CFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR) -g# -fsanitize=undefined
+CFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR) -g -fsanitize=thread
 
 SONAME	:= 
 
@@ -40,9 +48,13 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(OBJDIR)/%.o: %.c
+	@mkdir -p $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 .PHONY:	malloc
-malloc:	$(NAME)
-	$(CC) $(CFLAGS) -o $@ main.c $(NAME)
+malloc:	$(NAME) $(OBJS_TEST)
+	$(CC) $(CFLAGS) -o $@ $(OBJS_TEST) $(NAME)
 	./$@
 
 $(NAME):	$(OBJS)

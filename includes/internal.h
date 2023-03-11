@@ -12,7 +12,7 @@
 # include <errno.h>
 # include <assert.h>
 
-t_yoyo_realm	g_yoyo_realm;
+extern t_yoyo_realm	g_yoyo_realm;
 
 // yoyo_actual_malloc.c
 void*	actual_malloc(size_t n);

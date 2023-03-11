@@ -2,6 +2,8 @@
 #include "includes/internal.h"
 #include "includes/malloc.h"
 
+#include "test_malloc.h"
+
 #include <stdio.h>
 
 __attribute__((constructor))
@@ -90,6 +92,8 @@ void	realloc_basic() {
 	show_alloc_mem();
 }
 
+
+
 int main() {
 	// yoyo_dprintf(STDOUT_FILENO, "%zu\n", sizeof(bool));
 	// yoyo_dprintf(STDOUT_FILENO, "%zu\n", sizeof(unsigned int));
@@ -107,8 +111,11 @@ int main() {
 	// malloc_tiny_all();
 	// malloc_large_basic();
 
-	free_tiny_basic();
+	// free_tiny_basic();
 	// free_large_basic();
 
 	// realloc_basic();
+	// test_mass_basic();
+	// test_multithread_basic();
+	test_multithread_realloc();
 }
