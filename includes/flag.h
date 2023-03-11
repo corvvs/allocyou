@@ -15,10 +15,10 @@
 # define NEXT_OF(chunk) ADDRESS_OF((chunk)->next)
 
 // アドレス addr にフラグ flags をセットしたものを返す
-# define SET_FLAGS(addr, flags) ((void*)(((uintptr_t)addr & YOYO_FLAG_NOT_MASK) | flags))
+# define SET_FLAGS(addr, flags) ((void*)((uintptr_t)ADDRESS_OF(addr) | (YOYO_FLAG_MASK & flags)))
 
 // アドレス dst のフラグをアドレス src のフラグにしたものを返す
-# define COPY_FLAGS(dst, src) ((void *)((uintptr_t)ADDRESS_OF(dst) | (uintptr_t)ADDRESS_OF(src)))
+# define COPY_FLAGS(dst, src) (SET_FLAGS(dst, (uintptr_t)src))
 
 // この chunk が LARGE かどうかを判定する
 # define IS_LARGE_CHUNK(chunk) (!!((uintptr_t)((chunk)->next) & YOYO_FLAG_LARGE))

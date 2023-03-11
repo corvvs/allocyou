@@ -25,8 +25,8 @@ static bool	init_zone(const t_yoyo_arena* arena, t_yoyo_zone* zone, t_yoyo_zone_
 			DEBUGERR("errno: %d (%s)", errno, strerror(errno));
 			return false;
 		}
-		DEBUGOUT("%s", "@multi_thread");
 	}
+	DEBUGOUT("%s", "@%s-thread", arena->multi_thread ? "MULTI" : "SINGLE");
 	zone->multi_thread = arena->multi_thread;
 	zone->zone_type = zone_type;
 	const size_t zone_bytes = zone_bytes_for_zone_type(zone_type);

@@ -1,6 +1,6 @@
 #include "internal.h"
 
-extern t_yoyo_realm	g_yoyo_realm;
+t_yoyo_realm	g_yoyo_realm;
 
 static void	visualize_chunk(const t_yoyo_chunk* chunk) {
 	yoyo_dprintf(STDOUT_FILENO, "\t\tchunk @ %p: %zu blocks (%zu B)\n", chunk, chunk->blocks, chunk->blocks * BLOCK_UNIT_SIZE);

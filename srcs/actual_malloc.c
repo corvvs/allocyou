@@ -1,6 +1,6 @@
 #include "internal.h"
 
-extern t_yoyo_realm	g_yoyo_realm;
+t_yoyo_realm	g_yoyo_realm;
 
 // arena を1つロックして返す.
 // どの arena もロックできなかった場合は NULL を返す.
@@ -9,14 +9,14 @@ static t_yoyo_arena*	occupy_arena(t_yoyo_zone_type zone_type) {
 	for (unsigned int i = 0; i < g_yoyo_realm.arena_count; ++i) {
 		t_yoyo_arena*	arena = &g_yoyo_realm.arenas[i];
 		if (try_lock_arena(arena, zone_type)) {
-			DEBUGOUT("locked arenas[%u]", i);
+			DEBUGOUT("locked arenas[%u] (%p) %u", arena->index, arena, i);
 			return arena;
 		}
 	}
 	// trylock できなかった場合はデフォルトの arena がロックできるまで待つ.
 	t_yoyo_arena*	default_arena = &g_yoyo_realm.arenas[0];
 	if (lock_arena(default_arena, zone_type)) {
-		DEBUGOUT("locked arenas[%u]", 0);
+		DEBUGOUT("locked arenas[%u] (%p)", default_arena->index, default_arena);
 		return default_arena;
 	}
 	// このエラーは致命傷

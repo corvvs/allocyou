@@ -33,7 +33,7 @@ bool	init_arena(unsigned int index, bool multi_thread) {
 	arena->small.multi_thread = multi_thread;
 	arena->large.allocated = NULL;
 	arena->large.multi_thread = multi_thread;
-	DEBUGINFO("initialized arena: #%u(%p), multi_thread: %s", index, arena, multi_thread ? "y" : "n");
+	DEBUGINFO("initialized arena: #%u(%p), multi_thread: %s", arena->index, arena, multi_thread ? "y" : "n");
 	return true;
 }
 

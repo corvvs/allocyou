@@ -1,7 +1,6 @@
 #include "malloc.h"
 #include "internal.h"
 
-
 void*	yoyo_malloc(size_t n) {
 	DEBUGOUT("** bytes: %zu **", n);
 	SPRINT_START;
