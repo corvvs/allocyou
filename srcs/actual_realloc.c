@@ -36,20 +36,27 @@ static void*	relocate_chunk(t_yoyo_chunk* chunk, size_t blocks_required) {
 // 使用中チャンク chunk を, 先頭アドレスを変えないで blocks_required ブロックに縮小し,
 // 残ったブロックからフリーチャンクを生成する.
 static void	shrink_chunk(t_yoyo_chunk* chunk, size_t blocks_required) {
-	DEBUGOUT("chunk->blocks: %zu", chunk->blocks);
+	DEBUGOUT("chunk: %p, chunk->blocks: %zu", chunk, chunk->blocks);
 	assert(2 <= blocks_required);
 	assert(blocks_required < chunk->blocks);
 	t_yoyo_zone*	zone_current = get_zone_of_chunk(chunk);
 	if (zone_current == NULL) {
 		return;
 	}
+	assert(zone_current->zone_type != YOYO_ZONE_LARGE);
 	t_yoyo_chunk*	chunk_new_free = (void *)chunk + blocks_required * BLOCK_UNIT_SIZE;
 	chunk_new_free->blocks = chunk->blocks - blocks_required;
 	assert(2 <= chunk_new_free->blocks);
 	chunk_new_free->next = COPY_FLAGS(NULL, chunk->next);
+	// ここからロックが必要
+	if (!lock_zone(zone_current)) {
+		return;
+	}
 	chunk->blocks = blocks_required;
-	assert(2 <= chunk->blocks);
-	actual_free((void*)chunk_new_free + CEILED_CHUNK_SIZE);
+	free_from_locked_tiny_small_zone(zone_current, chunk_new_free);
+	if (!unlock_zone(zone_current)) {
+		return;
+	}
 	return;
 }
 

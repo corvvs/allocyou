@@ -19,6 +19,7 @@ void*	actual_malloc(size_t n);
 
 // yoyo_actual_free.c
 void	actual_free(void* addr);
+void	free_from_locked_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chunk);
 
 // yoyo_actual_realloc.c
 void*	actual_realloc(void* addr, size_t n);

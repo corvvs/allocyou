@@ -1,8 +1,8 @@
 #include "malloc.h"
 #include "internal.h"
 
-#define N_THREADS 500
-#define N_LOCKS 520
+#define N_THREADS 400
+#define N_LOCKS 20
 
 typedef struct s_basket_1 {
 	pthread_mutex_t	locks[N_LOCKS];
@@ -59,7 +59,7 @@ static void*	test_multithread_basic_sub(void* index) {
 			DEBUGINFO("#%d *%d unlocked %d-th lock", idx, i, k);
 		}
 	}
-	show_alloc_mem();
+	// show_alloc_mem();
 	DEBUGWARN("#%d closing...", idx);
 	return NULL;
 }
