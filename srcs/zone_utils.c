@@ -84,15 +84,10 @@ static t_yoyo_zone*	merge_zone_lists(t_yoyo_zone* top, t_yoyo_zone* bottom) {
 	}
 	assert(tail != NULL);
 	tail->next = NULL;
-	{
-		t_yoyo_zone* temp = head;
-		while (temp->next != NULL) {
-			assert((uintptr_t)temp < (uintptr_t)(temp->next));
-			temp = temp->next;
-		}
-	}
 	return head;
 }
+
+#define IS_IN_ORDER(node) (node->next == NULL || (uintptr_t)node < (uintptr_t)(node->next))
 
 static t_yoyo_zone*	divide_and_sort(t_yoyo_zone* list) {
 	if (list == NULL || list->next == NULL) {
@@ -102,13 +97,20 @@ static t_yoyo_zone*	divide_and_sort(t_yoyo_zone* list) {
 	t_yoyo_zone* prev_top = NULL;
 	t_yoyo_zone* top = list;
 	t_yoyo_zone* bottom = top;
+	bool	sorted = true;
 	while (bottom != NULL) {
+		sorted = sorted && IS_IN_ORDER(top);
 		prev_top = top;
 		top = top->next;
 		bottom = bottom->next;
 		if (bottom != NULL) {
+			sorted = sorted && IS_IN_ORDER(bottom);
 			bottom = bottom->next;
 		}
+	}
+	if (sorted) {
+		// list はソート済みなのでそのまま返してしまう.
+		return list;
 	}
 	assert(prev_top != NULL);
 	prev_top->next = NULL;
@@ -119,6 +121,15 @@ static t_yoyo_zone*	divide_and_sort(t_yoyo_zone* list) {
 
 // zoneリストを破壊的にソートする
 void	sort_zone_list(t_yoyo_zone** list) {
+	assert(list != NULL);
 	*list = divide_and_sort(*list);
+	{
+		// ソートされているかチェック
+		t_yoyo_zone* temp = *list;
+		while (temp->next != NULL) {
+			assert((uintptr_t)temp < (uintptr_t)(temp->next));
+			temp = temp->next;
+		}
+	}
 }
 
