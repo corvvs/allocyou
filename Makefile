@@ -37,33 +37,46 @@ FILES_TEST	:=\
 
 OBJS_TEST	:=	$(FILES_TEST:%.c=$(OBJDIR)/%.o)
 
-CC		:=	gcc
-CFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR) -g -fsanitize=thread
+CC			:=	gcc
+CCOREFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR)
+CFLAGS		:=	$(CCOREFLAGS) #-g -fsanitize=thread
+LIBFLAGS	:=	-fPIC -fpic
 
-SONAME	:= 
+SONAME		:=	libft_malloc_$(HOSTTYPE).so
+DYLIBNAME	:=	libft_malloc_$(HOSTTYPE).dylib
 
-all:	malloc
+all:			malloc
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c
+$(OBJDIR)/%.o:	$(SRCDIR)/%.c
+	@mkdir -p $(OBJDIR)
+	$(CC) $(CFLAGS) $(LIBFLAGS) -c $< -o $@
+
+$(OBJDIR)/%.o:	%.c
 	@mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(OBJDIR)/%.o: %.c
-	@mkdir -p $(OBJDIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-.PHONY:	malloc
-malloc:	$(NAME) $(OBJS_TEST)
+.PHONY:			malloc
+malloc:			$(NAME) $(OBJS_TEST)
 	$(CC) $(CFLAGS) -o $@ $(OBJS_TEST) $(NAME)
 	./$@
 
-$(NAME):	$(OBJS)
+$(NAME):		$(OBJS)
 	ar rcs $(NAME) $(OBJS)
 
+so:				$(SONAME)
+
+$(SONAME):		$(OBJS)
+	$(CC) -shared $^ -o $@
+
+dylib:			$(DYLIBNAME)
+
+$(DYLIBNAME):	$(OBJS)
+	$(CC) -dynamiclib $^ -o $@
+
 clean:
-	$(RM)	$(OBJDIR)
+	$(RM) $(OBJDIR)
 
-fclean:	clean
-	$(RM)	$(NAME)
+fclean:			clean
+	$(RM) $(NAME)
 
-re:		fclean all
+re:				fclean all
