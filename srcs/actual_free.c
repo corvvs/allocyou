@@ -51,6 +51,18 @@ static void insert_chunk_to_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chu
 	zone->blocks_used -= chunk_blocks;
 }
 
+void	free_from_locked_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
+	print_zone_state(zone);
+	print_zone_bitmap_state(zone);
+	// [zone のfreeマップの状態を変更する]
+	mark_chunk_as_free(zone, chunk);
+	// [zone のフリーリストに chunk を挿入する]
+	insert_chunk_to_tiny_small_zone(zone, chunk);
+	print_zone_state(zone);
+	print_zone_bitmap_state(zone);
+}
+
+
 static void	free_from_tiny_small_zone(t_yoyo_chunk* chunk) {
 	// chunk の所属 zone に飛ぶ
 	t_yoyo_zone*	zone = get_zone_of_chunk(chunk);
@@ -61,15 +73,8 @@ static void	free_from_tiny_small_zone(t_yoyo_chunk* chunk) {
 		DEBUGERR("FAILED to lock zone: %p", zone);
 		return;
 	}
-	print_zone_state(zone);
-	print_zone_bitmap_state(zone);
-	// [zone のfreeマップの状態を変更する]
-	mark_chunk_as_free(zone, chunk);
-	// [zone のフリーリストに chunk を挿入する]
-	insert_chunk_to_tiny_small_zone(zone, chunk);
+	free_from_locked_tiny_small_zone(zone, chunk);
 	// [zone のロックを離す]
-	print_zone_state(zone);
-	print_zone_bitmap_state(zone);
 	if (!unlock_zone(zone)) {
 		DEBUGERR("FAILED to unlock zone: %p", zone);
 	}

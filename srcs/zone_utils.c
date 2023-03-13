@@ -61,3 +61,75 @@ t_yoyo_zone*	get_zone_of_chunk(const t_yoyo_chunk* chunk) {
 	DEBUGOUT("zone_addr_mask is %lx", zone_addr_mask);
 	return (t_yoyo_zone*)((uintptr_t)chunk & zone_addr_mask);
 }
+
+static t_yoyo_zone*	merge_zone_lists(t_yoyo_zone* top, t_yoyo_zone* bottom) {
+	t_yoyo_zone*	head = NULL;
+	t_yoyo_zone*	tail = NULL;
+	while (top != NULL || bottom != NULL) {
+		t_yoyo_zone*	temp;
+		if (bottom == NULL || (top != NULL && (uintptr_t)top < (uintptr_t)bottom)) {
+			temp = top;
+			top = top->next;
+		} else {
+			temp = bottom;
+			bottom = bottom->next;
+		}
+		if (tail != NULL) {
+			tail->next = temp;
+		}
+		tail = temp;
+		if (head == NULL) {
+			head = tail;
+		}
+	}
+	assert(tail != NULL);
+	tail->next = NULL;
+	return head;
+}
+
+#define IS_IN_ORDER(node) (node->next == NULL || (uintptr_t)node < (uintptr_t)(node->next))
+
+static t_yoyo_zone*	divide_and_sort(t_yoyo_zone* list) {
+	if (list == NULL || list->next == NULL) {
+		return list;
+	}
+	// [前後に分割する]
+	t_yoyo_zone* prev_top = NULL;
+	t_yoyo_zone* top = list;
+	t_yoyo_zone* bottom = top;
+	bool	sorted = true;
+	while (bottom != NULL) {
+		sorted = sorted && IS_IN_ORDER(top);
+		prev_top = top;
+		top = top->next;
+		bottom = bottom->next;
+		if (bottom != NULL) {
+			sorted = sorted && IS_IN_ORDER(bottom);
+			bottom = bottom->next;
+		}
+	}
+	if (sorted) {
+		// list はソート済みなのでそのまま返してしまう.
+		return list;
+	}
+	assert(prev_top != NULL);
+	prev_top->next = NULL;
+	// [分割したものをそれぞれソートする]
+	// [ソートしたものをマージして返す]
+	return merge_zone_lists(divide_and_sort(list), divide_and_sort(top));
+}
+
+// zoneリストを破壊的にソートする
+void	sort_zone_list(t_yoyo_zone** list) {
+	assert(list != NULL);
+	*list = divide_and_sort(*list);
+	{
+		// ソートされているかチェック
+		t_yoyo_zone* temp = *list;
+		while (temp->next != NULL) {
+			assert((uintptr_t)temp < (uintptr_t)(temp->next));
+			temp = temp->next;
+		}
+	}
+}
+
