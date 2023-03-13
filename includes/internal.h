@@ -14,20 +14,20 @@
 
 extern t_yoyo_realm	g_yoyo_realm;
 
-// yoyo_actual_malloc.c
+// actual_malloc.c
 void*	actual_malloc(size_t n);
 
-// yoyo_actual_free.c
+// actual_free.c
 void	actual_free(void* addr);
 void	free_from_locked_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chunk);
 
-// yoyo_actual_realloc.c
+// actual_realloc.c
 void*	actual_realloc(void* addr, size_t n);
 
-// yoyo_visualize.c
+// visualize.c
 void	actual_show_alloc_mem(void);
 
-// yoyo_lock.c
+// lock.c
 bool	lock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
 bool	try_lock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
 bool	lock_subarena(t_yoyo_subarena* subarena);
@@ -38,40 +38,41 @@ bool	unlock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
 bool	unlock_subarena(t_yoyo_subarena* subarena);
 bool	unlock_zone(t_yoyo_zone* zone);
 
-// yoyo_memory_alloc.c
+// memory_alloc.c
 void*	map_memory(size_t bytes, bool align);
 void	unmap_memory(void* start, size_t size);
 
-// yoyo_init_realm.c
+// init_realm.c
 bool	init_realm(bool multi_thread);
 
-// yoyo_arena_initialize.c
+// arena_initialize.c
 bool				init_arena(unsigned int index, bool multi_thread);
 void				destroy_arena(t_yoyo_arena* arena);
 t_yoyo_subarena*	get_subarena(const t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
 
 
-// yoyo_zone_initialize.c
+// zone_initialize.c
 t_yoyo_zone*	allocate_zone(const t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
 
-// yoyo_zone_bitmap.c
+// zone_bitmap.c
 bool			is_head(const t_yoyo_zone* zone, unsigned int block_index);
 bool			is_used(const t_yoyo_zone* zone, unsigned int block_index);
 t_yoyo_chunk*	get_chunk_by_index(t_yoyo_zone* zone, unsigned int block_index);
 
-// yoyo_zone_utils.c
+// zone_utils.c
 size_t	zone_bytes_for_zone_type(t_yoyo_zone_type zone_type);
 size_t	max_chunk_blocks_for_zone_type(t_yoyo_zone_type zone_type);
 t_yoyo_zone_type	zone_type_for_bytes(size_t n);
 unsigned int	get_block_index(const t_yoyo_zone* zone, const t_yoyo_chunk* head);
 t_yoyo_zone*	get_zone_of_chunk(const t_yoyo_chunk* chunk);
+void	sort_zone_list(t_yoyo_zone** list);
 
-// yoyo_zone_operation.c
+// zone_operation.c
 void	unmark_chunk(t_yoyo_zone* zone, const t_yoyo_chunk* chunk);
 void	mark_chunk_as_free(t_yoyo_zone* zone, const t_yoyo_chunk* chunk);
 void	mark_chunk_as_used(t_yoyo_zone* zone, const t_yoyo_chunk* chunk);
 
-// yoyo_debug.c
+// debug.c
 void	print_zone_state(const t_yoyo_zone* zone);
 void	print_zone_bitmap_state(const t_yoyo_zone* zone);
 void	print_memory_state(const void* addr);

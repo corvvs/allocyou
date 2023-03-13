@@ -31,6 +31,9 @@ static void	visualize_locked_tiny_small_subarena(const char* zone_name, t_yoyo_a
 	if (subarena->head == NULL) {
 		return;
 	}
+	// zone リスト(subarena->head)をアドレスの昇順にソートする
+	sort_zone_list(&subarena->head);
+
 	yoyo_dprintf(STDOUT_FILENO, "\t< %s >\n", zone_name);
 	t_yoyo_zone*	zone = subarena->head;
 	size_t	n_zone = 0;

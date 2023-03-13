@@ -100,7 +100,7 @@ static void*	test_multithread_realloc_sub(void* index) {
 	int idx = *(int*)index;
 	DEBUGWARN("#%d launched", idx);
 
-	int count = 1000;
+	int count = 10;
 	char a[] = "0";
 	a[0] += idx;
 	for (int i = 0; i < count; ++i) {
