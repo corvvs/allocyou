@@ -23,21 +23,19 @@ static void insert_chunk_to_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chu
 	const size_t	chunk_blocks = chunk->blocks; // 後で使う
 	t_yoyo_chunk**	current_lot = &(zone->frees);
 	t_yoyo_chunk*	front = NULL;
+	t_yoyo_chunk*	back = ADDRESS_OF(*current_lot);
 
 	// [挿入場所を見つける]
-	while (true) {
-		t_yoyo_chunk*	back = ADDRESS_OF(*current_lot);
+	while (!(back == NULL) && !((uintptr_t)chunk < (uintptr_t)back)) {
 		DEBUGOUT("front: %p, back: %p", front, back);
-		if (back == NULL) {
-			DEBUGOUT("PUSH BACK a chunk %p into %p (back of %p)", chunk, current_lot, front);
-			break;
-		}
-		if ((uintptr_t)chunk < (uintptr_t)back) {
-			DEBUGOUT("INSERT a chunk %p between %p and %p", chunk, front, back);
-			break;
-		}
 		front = back;
 		current_lot = &(back->next);
+		back = ADDRESS_OF(*current_lot);
+	}
+	if (back == NULL) {
+		DEBUGOUT("PUSH BACK a chunk %p into %p (back of %p)", chunk, current_lot, front);
+	} else {
+		DEBUGOUT("INSERT a chunk %p between %p and %p", chunk, front, back);
 	}
 	// [後挿入操作]
 	chunk->next = COPY_FLAGS(ADDRESS_OF(*current_lot), chunk->next);
@@ -51,7 +49,7 @@ static void insert_chunk_to_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chu
 	zone->blocks_used -= chunk_blocks;
 }
 
-void	free_from_locked_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
+void	yoyo_free_from_locked_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
 	print_zone_state(zone);
 	print_zone_bitmap_state(zone);
 	// [zone のfreeマップの状態を変更する]
@@ -73,7 +71,7 @@ static void	free_from_tiny_small_zone(t_yoyo_chunk* chunk) {
 		DEBUGERR("FAILED to lock zone: %p", zone);
 		return;
 	}
-	free_from_locked_tiny_small_zone(zone, chunk);
+	yoyo_free_from_locked_tiny_small_zone(zone, chunk);
 	// [zone のロックを離す]
 	if (!unlock_zone(zone)) {
 		DEBUGERR("FAILED to unlock zone: %p", zone);
@@ -131,13 +129,13 @@ static void	free_from_large_zone(t_yoyo_chunk* chunk) {
 	large_chunk->large_next = NULL;
 
 	// [chunkをmunmapする]
-	unmap_memory(large_chunk, large_chunk->memory_byte);
+	yoyo_unmap_memory(large_chunk, large_chunk->memory_byte);
 
 	// [LARGE zoneのロックを離す]
 	unlock_subarena((t_yoyo_subarena*)subarena);
 }
 
-void	actual_free(void* addr) {
+void	yoyo_actual_free(void* addr) {
 	if (addr == NULL) {
 		DEBUGSTR("addr is NULL; DO NOTHING");
 		return;

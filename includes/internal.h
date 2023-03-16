@@ -15,14 +15,14 @@
 extern t_yoyo_realm	g_yoyo_realm;
 
 // actual_malloc.c
-void*	actual_malloc(size_t n);
+void*	yoyo_actual_malloc(size_t n);
 
 // actual_free.c
-void	actual_free(void* addr);
-void	free_from_locked_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chunk);
+void	yoyo_actual_free(void* addr);
+void	yoyo_free_from_locked_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chunk);
 
 // actual_realloc.c
-void*	actual_realloc(void* addr, size_t n);
+void*	yoyo_actual_realloc(void* addr, size_t n);
 
 // visualize.c
 void	actual_show_alloc_mem(void);
@@ -39,8 +39,8 @@ bool	unlock_subarena(t_yoyo_subarena* subarena);
 bool	unlock_zone(t_yoyo_zone* zone);
 
 // memory_alloc.c
-void*	map_memory(size_t bytes, bool align);
-void	unmap_memory(void* start, size_t size);
+void*	yoyo_map_memory(size_t bytes, bool align);
+void	yoyo_unmap_memory(void* start, size_t size);
 
 // init_realm.c
 bool	init_realm(bool multi_thread);

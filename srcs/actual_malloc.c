@@ -32,7 +32,7 @@ static t_yoyo_large_chunk*	allocate_large_chunk(t_yoyo_large_arena* subarena, si
 	const size_t		bytes_usable = blocks_needed * BLOCK_UNIT_SIZE;
 	const size_t		bytes_large_chunk = LARGE_OFFSET_USABLE + bytes_usable;
 	const size_t		memory_byte = CEIL_BY(bytes_large_chunk, getpagesize());
-	t_yoyo_large_chunk*	large_chunk = map_memory(memory_byte, false);
+	t_yoyo_large_chunk*	large_chunk = yoyo_map_memory(memory_byte, false);
 	if (large_chunk == NULL) {
 		DEBUGERR("FAILED for %zu B", bytes);
 		return NULL;
@@ -82,7 +82,10 @@ static void	insert_large_chunk_to_subarena(
 static void*	allocate_memory_from_large(t_yoyo_large_arena* subarena, size_t n) {
 	// LARGE chunk をアロケートする.
 	t_yoyo_large_chunk*	large_chunk = allocate_large_chunk(subarena, n);
-	if (large_chunk == NULL) { return NULL; }
+	if (large_chunk == NULL) {
+		DEBUGERR("failed to allocate LARGE chunk at subarena %p for %zu B", subarena, n);
+		return NULL;
+	}
 	// アロケートした LARGE chunk を subarena のリストに接続する.
 	insert_large_chunk_to_subarena(subarena, large_chunk);
 	// 使用可能領域を返す
@@ -222,7 +225,7 @@ static void*	allocate_from_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type
 	return allocate_memory_from_zone_list(arena, zone_type, n);
 }
 
-void*	actual_malloc(size_t n) {
+void*	yoyo_actual_malloc(size_t n) {
 	// [ゾーン種別決定]
 	t_yoyo_zone_type zone_type = zone_type_for_bytes(n);
 

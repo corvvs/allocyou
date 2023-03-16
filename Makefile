@@ -42,8 +42,11 @@ CCOREFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR)
 CFLAGS		:=	$(CCOREFLAGS) #-g -fsanitize=thread
 LIBFLAGS	:=	-fPIC -fpic
 
+BASE_LIBNAME	:=	ft_malloc
 SONAME		:=	libft_malloc_$(HOSTTYPE).so
+BASE_SONAME	:=	libft_malloc.so
 DYLIBNAME	:=	libft_malloc_$(HOSTTYPE).dylib
+BASE_DYLIBNAME	:=	libft_malloc.dylib
 
 all:			malloc
 
@@ -63,15 +66,24 @@ malloc:			$(NAME) $(OBJS_TEST)
 $(NAME):		$(OBJS)
 	ar rcs $(NAME) $(OBJS)
 
-so:				$(SONAME)
+so:				$(BASE_SONAME)
 
 $(SONAME):		$(OBJS)
 	$(CC) -shared $^ -o $@
 
-dylib:			$(DYLIBNAME)
+$(BASE_SONAME):	$(SONAME)
+	rm -f $@
+	ln -s $^ $@
+
+dylib:			$(BASE_DYLIBNAME)
 
 $(DYLIBNAME):	$(OBJS)
 	$(CC) -dynamiclib $^ -o $@
+
+$(BASE_DYLIBNAME):	$(DYLIBNAME)
+	rm -f $@
+	ln -s $^ $@
+
 
 clean:
 	$(RM) $(OBJDIR)

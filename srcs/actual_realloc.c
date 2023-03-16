@@ -17,7 +17,7 @@ static void	*yoyo_memcpy(void* dst, const void* src, size_t n) {
 static void*	relocate_chunk(t_yoyo_chunk* chunk, size_t blocks_required) {
 	// [引っ越し先チャンクを確保]
 	DEBUGINFO("%s", "ALLOCATE");
-	void*	relocated = actual_malloc((blocks_required - 1) * BLOCK_UNIT_SIZE);
+	void*	relocated = yoyo_actual_malloc((blocks_required - 1) * BLOCK_UNIT_SIZE);
 	if (relocated == NULL) {
 		return NULL;
 	}
@@ -29,7 +29,7 @@ static void*	relocate_chunk(t_yoyo_chunk* chunk, size_t blocks_required) {
 	yoyo_memcpy(relocated, addr_current, blocks_copy * BLOCK_UNIT_SIZE);
 	// [現在のチャンクを解放]
 	DEBUGINFO("%s", "DEALLOCATE");
-	actual_free(addr_current);
+	yoyo_actual_free(addr_current);
 	return relocated;
 }
 
@@ -53,7 +53,7 @@ static void	shrink_chunk(t_yoyo_chunk* chunk, size_t blocks_required) {
 		return;
 	}
 	chunk->blocks = blocks_required;
-	free_from_locked_tiny_small_zone(zone_current, chunk_new_free);
+	yoyo_free_from_locked_tiny_small_zone(zone_current, chunk_new_free);
 	if (!unlock_zone(zone_current)) {
 		return;
 	}
@@ -61,10 +61,10 @@ static void	shrink_chunk(t_yoyo_chunk* chunk, size_t blocks_required) {
 }
 
 // 実際の realloc の動作をする
-void*	actual_realloc(void* addr, size_t n) {
+void*	yoyo_actual_realloc(void* addr, size_t n) {
 	if (addr == NULL) {
 		DEBUGWARN("addr == NULL -> delegate to malloc(%zu)", n);
-		return actual_malloc(n);
+		return yoyo_actual_malloc(n);
 	}
 	assert(CEILED_CHUNK_SIZE <= (size_t)addr);
 	t_yoyo_chunk*	chunk = addr - CEILED_CHUNK_SIZE;

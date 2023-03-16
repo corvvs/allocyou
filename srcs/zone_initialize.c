@@ -59,14 +59,14 @@ static bool	init_zone(const t_yoyo_arena* arena, t_yoyo_zone* zone, t_yoyo_zone_
 // TINY / SMALL zone を mmap で確保し, 初期化して返す.
 t_yoyo_zone*	allocate_zone(const t_yoyo_arena* arena, t_yoyo_zone_type zone_type) {
 	const size_t zone_bytes = zone_bytes_for_zone_type(zone_type);
-	t_yoyo_zone* zone = map_memory(zone_bytes, true);
+	t_yoyo_zone* zone = yoyo_map_memory(zone_bytes, true);
 	if (zone == NULL) {
 		DEBUGERR("failed for class: %d", zone_type);
 		return NULL;
 	}
 	DEBUGOUT("ALLOCATED %zu bytes region at %p", zone_bytes, zone);
 	if (!init_zone(arena, zone, zone_type)) {
-		unmap_memory(zone, zone_bytes);
+		yoyo_unmap_memory(zone, zone_bytes);
 		return NULL;
 	}
 	return zone;
