@@ -29,10 +29,10 @@ static void*	test_multithread_basic_sub(void* index) {
 			{
 				DEBUGINFO("#%d *%d locked %d-th lock", idx, i, k);
 				if (basket.strings[k]) {
-					yoyo_free(basket.strings[k]);
+					free(basket.strings[k]);
 					basket.strings[k] = NULL;
 				}
-				char* str = yoyo_malloc(20 + rand() % 200000);
+				char* str = malloc(20 + rand() % 200000);
 				strcpy(str, "<thread #");
 				strcat(str, a);
 				strcat(str, ">");
@@ -83,7 +83,7 @@ void	test_multithread_basic(void) {
 	}
 	show_alloc_mem();
 	for (int i = 0; i < N_LOCKS; ++i) {
-		yoyo_free(basket.strings[i]);
+		free(basket.strings[i]);
 	}
 	DEBUGWARN("done: %d - %d", N_THREADS, N_LOCKS);
 	dprintf(2, "%zu\n", sizeof(t_basket_1));
@@ -111,7 +111,7 @@ static void*	test_multithread_realloc_sub(void* index) {
 			pthread_mutex_lock(&basket.locks[k]);
 			{
 				DEBUGINFO("#%d *%d locked %d-th lock", idx, i, k);
-				char* str = yoyo_realloc(basket.strings[k], 20 + rand() % 200000);
+				char* str = realloc(basket.strings[k], 20 + rand() % 200000);
 				strcpy(str, "<thread #");
 				strcat(str, a);
 				strcat(str, ">");
@@ -162,7 +162,7 @@ void	test_multithread_realloc(void) {
 	}
 	show_alloc_mem();
 	for (int i = 0; i < N_LOCKS; ++i) {
-		yoyo_free(basket.strings[i]);
+		free(basket.strings[i]);
 	}
 	DEBUGWARN("done: %d - %d", N_THREADS, N_LOCKS);
 	dprintf(2, "%zu\n", sizeof(t_basket_1));

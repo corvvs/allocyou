@@ -39,7 +39,7 @@ OBJS_TEST	:=	$(FILES_TEST:%.c=$(OBJDIR)/%.o)
 
 CC			:=	gcc
 CCOREFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR)
-CFLAGS		:=	$(CCOREFLAGS) #-g -fsanitize=thread
+CFLAGS		:=	$(CCOREFLAGS) -g# -fsanitize=undefined
 LIBFLAGS	:=	-fPIC -fpic
 
 BASE_LIBNAME	:=	ft_malloc
@@ -48,7 +48,7 @@ BASE_SONAME	:=	libft_malloc.so
 DYLIBNAME	:=	libft_malloc_$(HOSTTYPE).dylib
 BASE_DYLIBNAME	:=	libft_malloc.dylib
 
-all:			malloc
+all:			$(BASE_DYLIBNAME)
 
 $(OBJDIR)/%.o:	$(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR)
@@ -59,7 +59,8 @@ $(OBJDIR)/%.o:	%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY:			malloc
-malloc:			$(NAME) $(OBJS_TEST)
+malloc:			$(NAME) $(OBJS_TEST) #$(BASE_DYLIBNAME)
+	# $(CC) $(CFLAGS) -o $@ $(OBJS_TEST) -L . -l $(BASE_LIBNAME)
 	$(CC) $(CFLAGS) -o $@ $(OBJS_TEST) $(NAME)
 	./$@
 
@@ -69,7 +70,7 @@ $(NAME):		$(OBJS)
 so:				$(BASE_SONAME)
 
 $(SONAME):		$(OBJS)
-	$(CC) -shared $^ -o $@
+	$(CC) -shared -fPIC $^ -o $@
 
 $(BASE_SONAME):	$(SONAME)
 	rm -f $@
@@ -78,7 +79,8 @@ $(BASE_SONAME):	$(SONAME)
 dylib:			$(BASE_DYLIBNAME)
 
 $(DYLIBNAME):	$(OBJS)
-	$(CC) -dynamiclib $^ -o $@
+	$(CC) -shared -fPIC $^ -o $@
+	# $(CC) -dynamiclib $^ -o $@
 
 $(BASE_DYLIBNAME):	$(DYLIBNAME)
 	rm -f $@
