@@ -1,6 +1,12 @@
 #include "internal.h"
 
-t_yoyo_realm	g_yoyo_realm;
+static	void*	yo_memset(void* dst, int ch, size_t n) {
+	unsigned char*	ud = dst;
+	while (n--) {
+		*(ud++) = (unsigned char)ch;
+	}
+	return dst;
+}
 
 // arena を1つロックして返す.
 // どの arena もロックできなかった場合は NULL を返す.
@@ -31,7 +37,7 @@ static t_yoyo_large_chunk*	allocate_large_chunk(t_yoyo_large_arena* subarena, si
 	const size_t		blocks_needed = BLOCKS_FOR_SIZE(bytes);
 	const size_t		bytes_usable = blocks_needed * BLOCK_UNIT_SIZE;
 	const size_t		bytes_large_chunk = LARGE_OFFSET_USABLE + bytes_usable;
-	const size_t		memory_byte = CEIL_BY(bytes_large_chunk, getpagesize());
+	const size_t		memory_byte = CEIL_BY(bytes_large_chunk, (size_t)getpagesize());
 	t_yoyo_large_chunk*	large_chunk = yoyo_map_memory(memory_byte, false);
 	if (large_chunk == NULL) {
 		DEBUGERR("FAILED for %zu B", bytes);
@@ -222,6 +228,7 @@ static void*	allocate_from_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type
 	t_yoyo_subarena* subarena = get_subarena(arena, zone_type);
 	assert(subarena != NULL);
 	assert((void*)subarena != (void*)&arena->large);
+	(void)subarena;
 	return allocate_memory_from_zone_list(arena, zone_type, n);
 }
 
@@ -244,3 +251,18 @@ void*	yoyo_actual_malloc(size_t n) {
 	return mem;
 }
 
+void*	yoyo_actual_calloc(size_t count, size_t size) {
+	if (count == 0 || size == 0) {
+		count = 1;
+		size = 1;
+	}
+	if (count != 0 && SIZE_MAX / count < size) {
+		errno = ENOMEM;
+		return (NULL);
+	}
+	void* mem = yoyo_actual_malloc(count * size);
+	if (mem) {
+		yo_memset(mem, 0, count * size);
+	}
+	return (mem);
+}

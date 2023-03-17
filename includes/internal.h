@@ -11,11 +11,14 @@
 # include <sys/mman.h>
 # include <errno.h>
 # include <assert.h>
+# include <stdint.h>
 
 extern t_yoyo_realm	g_yoyo_realm;
 
 // actual_malloc.c
 void*	yoyo_actual_malloc(size_t n);
+void*	yoyo_actual_calloc(size_t count, size_t size);
+
 
 // actual_free.c
 void	yoyo_actual_free(void* addr);

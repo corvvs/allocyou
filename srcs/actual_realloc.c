@@ -24,8 +24,12 @@ static void*	relocate_chunk(t_yoyo_chunk* chunk, size_t blocks_required) {
 	// [データをコピー]
 	DEBUGINFO("%s", "COPY");
 	t_yoyo_chunk*	chunk_relocated = relocated - CEILED_CHUNK_SIZE;
+	DEBUGOUT("chunk: %p", chunk);
+	DEBUGOUT("chunk_relocated: %p", chunk_relocated);
+	DEBUGOUT("chunk_relocated->blocks: %zu, chunk->blocks: %zu", chunk_relocated->blocks, chunk->blocks);
 	const size_t	blocks_copy = ((chunk_relocated->blocks < chunk->blocks) ? chunk_relocated->blocks : chunk->blocks) - 1;
 	void*			addr_current = (void*)chunk + CEILED_CHUNK_SIZE;
+	DEBUGINFO("yoyo_memcpy(%p, %p, %zu)", relocated, addr_current, blocks_copy * BLOCK_UNIT_SIZE);
 	yoyo_memcpy(relocated, addr_current, blocks_copy * BLOCK_UNIT_SIZE);
 	// [現在のチャンクを解放]
 	DEBUGINFO("%s", "DEALLOCATE");

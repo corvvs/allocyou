@@ -136,50 +136,56 @@ static bool	resolve_conversion(t_yoyo_printf_buffer* buffer, t_yoyo_conversion* 
 		case 'd':
 		case 'i':
 			switch (conversion->length_modifier) {
-				case YOYO_LM_DEFAULT:
-					return resolve_d(buffer, conversion, va_arg(*args, int));
 				case YOYO_LM_L:
 					return resolve_d(buffer, conversion, va_arg(*args, long));
 				case YOYO_LM_LL:
 					return resolve_d(buffer, conversion, va_arg(*args, long long));
 				case YOYO_LM_Z:
 					return resolve_d(buffer, conversion, va_arg(*args, ssize_t));
+				case YOYO_LM_DEFAULT:
+				default:
+					return resolve_d(buffer, conversion, va_arg(*args, int));
 			}
 		case 'u':
 			switch (conversion->length_modifier) {
-				case YOYO_LM_DEFAULT:
-					return resolve_u(buffer, conversion, va_arg(*args, unsigned int));
 				case YOYO_LM_L:
 					return resolve_u(buffer, conversion, va_arg(*args, unsigned long));
 				case YOYO_LM_LL:
 					return resolve_u(buffer, conversion, va_arg(*args, unsigned long long));
 				case YOYO_LM_Z:
 					return resolve_u(buffer, conversion, va_arg(*args, size_t));
+				case YOYO_LM_DEFAULT:
+				default:
+					return resolve_u(buffer, conversion, va_arg(*args, unsigned int));
 			}
 		case 'p':
 			return resolve_p(buffer, conversion, (unsigned long long)va_arg(*args, void*));
 		case 'x':
 			switch (conversion->length_modifier) {
-				case YOYO_LM_DEFAULT:
-					return resolve_x(buffer, conversion, va_arg(*args, unsigned int));
 				case YOYO_LM_L:
 					return resolve_x(buffer, conversion, va_arg(*args, unsigned long));
 				case YOYO_LM_LL:
 					return resolve_x(buffer, conversion, va_arg(*args, unsigned long long));
 				case YOYO_LM_Z:
 					return resolve_x(buffer, conversion, va_arg(*args, size_t));
+				case YOYO_LM_DEFAULT:
+				default:
+					return resolve_x(buffer, conversion, va_arg(*args, unsigned int));
 			}
 		case 'b':
 			switch (conversion->length_modifier) {
-				case YOYO_LM_DEFAULT:
-					return resolve_b(buffer, conversion, va_arg(*args, unsigned int));
 				case YOYO_LM_L:
 					return resolve_b(buffer, conversion, va_arg(*args, unsigned long));
 				case YOYO_LM_LL:
 					return resolve_b(buffer, conversion, va_arg(*args, unsigned long long));
 				case YOYO_LM_Z:
 					return resolve_b(buffer, conversion, va_arg(*args, size_t));
+				case YOYO_LM_DEFAULT:
+				default:
+					return resolve_b(buffer, conversion, va_arg(*args, unsigned int));
 			}
+		default:
+			break;
 		}
 	return false;
 }

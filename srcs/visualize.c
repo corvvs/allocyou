@@ -1,7 +1,5 @@
 #include "internal.h"
 
-t_yoyo_realm	g_yoyo_realm;
-
 static void	visualize_chunk(const t_yoyo_chunk* chunk) {
 	yoyo_dprintf(STDOUT_FILENO, "\t\tchunk @ %p: %zu blocks (%zu B)\n", chunk, chunk->blocks, chunk->blocks * BLOCK_UNIT_SIZE);
 }
@@ -62,6 +60,7 @@ static void	visualize_large_chunk(const t_yoyo_large_chunk* large_chunk) {
 
 // LARGE サブアリーナを可視化する
 static void	visualize_locked_large_subarena(const char* zone_name, t_yoyo_arena* arena, t_yoyo_zone_type zone_type) {
+	(void)zone_type;
 	assert(zone_type == YOYO_ZONE_LARGE);
 	t_yoyo_large_arena* subarena = &arena->large;
 	if (subarena->allocated == NULL) {

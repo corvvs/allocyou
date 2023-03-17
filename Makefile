@@ -91,6 +91,17 @@ clean:
 	$(RM) $(OBJDIR)
 
 fclean:			clean
-	$(RM) $(NAME)
+	$(RM) $(NAME) $(SONAME) $(DYLIBNAME) $(BASE_SONAME) $(BASE_DYLIBNAME)
 
 re:				fclean all
+
+
+up:
+	docker-compose up --build -d
+
+down:
+	docker-compose down
+
+
+it:
+	docker-compose exec app bash

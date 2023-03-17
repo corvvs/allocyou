@@ -13,7 +13,7 @@ void*	malloc(size_t n) {
 	SPRINT_START;
 	void	*mem = yoyo_actual_malloc(n);
 	SPRINT_END("malloc");
-	DEBUGSTR("** malloc end **");
+	DEBUGOUT("** malloc end, returning %p for %zu B **", mem, n);
 	return mem;
 }
 
@@ -30,7 +30,16 @@ void*	realloc(void* addr, size_t n) {
 	SPRINT_START;
 	void*	mem = yoyo_actual_realloc(addr, n);
 	SPRINT_END("realloc");
-	DEBUGSTR("** realloc end **");
+	DEBUGOUT("** realloc end, returning %p for %p, %zu B **", mem, addr, n);
+	return mem;
+}
+
+void*	calloc(size_t count, size_t size) {
+	DEBUGOUT("** count: %zu, size: %zu **", count, size);
+	SPRINT_START;
+	void	*mem = yoyo_actual_calloc(count, size);
+	SPRINT_END("malloc");
+	DEBUGOUT("** calloc end, returning %p for %zu x %zu B **", mem, count, size);
 	return mem;
 }
 
