@@ -6,4 +6,6 @@ RUN apt-get update && apt-get install -y\
     build-essential \
     gdb \
 	vim
+RUN apt-get install -y emacs
+RUN apt-get install -y man-db
 
