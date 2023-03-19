@@ -233,6 +233,12 @@ static void*	allocate_from_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type
 }
 
 void*	yoyo_actual_malloc(size_t n) {
+	size_t	block_needed = BLOCKS_FOR_SIZE(n);
+	if (block_needed == 0) {
+		errno = ENOMEM;
+		return NULL;
+	}
+
 	// [ゾーン種別決定]
 	t_yoyo_zone_type zone_type = zone_type_for_bytes(n);
 

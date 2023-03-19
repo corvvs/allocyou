@@ -38,6 +38,7 @@ void*	yoyo_map_memory(size_t bytes, bool align) {
 		SPRINT_END("mmap");
 	}
 	if (bulk == MAP_FAILED) {
+		errno = ENOMEM;
 		return NULL;
 	}
 	if (align) {

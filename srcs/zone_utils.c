@@ -24,6 +24,7 @@ size_t	max_chunk_blocks_for_zone_type(t_yoyo_zone_type zone_type) {
 
 t_yoyo_zone_type	zone_type_for_bytes(size_t n) {
 	size_t	block_needed = BLOCKS_FOR_SIZE(n);
+	DEBUGOUT("block_needed: %zu", block_needed);
 	if (block_needed > SMALL_MAX_CHUNK_BLOCK) {
 		DEBUGWARN("zone for %zu B: LARGE", n);
 		return YOYO_ZONE_LARGE;
