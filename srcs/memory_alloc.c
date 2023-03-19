@@ -1,7 +1,8 @@
 #include "internal.h"
 
 static void	unmap_range(void* begin, void* end) {
-	if((size_t)begin >= (size_t)end) {
+	assert((size_t)begin <= (size_t)end);
+	if((size_t)begin == (size_t)end) {
 		DEBUGOUT("skipped: [%p, %p)", begin, end);
 		return;
 	}
@@ -21,7 +22,7 @@ static void	unmap_range(void* begin, void* end) {
 // bytes バイトの領域を mmap して返す.
 // align がtrueなら領域は bytes バイトアラインされる.
 // ただしその場合 bytes が2冪でなければならない.
-void*	map_memory(size_t bytes, bool align) {
+void*	yoyo_map_memory(size_t bytes, bool align) {
 	assert(!align || ((bytes & (bytes - 1)) == 0));
 	const size_t	bulk_size = align ? 2 * bytes : bytes;
 	void*	bulk;
@@ -54,6 +55,6 @@ void*	map_memory(size_t bytes, bool align) {
 	}
 }
 
-void	unmap_memory(void* start, size_t size) {
+void	yoyo_unmap_memory(void* start, size_t size) {
 	unmap_range(start, start + size);
 }

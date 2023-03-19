@@ -37,33 +37,71 @@ FILES_TEST	:=\
 
 OBJS_TEST	:=	$(FILES_TEST:%.c=$(OBJDIR)/%.o)
 
-CC		:=	gcc
-CFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR) -g -fsanitize=thread
+CC			:=	gcc
+CCOREFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR)
+CFLAGS		:=	$(CCOREFLAGS) -g# -fsanitize=undefined
+LIBFLAGS	:=	-fPIC -fpic
 
-SONAME	:= 
+BASE_LIBNAME	:=	ft_malloc
+SONAME		:=	libft_malloc_$(HOSTTYPE).so
+BASE_SONAME	:=	libft_malloc.so
+DYLIBNAME	:=	libft_malloc_$(HOSTTYPE).dylib
+BASE_DYLIBNAME	:=	libft_malloc.dylib
 
-all:	malloc
+all:			$(BASE_DYLIBNAME)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c
+$(OBJDIR)/%.o:	$(SRCDIR)/%.c
+	@mkdir -p $(OBJDIR)
+	$(CC) $(CFLAGS) $(LIBFLAGS) -c $< -o $@
+
+$(OBJDIR)/%.o:	%.c
 	@mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(OBJDIR)/%.o: %.c
-	@mkdir -p $(OBJDIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-.PHONY:	malloc
-malloc:	$(NAME) $(OBJS_TEST)
+.PHONY:			malloc
+malloc:			$(NAME) $(OBJS_TEST) #$(BASE_DYLIBNAME)
+	# $(CC) $(CFLAGS) -o $@ $(OBJS_TEST) -L . -l $(BASE_LIBNAME)
 	$(CC) $(CFLAGS) -o $@ $(OBJS_TEST) $(NAME)
 	./$@
 
-$(NAME):	$(OBJS)
+$(NAME):		$(OBJS)
 	ar rcs $(NAME) $(OBJS)
 
+so:				$(BASE_SONAME)
+
+$(SONAME):		$(OBJS)
+	$(CC) -shared -fPIC $^ -o $@
+
+$(BASE_SONAME):	$(SONAME)
+	rm -f $@
+	ln -s $^ $@
+
+dylib:			$(BASE_DYLIBNAME)
+
+$(DYLIBNAME):	$(OBJS)
+	$(CC) -shared -fPIC $^ -o $@
+	# $(CC) -dynamiclib $^ -o $@
+
+$(BASE_DYLIBNAME):	$(DYLIBNAME)
+	rm -f $@
+	ln -s $^ $@
+
+
 clean:
-	$(RM)	$(OBJDIR)
+	$(RM) $(OBJDIR)
 
-fclean:	clean
-	$(RM)	$(NAME)
+fclean:			clean
+	$(RM) $(NAME) $(SONAME) $(DYLIBNAME) $(BASE_SONAME) $(BASE_DYLIBNAME)
 
-re:		fclean all
+re:				fclean all
+
+
+up:
+	docker-compose up --build -d
+
+down:
+	docker-compose down
+
+
+it:
+	docker-compose exec app bash

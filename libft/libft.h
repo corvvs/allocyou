@@ -6,7 +6,7 @@
 /*   By: corvvs <corvvs@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/10 18:59:27 by corvvs            #+#    #+#             */
-/*   Updated: 2023/03/05 05:30:50 by corvvs           ###   ########.fr       */
+/*   Updated: 2023/03/16 22:30:27 by corvvs           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,13 +14,6 @@
 # define LIBFT_H
 # include <stdlib.h>
 # include <stdbool.h>
-
-void	init_realm(bool);
-void*	yoyo_malloc(size_t n);
-void	yoyo_free(void* addr);
-void	show_alloc_mem(void);
-# define malloc yoyo_malloc
-# define free yoyo_free
 
 size_t	ft_strlen(const char *str);
 size_t	ft_strnlen(const char *str, size_t nmax);

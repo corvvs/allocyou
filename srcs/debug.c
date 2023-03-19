@@ -3,6 +3,7 @@
 // zone の状態を出力する.
 // ロックは必要なら取っておくこと.
 void	print_zone_state(const t_yoyo_zone* zone) {
+	(void)zone;
 	DEBUGINFO(
 		"ZONE %p: MT: %s, class: %d, blocks: zone %u, heap %u, free %u, used %u",
 		zone, zone->multi_thread ? "Y" : "N",
@@ -34,6 +35,7 @@ void	print_memory_state(const void* addr) {
 	if (IS_LARGE_CHUNK(chunk)) {
 		// chunk is LARGE
 		const t_yoyo_large_chunk* large_chunk = (void*)chunk - CEILED_LARGE_CHUNK_SIZE;
+		(void)large_chunk;
 		DEBUGINFO(
 			"chunk at %p is LARGE: %p, subarena: %p, total bytes: %zu B",
 			addr, large_chunk, large_chunk->subarena, large_chunk->memory_byte

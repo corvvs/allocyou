@@ -15,12 +15,12 @@
 # define TX_RST "\e[0m"
 
 # ifdef NDEBUG
-#  define DEBUGSTRN(format) (0)
-#  define DEBUGSTR(format) (0)
-#  define DEBUGOUT(format, ...) (0)
-#  define DEBUGINFO(format, ...) (0)
-#  define DEBUGWARN(format, ...) (0)
-#  define DEBUGERR(format, ...) (0)
+#  define DEBUGSTRN(format) ((void)0)
+#  define DEBUGSTR(format) ((void)0)
+#  define DEBUGOUT(format, ...) ((void)0)
+#  define DEBUGINFO(format, ...) ((void)0)
+#  define DEBUGWARN(format, ...) ((void)0)
+#  define DEBUGERR(format, ...) ((void)0)
 #  define PRINT_STATE_AFTER(proc) proc;
 # else
 #  define DEBUGSTRN(format) yoyo_dprintf(STDOUT_FILENO, "%s[%s:%d %s] " format "%s", TX_GRY, __FILE__, __LINE__, __func__, TX_RST)

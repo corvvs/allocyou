@@ -144,8 +144,8 @@ typedef struct	s_yoyo_subarena {
 	pthread_mutex_t	lock;
 	// マルチスレッドモードかどうか
 	bool			multi_thread;
-	// なんかしらのポインタ
-	void*			some;
+	// なんかしらのポインタ. 直接使わないこと.
+	void*			do_not_use;
 }	t_yoyo_subarena;
 
 // [arena 構造体]
@@ -170,7 +170,7 @@ typedef struct	s_yoyo_realm {
 	// 初期化済みフラグ
 	bool			initialized;
 	// 使用可能な arena の総数.
-	// arena_count == 1 は シングルスレッドモードであることと同値.
+	// arena_count == 1 であってもシングルスレッドモードとは限らない
 	// !initialized の時は 1 とみなすこと.
 	unsigned int	arena_count;
 
