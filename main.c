@@ -108,6 +108,31 @@ void	test_extreme_malloc(void) {
 	test_extreme_malloc_single(SIZE_MAX);
 }
 
+void	test_extreme_realloc_single(size_t n, size_t m) {
+	void*	mem = realloc(NULL, n);
+	printf("n = %zu B, mem = %p\n", n, mem);
+	printf("errno = %d, %s\n", errno, strerror(errno));
+	void*	mem2 = realloc(mem, m);
+	printf("m = %zu B, mem2 = %p\n", m, mem2);
+	printf("errno = %d, %s\n", errno, strerror(errno));
+	if (mem != mem2 && mem2 == NULL) {
+		free(mem);
+	}
+	free(mem2);
+}
+
+void	test_extreme_realloc(void) {
+	size_t sizes[] = {1, UINT_MAX, SIZE_MAX / 2, SIZE_MAX - 1000, SIZE_MAX - 100, SIZE_MAX - 10, SIZE_MAX - 1, SIZE_MAX};
+	// size_t sizes[] = {1, UINT_MAX, SIZE_MAX / 2};
+	for (size_t i = 0; i < sizeof(sizes) / sizeof(sizes[0]); ++i) {
+		for (size_t j = 0; j < sizeof(sizes) / sizeof(sizes[0]); ++j) {
+			printf("<< %zu B -> %zu B >>\n", sizes[i], sizes[j]);
+			test_extreme_realloc_single(sizes[i], sizes[j]);
+			show_alloc_mem();
+		}
+	}
+}
+
 int main() {
 	// yoyo_dprintf(STDOUT_FILENO, "%zu\n", sizeof(bool));
 	// yoyo_dprintf(STDOUT_FILENO, "%zu\n", sizeof(unsigned int));
@@ -133,5 +158,6 @@ int main() {
 	// test_multithread_basic();
 	// test_multithread_realloc();
 
-	test_extreme_malloc();
+	// test_extreme_malloc();
+	test_extreme_realloc();
 }
