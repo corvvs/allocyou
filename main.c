@@ -6,11 +6,6 @@
 
 #include <stdio.h>
 
-__attribute__((constructor))
-static void init_yoyo() {
-	init_realm(true);
-}
-
 void	malloc_tiny_basic() {
 	void* mem;
 	mem = malloc(1);
@@ -92,7 +87,51 @@ void	realloc_basic() {
 	show_alloc_mem();
 }
 
+#include <limits.h>
+#include <errno.h>
 
+void	test_extreme_malloc_single(size_t n) {
+	void*	mem = malloc(n);
+	printf("n = %zu B, mem = %p\n", n, mem);
+	printf("errno = %d, %s\n", errno, strerror(errno));
+	free(mem);
+}
+
+void	test_extreme_malloc(void) {
+	test_extreme_malloc_single(0);
+	test_extreme_malloc_single(UINT_MAX);
+	test_extreme_malloc_single(SIZE_MAX / 2);
+	test_extreme_malloc_single(SIZE_MAX - 1000);
+	test_extreme_malloc_single(SIZE_MAX - 100);
+	test_extreme_malloc_single(SIZE_MAX - 10);
+	test_extreme_malloc_single(SIZE_MAX - 1);
+	test_extreme_malloc_single(SIZE_MAX);
+}
+
+void	test_extreme_realloc_single(size_t n, size_t m) {
+	void*	mem = realloc(NULL, n);
+	printf("n = %zu B, mem = %p\n", n, mem);
+	printf("errno = %d, %s\n", errno, strerror(errno));
+	void*	mem2 = realloc(mem, m);
+	printf("m = %zu B, mem2 = %p\n", m, mem2);
+	printf("errno = %d, %s\n", errno, strerror(errno));
+	if (mem != mem2 && mem2 == NULL) {
+		free(mem);
+	}
+	free(mem2);
+}
+
+void	test_extreme_realloc(void) {
+	size_t sizes[] = {1, UINT_MAX, SIZE_MAX / 2, SIZE_MAX - 1000, SIZE_MAX - 100, SIZE_MAX - 10, SIZE_MAX - 1, SIZE_MAX};
+	// size_t sizes[] = {1, UINT_MAX, SIZE_MAX / 2};
+	for (size_t i = 0; i < sizeof(sizes) / sizeof(sizes[0]); ++i) {
+		for (size_t j = 0; j < sizeof(sizes) / sizeof(sizes[0]); ++j) {
+			printf("<< %zu B -> %zu B >>\n", sizes[i], sizes[j]);
+			test_extreme_realloc_single(sizes[i], sizes[j]);
+			show_alloc_mem();
+		}
+	}
+}
 
 int main() {
 	// yoyo_dprintf(STDOUT_FILENO, "%zu\n", sizeof(bool));
@@ -117,5 +156,8 @@ int main() {
 	// realloc_basic();
 	// test_mass_basic();
 	// test_multithread_basic();
-	test_multithread_realloc();
+	// test_multithread_realloc();
+
+	// test_extreme_malloc();
+	test_extreme_realloc();
 }

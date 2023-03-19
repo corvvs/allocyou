@@ -21,6 +21,8 @@ void	print_zone_bitmap_state(const t_yoyo_zone* zone) {
 		n_head += !!h;
 		n_used += !!(h && is_used(zone, i));
 	}
+	(void)n_head;
+	(void)n_used;
 	DEBUGINFO(
 		"ZONE %p: MT: %s, class: %d, is_head: %u, is_used: %u",
 		zone, zone->multi_thread ? "Y" : "N", zone->zone_type,
