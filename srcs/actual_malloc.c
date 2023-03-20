@@ -26,7 +26,7 @@ static t_yoyo_arena*	occupy_arena(t_yoyo_zone_type zone_type) {
 		return default_arena;
 	}
 	// このエラーは致命傷
-	DEBUGERR("%s", "COULDN'T LOCK any arena");
+	DEBUGFATAL("%s", "COULDN'T LOCK any arena");
 	return NULL;
 }
 
@@ -36,10 +36,22 @@ static t_yoyo_large_chunk*	allocate_large_chunk(t_yoyo_large_arena* subarena, si
 	// まず mmap する.
 	const size_t		blocks_needed = BLOCKS_FOR_SIZE(bytes);
 	const size_t		bytes_usable = blocks_needed * BLOCK_UNIT_SIZE;
+	if (LARGE_OFFSET_USABLE >= SIZE_MAX - bytes_usable) {
+		DEBUGERR("required bytes %zu B is too large", bytes);
+		errno = ENOMEM;
+		return NULL;
+	}
 	const size_t		bytes_large_chunk = LARGE_OFFSET_USABLE + bytes_usable;
-	const size_t		memory_byte = CEIL_BY(bytes_large_chunk, (size_t)getpagesize());
+	const size_t		pagesize = getpagesize();
+	const size_t		memory_byte = CEIL_BY(bytes_large_chunk, pagesize);
+	if (memory_byte < pagesize) {
+		DEBUGERR("required bytes %zu B is too large", bytes);
+		errno = ENOMEM;
+		return NULL;
+	}
 	t_yoyo_large_chunk*	large_chunk = yoyo_map_memory(memory_byte, false);
 	if (large_chunk == NULL) {
+		// サイズがデカすぎて失敗しているならいいが, そうでないなら致命傷
 		DEBUGERR("FAILED for %zu B", bytes);
 		return NULL;
 	}
@@ -136,7 +148,7 @@ static bool	is_exhaustible(const t_yoyo_chunk* chunk, size_t blocks_needed) {
 
 // zone からサイズ n の chunk を取得しようとする.
 static void*	try_allocate_chunk_from_zone(t_yoyo_zone* zone, size_t n) {
-	DEBUGOUT("try from: %p - %zu", zone, n);
+	DEBUGOUT("try from zone: %p, for %zu B", zone, n);
 	const size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
 	DEBUGOUT("blocks needed: %zu, rest: %u", blocks_needed, zone->blocks_free);
 	const size_t	whole_needed = blocks_needed + 1;
@@ -147,6 +159,7 @@ static void*	try_allocate_chunk_from_zone(t_yoyo_zone* zone, size_t n) {
 	t_yoyo_chunk**	current_lot = &zone->frees;
 	while (*current_lot != NULL) {
 		t_yoyo_chunk*	current_free_chunk = ADDRESS_OF(*current_lot);
+		DEBUGOUT("current_free_chunk: %p", current_free_chunk);
 		unsigned int	bi = get_block_index(zone, current_free_chunk);
 		(void)bi;
 		assert(is_head(zone, bi));
@@ -233,8 +246,12 @@ static void*	allocate_from_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type
 }
 
 void*	yoyo_actual_malloc(size_t n) {
-	size_t	block_needed = BLOCKS_FOR_SIZE(n);
-	if (block_needed == 0) {
+	// 実際の要求バイト数は n バイトでも, これが BLOCK_UNIT_SIZE の倍数に切り上げあられ, さらにチャンクヘッダも必要になるので, 
+	// 実際には (BLOCKS_FOR_SIZE(n) + 1) * BLOCK_UNIT_SIZE バイト必要になる.
+	const size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
+	const size_t	blocks_required = blocks_needed + 1;
+	DEBUGOUT("blocks_required * BLOCK_UNIT_SIZE: %zu", blocks_required * BLOCK_UNIT_SIZE);
+	if (blocks_needed == 0 || blocks_required * BLOCK_UNIT_SIZE == 0) {
 		errno = ENOMEM;
 		return NULL;
 	}

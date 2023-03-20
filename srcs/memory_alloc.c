@@ -13,7 +13,7 @@ static void	unmap_range(void* begin, void* end) {
 		SPRINT_END("munmap");
 	}
 	if (rv) {
-		DEBUGERR("FAILED: errno = %d, %s", errno, strerror(errno));
+		DEBUGFATAL("FAILED: errno = %d, %s", errno, strerror(errno));
 		return;
 	}
 	DEBUGINFO("unmapped: [%p, %p) (%zd B)", begin, end, end - begin);
@@ -26,19 +26,21 @@ void*	yoyo_map_memory(size_t bytes, bool align) {
 	assert(!align || ((bytes & (bytes - 1)) == 0));
 	const size_t	bulk_size = align ? 2 * bytes : bytes;
 	void*	bulk;
-
+	errno = 0;
 	{
-		SPRINT_START;
 		bulk = mmap(
 			NULL,
 			bulk_size,
 			PROT_READ | PROT_WRITE,
 			MAP_ANON | MAP_PRIVATE,
 			-1, 0);
-		SPRINT_END("mmap");
 	}
 	if (bulk == MAP_FAILED) {
-		errno = ENOMEM;
+		if (errno != ENOMEM) {
+			DEBUGFATAL("for bulk_size %zu B, mmap is failed and errno is not ENOMEM. errno: %d %s", bulk_size, errno, strerror(errno));
+		} else {
+			errno = ENOMEM;
+		}
 		return NULL;
 	}
 	if (align) {

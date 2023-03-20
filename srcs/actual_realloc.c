@@ -71,9 +71,17 @@ void*	yoyo_actual_realloc(void* addr, size_t n) {
 		return yoyo_actual_malloc(n);
 	}
 	assert(CEILED_CHUNK_SIZE <= (size_t)addr);
-	t_yoyo_chunk*	chunk = addr - CEILED_CHUNK_SIZE;
-
-	const size_t			blocks_required = BLOCKS_FOR_SIZE(n) + 1;
+	if (CEILED_CHUNK_SIZE > (size_t)addr) {
+		DEBUGFATAL("addr is TOO LOW: %p", addr);
+		return NULL;
+	}
+	t_yoyo_chunk*			chunk = addr - CEILED_CHUNK_SIZE;
+	const size_t			blocks_needed = BLOCKS_FOR_SIZE(n);
+	const size_t			blocks_required = blocks_needed + 1;
+	if (blocks_needed == 0 || blocks_required == 0) {
+		errno = ENOMEM;
+		return NULL;
+	}
 	const size_t			blocks_current = chunk->blocks;
 	const t_yoyo_zone_type	type_required = zone_type_for_bytes(n);
 	const t_yoyo_zone_type	type_current = zone_type_for_bytes(blocks_current * BLOCK_UNIT_SIZE);

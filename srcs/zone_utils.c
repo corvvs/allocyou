@@ -23,12 +23,12 @@ size_t	max_chunk_blocks_for_zone_type(t_yoyo_zone_type zone_type) {
 }
 
 t_yoyo_zone_type	zone_type_for_bytes(size_t n) {
-	size_t	block_needed = BLOCKS_FOR_SIZE(n);
-	DEBUGOUT("block_needed: %zu", block_needed);
-	if (block_needed > SMALL_MAX_CHUNK_BLOCK) {
+	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
+	DEBUGOUT("blocks_needed: %zu", blocks_needed);
+	if (blocks_needed > SMALL_MAX_CHUNK_BLOCK) {
 		DEBUGWARN("zone for %zu B: LARGE", n);
 		return YOYO_ZONE_LARGE;
-	} else if (block_needed > TINY_MAX_CHUNK_BLOCK) {
+	} else if (blocks_needed > TINY_MAX_CHUNK_BLOCK) {
 		DEBUGWARN("zone for %zu B: SMALL", n);
 		return YOYO_ZONE_SMALL;
 	}

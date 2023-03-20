@@ -27,12 +27,16 @@ FILES	:=	\
 SRCS	:=	$(FILES:%.c=$(SRCDIR)/%.c)
 OBJS	:=	$(FILES:%.c=$(OBJDIR)/%.o)
 NAME	:=	libmalloc.a
+LIBFT	:=	libft.a
+LIBFT_DIR	:=	libft
 RM		:=	rm -rf
 
 FILES_TEST	:=\
 			main.c\
 			test_mass.c\
 			test_multithread.c\
+			test_extreme.c\
+			test_fine.c\
 
 
 OBJS_TEST	:=	$(FILES_TEST:%.c=$(OBJDIR)/%.o)
@@ -59,9 +63,9 @@ $(OBJDIR)/%.o:	%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY:			malloc
-malloc:			$(NAME) $(OBJS_TEST) #$(BASE_DYLIBNAME)
+malloc:			$(NAME) $(OBJS_TEST) $(LIBFT) #$(BASE_DYLIBNAME)
 	# $(CC) $(CFLAGS) -o $@ $(OBJS_TEST) -L . -l $(BASE_LIBNAME)
-	$(CC) $(CFLAGS) -o $@ $(OBJS_TEST) $(NAME)
+	$(CC) $(CFLAGS) -o $@ $(OBJS_TEST) $(LIBFT) $(NAME)
 	./$@
 
 $(NAME):		$(OBJS)
@@ -86,9 +90,13 @@ $(BASE_DYLIBNAME):	$(DYLIBNAME)
 	rm -f $@
 	ln -s $^ $@
 
+$(LIBFT):
+	$(MAKE) -C $(LIBFT_DIR)
+	cp $(LIBFT_DIR)/$(LIBFT) .
+
 
 clean:
-	$(RM) $(OBJDIR)
+	$(RM) $(OBJDIR) $(LIBFT)
 
 fclean:			clean
 	$(RM) $(NAME) $(SONAME) $(DYLIBNAME) $(BASE_SONAME) $(BASE_DYLIBNAME)

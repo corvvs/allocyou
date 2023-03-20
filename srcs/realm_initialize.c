@@ -15,7 +15,7 @@ bool	init_realm(bool multi_thread) {
 	static pthread_mutex_t	init_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 	if (pthread_mutex_lock(&init_mutex)) {
-		DEBUGERR("FAILED to lock for init: %d (%s)", errno, strerror(errno));
+		DEBUGFATAL("FAILED to lock for init: %d (%s)", errno, strerror(errno));
 		return false;
 	}
 
@@ -28,7 +28,7 @@ bool	init_realm(bool multi_thread) {
 	for (unsigned int i = 0; i < g_yoyo_realm.arena_count; ++i) {
 		const bool succeeded = init_arena(i, multi_thread);
 		if (!succeeded) {
-			DEBUGERR("FAILED to init arena #%u", i);
+			DEBUGFATAL("FAILED to init arena #%u", i);
 			destroy_n_arenas(i);
 			pthread_mutex_unlock(&init_mutex);
 			return false;

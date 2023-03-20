@@ -68,13 +68,18 @@ static void	free_from_tiny_small_zone(t_yoyo_chunk* chunk) {
 	DEBUGOUT("zone: %p", zone);
 	// [ロックを取る]
 	if (!lock_zone(zone)) {
-		DEBUGERR("FAILED to lock zone: %p", zone);
+		DEBUGFATAL("FAILED to lock zone: %p", zone);
 		return;
 	}
-	yoyo_free_from_locked_tiny_small_zone(zone, chunk);
+	if (is_header_and_used(zone, chunk)) {
+		yoyo_free_from_locked_tiny_small_zone(zone, chunk);
+	} else {
+		DEBUGFATAL("chunk header %p is not an actual header addr or not a using chunk", chunk);
+		assert(false);
+	}
 	// [zone のロックを離す]
 	if (!unlock_zone(zone)) {
-		DEBUGERR("FAILED to unlock zone: %p", zone);
+		DEBUGFATAL("FAILED to unlock zone: %p", zone);
 	}
 }
 
@@ -89,7 +94,7 @@ static void	free_from_large_zone(t_yoyo_chunk* chunk) {
 
 	// [LARGE zone のロックを取る]
 	if (!lock_subarena((t_yoyo_subarena*)subarena)) {
-		DEBUGERR("FAILED to lock LARGE subarena: %p", subarena);
+		DEBUGFATAL("FAILED to lock LARGE subarena: %p", subarena);
 		return;
 	}
 
@@ -103,6 +108,7 @@ static void	free_from_large_zone(t_yoyo_chunk* chunk) {
 		t_yoyo_large_chunk*	head = *list;
 		DEBUGOUT("head: %p", head);
 		if (head == NULL) {
+			// TODO: これは致命傷(DEBUGFATAL)なのか検討
 			DEBUGERR("FATAL: not found in the list: %p", &subarena->allocated);
 			unlock_subarena((t_yoyo_subarena*)subarena);
 			return;

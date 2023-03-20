@@ -61,6 +61,7 @@ t_yoyo_zone*	allocate_zone(const t_yoyo_arena* arena, t_yoyo_zone_type zone_type
 bool			is_head(const t_yoyo_zone* zone, unsigned int block_index);
 bool			is_used(const t_yoyo_zone* zone, unsigned int block_index);
 t_yoyo_chunk*	get_chunk_by_index(t_yoyo_zone* zone, unsigned int block_index);
+bool			is_header_and_used(const t_yoyo_zone* zone, const t_yoyo_chunk* chunk);
 
 // zone_utils.c
 size_t	zone_bytes_for_zone_type(t_yoyo_zone_type zone_type);
