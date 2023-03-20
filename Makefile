@@ -37,6 +37,7 @@ FILES_TEST	:=\
 			test_multithread.c\
 			test_extreme.c\
 			test_fine.c\
+			test_utils.c\
 
 
 OBJS_TEST	:=	$(FILES_TEST:%.c=$(OBJDIR)/%.o)
@@ -64,7 +65,6 @@ $(OBJDIR)/%.o:	%.c
 
 .PHONY:			malloc
 malloc:			$(NAME) $(OBJS_TEST) $(LIBFT) #$(BASE_DYLIBNAME)
-	# $(CC) $(CFLAGS) -o $@ $(OBJS_TEST) -L . -l $(BASE_LIBNAME)
 	$(CC) $(CFLAGS) -o $@ $(OBJS_TEST) $(LIBFT) $(NAME)
 	./$@
 

@@ -1,7 +1,11 @@
 #ifndef TEST_MALLOC_H
 # define TEST_MALLOC_H
 
+# include "includes/structure.h"
+# include "includes/malloc.h"
+# include <stdio.h>
 # include <sys/time.h>
+# include "test_utils.h"
 typedef struct timeval t_tv;
 
 // test_mass.c
@@ -19,6 +23,8 @@ void	test_extreme_realloc(void);
 void	test_tiny_fine(void);
 void	test_realloc_fine(void);
 
+// test_utils.c
+t_yoyo_exit	exec_test(void	(*func)(void), int* signal);
 
 // テキスト色変
 # define TX_RED "\e[31m"
@@ -33,9 +39,9 @@ void	test_realloc_fine(void);
 # define TIME_DIFF(t0, t1) (STIME(t1) - STIME(t0))
 
 // テストラベル表示
-# define OUT_TEST_LABEL(prefix, label, width) {\
-	yoyo_dprintf(STDOUT_FILENO, "%s", TX_BLU);\
-	int n = yoyo_dprintf(STDOUT_FILENO, "== < %s %s > ", prefix, label);\
+# define OUT_TEST_LABEL(prefix, width, format, ...) {\
+	yoyo_dprintf(STDOUT_FILENO, "%s", prefix);\
+	int n = yoyo_dprintf(STDOUT_FILENO, "== < " format " > ", __VA_ARGS__);\
 	if (n < width) {\
 		for (int i = 0; i < width - n; ++i) {\
 			yoyo_dprintf(STDOUT_FILENO, "%s", "=");\
@@ -47,27 +53,27 @@ void	test_realloc_fine(void);
 # define OUT_OK(format, ...) yoyo_dprintf(STDOUT_FILENO, "%s[ok] " format "%s\n", TX_GRN, __VA_ARGS__, TX_RST)
 # define OUT_KO(format, ...) yoyo_dprintf(STDOUT_FILENO, "%s[KO] " format " @ %s:%d %s %s\n", TX_RED, __VA_ARGS__, __FILE__, __LINE__, __func__, TX_RST)
 
-// テスト開始・終了時表示
-# define START_TEST OUT_TEST_LABEL("start:", __func__, 120)
-# define END_TEST OUT_TEST_LABEL("end:", __func__, 120)
-
 // テストキッカー
 # define EXEC_TEST(func) {\
 	t_tv yo_t0; gettimeofday(&yo_t0, NULL);\
-	OUT_TEST_LABEL("start:", #func, 120);\
-	pid_t pid = fork();\
-	if (pid >= 0) {\
-		if (pid == 0) {\
-			func();\
-			exit(0);\
-		} else {\
-			int	status;\
-			waitpid(pid, &status, 0);\
-		}\
-	}\
-	OUT_TEST_LABEL("end:", #func, 120);\
+	OUT_TEST_LABEL(TX_BLU, 120, "start: %s", #func);\
+	int signal;\
+	t_yoyo_exit	ex = exec_test(func, &signal);\
 	t_tv yo_t1; gettimeofday(&yo_t1, NULL);\
-	yoyo_dprintf(STDOUT_FILENO, "%sduration: %llums%s\n", TX_BLU, TIME_DIFF(yo_t0, yo_t1) / 1000, TX_RST);\
+	switch (ex) {\
+		case YOYO_EXIT_OK:\
+			OUT_TEST_LABEL(TX_BLU, 120, "end successfully: %s, duration: %llums", #func, TIME_DIFF(yo_t0, yo_t1) / 1000);\
+			break;\
+		case YOYO_EXIT_ERROR:\
+			OUT_TEST_LABEL(TX_RED, 120, "end ERROR: %s", #func);\
+			abort();\
+		case YOYO_EXIT_SIGNAL:\
+			OUT_TEST_LABEL(BG_RED, 120, "end SIGNAL: %s, %s", #func, strsignal(signal));\
+			abort();\
+		default:\
+			OUT_TEST_LABEL(TX_RED, 120, "end UNEXPECTEDLY: %s", #func);\
+			abort();\
+	}\
 }
 
 // アサーション
@@ -97,8 +103,7 @@ void	test_realloc_fine(void);
 # define EXPECT_EQ(ptr1, ptr2) {\
 	if (ptr1 != ptr2) {\
 		OUT_KO("ptr1 %s %p != ptr2 %s %p", #ptr1, ptr1, #ptr2, ptr2);\
-		assert(ptr1 == ptr2);\
-		return;\
+		abort();\
 	}\
 	OUT_OK("ptr1 %s == ptr2 %s %p", #ptr1, #ptr2, ptr2);\
 }
@@ -106,8 +111,7 @@ void	test_realloc_fine(void);
 # define EXPECT_NE(ptr1, ptr2) {\
 	if (ptr1 == ptr2) {\
 		OUT_KO("ptr1 %s == ptr2 %s %p", #ptr1, #ptr2, ptr2);\
-		assert(ptr1 != ptr2);\
-		return;\
+		abort();\
 	}\
 	OUT_OK("ptr1 %s %p != ptr2 %s %p", #ptr1, ptr1, #ptr2, ptr2);\
 }
@@ -115,8 +119,7 @@ void	test_realloc_fine(void);
 # define EXPECT_EQ_I(v1, v2) {\
 	if (v1 != v2) {\
 		OUT_KO("v1 %s != v2 %s", #v1, #v2);\
-		assert(v1 == v2);\
-		return;\
+		abort();\
 	}\
 	OUT_OK("v1 %s == v2 %s", #v1, #v2);\
 }
@@ -124,8 +127,7 @@ void	test_realloc_fine(void);
 # define EXPECT_NE_STR(v1, v2) {\
 	if (!ft_strncmp(v1, v2, -1)) {\
 		OUT_KO("v1 %s == v2 %s", #v1, #v2);\
-		assert(0);\
-		return;\
+		abort();\
 	}\
 	OUT_OK("v1 %s != v2 %s", #v1, #v2);\
 }
@@ -133,8 +135,7 @@ void	test_realloc_fine(void);
 # define EXPECT_EQ_STR(v1, v2) {\
 	if (ft_strncmp(v1, v2, -1)) {\
 		OUT_KO("v1 %s != v2 %s", #v1, #v2);\
-		assert(0);\
-		return;\
+		abort();\
 	}\
 	OUT_OK("v1 %s == v2 %s", #v1, #v2);\
 }

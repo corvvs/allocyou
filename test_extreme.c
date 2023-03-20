@@ -8,8 +8,6 @@
 static void	test_extreme_malloc_single(size_t n) {
 	errno = 0;
 	void*	mem = malloc(n);
-	printf("n = %zu B, mem = %p\n", n, mem);
-	printf("errno = %d, %s\n", errno, strerror(errno));
 	if (mem == NULL) {
 		EXPECT_EQ_I(errno, ENOMEM);
 	} else {
@@ -32,8 +30,6 @@ void	test_extreme_malloc(void) {
 static void	test_extreme_realloc_single(size_t n, size_t m) {
 	errno = 0;
 	void*	mem = realloc(NULL, n);
-	printf("n = %zu B, mem = %p\n", n, mem);
-	printf("errno = %d, %s\n", errno, strerror(errno));
 	if (mem == NULL) {
 		EXPECT_EQ_I(errno, ENOMEM);
 	} else {
@@ -41,8 +37,6 @@ static void	test_extreme_realloc_single(size_t n, size_t m) {
 	}
 	errno = 0;
 	void*	mem2 = realloc(mem, m);
-	printf("m = %zu B, mem2 = %p\n", m, mem2);
-	printf("errno = %d, %s\n", errno, strerror(errno));
 	if (mem2 == NULL) {
 		EXPECT_EQ_I(errno, ENOMEM);
 	} else {
@@ -59,7 +53,7 @@ void	test_extreme_realloc(void) {
 	// size_t sizes[] = {1, UINT_MAX, SIZE_MAX / 2};
 	for (size_t i = 0; i < sizeof(sizes) / sizeof(sizes[0]); ++i) {
 		for (size_t j = 0; j < sizeof(sizes) / sizeof(sizes[0]); ++j) {
-			printf("<< %zu B -> %zu B >>\n", sizes[i], sizes[j]);
+			yoyo_dprintf(STDOUT_FILENO, "<< %zu B -> %zu B >>\n", sizes[i], sizes[j]);
 			test_extreme_realloc_single(sizes[i], sizes[j]);
 		}
 	}

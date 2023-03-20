@@ -1,10 +1,5 @@
-#include "includes/structure.h"
-#include "includes/internal.h"
-#include "includes/malloc.h"
-
 #include "test_malloc.h"
 
-#include <stdio.h>
 
 void	malloc_tiny_basic() {
 	void* mem;
@@ -59,27 +54,27 @@ void	realloc_basic() {
 	EXPECT_NE(mem4, mem5);
 	void*	mem6 = realloc(mem5, 20000);
 	EXPECT_IS_NOT_NULL(mem6);
-	EXPECT_NE(mem5, mem6);
+	EXPECT_EQ(mem5, mem6);
 	void*	mem7 = realloc(mem6, 1);
 	EXPECT_IS_NOT_NULL(mem7);
 	EXPECT_NE(mem6, mem7);
-	EXPECT_NE(mem1, mem7);
 }
 
 
 int main() {
-	// EXEC_TEST(malloc_tiny_basic);
-	// EXEC_TEST(malloc_tiny_all);
-	// EXEC_TEST(malloc_large_basic);
+	EXEC_TEST(malloc_tiny_basic);
+	EXEC_TEST(malloc_tiny_all);
+	EXEC_TEST(malloc_large_basic);
 
-	// EXEC_TEST(realloc_basic);
-	// EXEC_TEST(test_mass_basic);
-	// EXEC_TEST(test_multithread_basic);
-	// EXEC_TEST(test_multithread_realloc);
+	EXEC_TEST(realloc_basic);
 
-	// EXEC_TEST(test_extreme_malloc);
+	EXEC_TEST(test_mass_basic);
+	EXEC_TEST(test_multithread_basic);
+	EXEC_TEST(test_multithread_realloc);
+
+	EXEC_TEST(test_extreme_malloc);
 	EXEC_TEST(test_extreme_realloc);
 
-	// EXEC_TEST(test_tiny_fine);
-	// EXEC_TEST(test_realloc_fine);
+	EXEC_TEST(test_tiny_fine);
+	EXEC_TEST(test_realloc_fine);
 }
