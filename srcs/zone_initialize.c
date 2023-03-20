@@ -22,7 +22,7 @@ static size_t	bitmap_bytes_for_zone_bytes(size_t zone_bytes) {
 static bool	init_zone(const t_yoyo_arena* arena, t_yoyo_zone* zone, t_yoyo_zone_type zone_type) {
 	if (arena->multi_thread) {
 		if (pthread_mutex_init(&zone->lock, NULL)) {
-			DEBUGERR("errno: %d (%s)", errno, strerror(errno));
+			DEBUGFATAL("errno: %d (%s)", errno, strerror(errno));
 			return false;
 		}
 	}
@@ -61,6 +61,7 @@ t_yoyo_zone*	allocate_zone(const t_yoyo_arena* arena, t_yoyo_zone_type zone_type
 	const size_t zone_bytes = zone_bytes_for_zone_type(zone_type);
 	t_yoyo_zone* zone = yoyo_map_memory(zone_bytes, true);
 	if (zone == NULL) {
+		// 原因がサイズデカすぎでないなら致命傷
 		DEBUGERR("failed for class: %d", zone_type);
 		return NULL;
 	}

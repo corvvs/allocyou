@@ -9,155 +9,77 @@
 void	malloc_tiny_basic() {
 	void* mem;
 	mem = malloc(1);
-	yoyo_dprintf(STDOUT_FILENO, "%p\n", mem);
+	EXPECT_IS_NOT_NULL(mem);
+	free(mem);
 	mem = malloc(10);
-	yoyo_dprintf(STDOUT_FILENO, "%p\n", mem);
+	EXPECT_IS_NOT_NULL(mem);
+	free(mem);
 	mem = malloc(100);
-	yoyo_dprintf(STDOUT_FILENO, "%p\n", mem);
-	show_alloc_mem();
+	EXPECT_IS_NOT_NULL(mem);
+	free(mem);
 }
 
 void	malloc_tiny_all() {
-	for (int i = 0; i < 1025; ++i) {
-		void* mem = malloc(992);
-		yoyo_dprintf(STDOUT_FILENO, "%d -> %p\n", i, mem);
+	int	n = 1025;
+	void**	mems = malloc(sizeof(void*) * n);
+	EXPECT_IS_NOT_NULL(mems);
+	for (int i = 0; i < n; ++i) {
+		mems[i] = malloc(992);
 	}
+	for (int i = 0; i < n; ++i) {
+		free(mems[i]);
+	}
+	free(mems);
 }
 
 void	malloc_large_basic() {
-	void* mem;
-	mem = malloc(100000);
-	yoyo_dprintf(STDOUT_FILENO, "%p\n", mem);
-	mem = malloc(500000);
-	yoyo_dprintf(STDOUT_FILENO, "%p\n", mem);
-	mem = malloc(100000000);
-	yoyo_dprintf(STDOUT_FILENO, "%p\n", mem);
-}
-
-void	free_tiny_basic() {
-	void* mem1 = malloc(1);
-	yoyo_dprintf(STDOUT_FILENO, "mem1 = %p\n", mem1);
-	void* mem2 = malloc(1);
-	yoyo_dprintf(STDOUT_FILENO, "mem2 = %p\n", mem2);
-	void* mem3 = malloc(1);
-	yoyo_dprintf(STDOUT_FILENO, "mem3 = %p\n", mem3);
-	show_alloc_mem();
-	free(mem1);
-	free(mem3);
-	free(mem2);
-	show_alloc_mem();
-}
-
-void	free_large_basic() {
-	show_alloc_mem();
-	void* mem1 = malloc(100000);
-	yoyo_dprintf(STDOUT_FILENO, "mem1 = %p\n", mem1);
-	void* mem2 = malloc(500000);
-	yoyo_dprintf(STDOUT_FILENO, "mem2 = %p\n", mem2);
-	void* mem3 = malloc(12500000);
-	yoyo_dprintf(STDOUT_FILENO, "mem3 = %p\n", mem2);
-	show_alloc_mem();
-	print_memory_state(mem1);
-	print_memory_state(mem2);
-	print_memory_state(mem3);
-	free(mem2);
-	free(mem3);
-	free(mem1);
-	show_alloc_mem();
+	void* mem[3];
+	mem[0] = malloc(100000);
+	EXPECT_IS_NOT_NULL(mem[0]);
+	mem[1] = malloc(500000);
+	EXPECT_IS_NOT_NULL(mem[1]);
+	mem[2] = malloc(100000000);
+	EXPECT_IS_NOT_NULL(mem[2]);
 }
 
 void	realloc_basic() {
 	void*	mem1 = realloc(NULL, 60);
-	yoyo_dprintf(STDOUT_FILENO, "mem1 = %p\n", mem1);
+	EXPECT_IS_NOT_NULL(mem1);
 	void*	mem2 = realloc(mem1, 20);
-	yoyo_dprintf(STDOUT_FILENO, "mem2 = %p\n", mem2);
+	EXPECT_IS_NOT_NULL(mem2);
+	EXPECT_EQ(mem1, mem2);
 	void*	mem3 = realloc(mem2, 24);
-	yoyo_dprintf(STDOUT_FILENO, "mem3 = %p\n", mem3);
-	show_alloc_mem();
+	EXPECT_IS_NOT_NULL(mem3);
+	EXPECT_EQ(mem2, mem3);
 	void*	mem4 = realloc(mem3, 4000);
-	yoyo_dprintf(STDOUT_FILENO, "mem4 = %p\n", mem4);
-	show_alloc_mem();
+	EXPECT_IS_NOT_NULL(mem4);
+	EXPECT_NE(mem3, mem4);
 	void*	mem5 = realloc(mem4, 40000);
-	yoyo_dprintf(STDOUT_FILENO, "mem5 = %p\n", mem5);
+	EXPECT_IS_NOT_NULL(mem5);
+	EXPECT_NE(mem4, mem5);
 	void*	mem6 = realloc(mem5, 20000);
-	yoyo_dprintf(STDOUT_FILENO, "mem6 = %p\n", mem6);
-	show_alloc_mem();
+	EXPECT_IS_NOT_NULL(mem6);
+	EXPECT_NE(mem5, mem6);
 	void*	mem7 = realloc(mem6, 1);
-	yoyo_dprintf(STDOUT_FILENO, "mem7 = %p\n", mem7);
-	show_alloc_mem();
+	EXPECT_IS_NOT_NULL(mem7);
+	EXPECT_NE(mem6, mem7);
+	EXPECT_NE(mem1, mem7);
 }
 
-#include <limits.h>
-#include <errno.h>
-
-void	test_extreme_malloc_single(size_t n) {
-	void*	mem = malloc(n);
-	printf("n = %zu B, mem = %p\n", n, mem);
-	printf("errno = %d, %s\n", errno, strerror(errno));
-	free(mem);
-}
-
-void	test_extreme_malloc(void) {
-	test_extreme_malloc_single(0);
-	test_extreme_malloc_single(UINT_MAX);
-	test_extreme_malloc_single(SIZE_MAX / 2);
-	test_extreme_malloc_single(SIZE_MAX - 1000);
-	test_extreme_malloc_single(SIZE_MAX - 100);
-	test_extreme_malloc_single(SIZE_MAX - 10);
-	test_extreme_malloc_single(SIZE_MAX - 1);
-	test_extreme_malloc_single(SIZE_MAX);
-}
-
-void	test_extreme_realloc_single(size_t n, size_t m) {
-	void*	mem = realloc(NULL, n);
-	printf("n = %zu B, mem = %p\n", n, mem);
-	printf("errno = %d, %s\n", errno, strerror(errno));
-	void*	mem2 = realloc(mem, m);
-	printf("m = %zu B, mem2 = %p\n", m, mem2);
-	printf("errno = %d, %s\n", errno, strerror(errno));
-	if (mem != mem2 && mem2 == NULL) {
-		free(mem);
-	}
-	free(mem2);
-}
-
-void	test_extreme_realloc(void) {
-	size_t sizes[] = {1, UINT_MAX, SIZE_MAX / 2, SIZE_MAX - 1000, SIZE_MAX - 100, SIZE_MAX - 10, SIZE_MAX - 1, SIZE_MAX};
-	// size_t sizes[] = {1, UINT_MAX, SIZE_MAX / 2};
-	for (size_t i = 0; i < sizeof(sizes) / sizeof(sizes[0]); ++i) {
-		for (size_t j = 0; j < sizeof(sizes) / sizeof(sizes[0]); ++j) {
-			printf("<< %zu B -> %zu B >>\n", sizes[i], sizes[j]);
-			test_extreme_realloc_single(sizes[i], sizes[j]);
-			show_alloc_mem();
-		}
-	}
-}
 
 int main() {
-	// yoyo_dprintf(STDOUT_FILENO, "%zu\n", sizeof(bool));
-	// yoyo_dprintf(STDOUT_FILENO, "%zu\n", sizeof(unsigned int));
-	// yoyo_dprintf(STDOUT_FILENO, "%zu\n", sizeof(pthread_mutex_t));
-	// yoyo_dprintf(STDOUT_FILENO, "%zu\n", sizeof(t_yoyo_zone));
+	// EXEC_TEST(malloc_tiny_basic);
+	// EXEC_TEST(malloc_tiny_all);
+	// EXEC_TEST(malloc_large_basic);
 
-	// size_t	zone_tiny_bytes = 1024 * 1024;
-	// size_t	zone_small_bytes = 8 * 1024 * 1024;
-	// yoyo_dprintf(STDOUT_FILENO, "bytes: %zu\n", heap_bytes_for_zone_bytes(zone_tiny_bytes));
-	// yoyo_dprintf(STDOUT_FILENO, "bytes: %zu\n", heap_bytes_for_zone_bytes(zone_small_bytes));
+	// EXEC_TEST(realloc_basic);
+	// EXEC_TEST(test_mass_basic);
+	// EXEC_TEST(test_multithread_basic);
+	// EXEC_TEST(test_multithread_realloc);
 
-	// t_yoyo_zone* tiny = allocate_zone(&g_yoyo_realm.arenas[0], YOYO_ZONE_TINY);
-	// yoyo_dprintf(STDOUT_FILENO, "%p\n", tiny);
-	// malloc_tiny_basic();
-	// malloc_tiny_all();
-	// malloc_large_basic();
+	// EXEC_TEST(test_extreme_malloc);
+	EXEC_TEST(test_extreme_realloc);
 
-	// free_tiny_basic();
-	// free_large_basic();
-
-	// realloc_basic();
-	// test_mass_basic();
-	// test_multithread_basic();
-	// test_multithread_realloc();
-
-	// test_extreme_malloc();
-	test_extreme_realloc();
+	// EXEC_TEST(test_tiny_fine);
+	// EXEC_TEST(test_realloc_fine);
 }

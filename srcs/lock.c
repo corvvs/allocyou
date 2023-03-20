@@ -9,7 +9,7 @@ bool	lock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type) {
 	}
 	t_yoyo_subarena*	subarena = get_subarena(arena, zone_type);
 	if (!lock_subarena(subarena)) {
-		// DEBUGERR("FAILED to lock: %d(%s)", errno, strerror(errno));
+		DEBUGFATAL("FAILED to lock: %d(%s)", errno, strerror(errno));
 		return false;
 	}
 	// DEBUGOUT("LOCKED: #%u(%p)", arena->index, arena);
@@ -36,7 +36,7 @@ bool	lock_subarena(t_yoyo_subarena* subarena) {
 		return true;
 	}
 	if (pthread_mutex_lock(&subarena->lock)) {
-		// DEBUGERR("FAILED to lock: %d(%s)", errno, strerror(errno));
+		DEBUGFATAL("FAILED to lock: %d(%s)", errno, strerror(errno));
 		return false;
 	}
 	// DEBUGOUT("LOCKED: %p", subarena);
@@ -62,7 +62,7 @@ bool	lock_zone(t_yoyo_zone* zone) {
 		return true;
 	}
 	if (pthread_mutex_lock(&zone->lock)) {
-		// DEBUGERR("FAILED to lock: %d(%s)", errno, strerror(errno));
+		DEBUGFATAL("FAILED to lock: %d(%s)", errno, strerror(errno));
 		return false;
 	}
 	// DEBUGOUT("LOCKED: %p", zone);
@@ -89,7 +89,7 @@ bool	unlock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type) {
 	}
 	t_yoyo_subarena*	subarena = get_subarena(arena, zone_type);
 	if (pthread_mutex_unlock(&subarena->lock)) {
-		// DEBUGERR("FAILED to unlock: %d(%s)", errno, strerror(errno));
+		DEBUGFATAL("FAILED to unlock: %d(%s)", errno, strerror(errno));
 		return false;
 	}
 	// DEBUGOUT("UNLOCKED: #%u(%p)", arena->index, arena);
@@ -102,7 +102,7 @@ bool	unlock_subarena(t_yoyo_subarena* subarena) {
 		return true;
 	}
 	if (pthread_mutex_unlock(&subarena->lock)) {
-		DEBUGERR("FAILED to unlock: %d(%s)", errno, strerror(errno));
+		DEBUGFATAL("FAILED to unlock: %d(%s)", errno, strerror(errno));
 		return false;
 	}
 	DEBUGOUT("UNLOCKED: %p", subarena);
@@ -115,7 +115,7 @@ bool	unlock_zone(t_yoyo_zone* zone) {
 		return true;
 	}
 	if (pthread_mutex_unlock(&zone->lock)) {
-		DEBUGERR("FAILED to unlock: %d(%s)", errno, strerror(errno));
+		DEBUGFATAL("FAILED to unlock: %d(%s)", errno, strerror(errno));
 		return false;
 	}
 	DEBUGOUT("UNLOCKED: %p", zone);

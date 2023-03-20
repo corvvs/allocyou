@@ -24,3 +24,9 @@ t_yoyo_chunk*	get_chunk_by_index(t_yoyo_zone* zone, unsigned int block_index) {
 	}
 	return (void*)zone + zone->offset_heap + block_index * BLOCK_UNIT_SIZE;
 }
+
+// 対象アドレスがchunkヘッダであること, 使用中であることを確認する
+bool	is_header_and_used(const t_yoyo_zone* zone, const t_yoyo_chunk* chunk) {
+	const unsigned int	bi = get_block_index(zone, chunk);
+	return is_head(zone, bi) && is_used(zone, bi);
+}
