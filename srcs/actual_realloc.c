@@ -95,8 +95,9 @@ void*	yoyo_actual_realloc(void* addr, size_t n) {
 	// SHRINK できるか？
 	// - 要求ブロックサイズ < 現在ブロックサイズ
 	// - 要求ゾーンタイプ = 現在ゾーンタイプ
+	// - 現在ゾーンタイプ != LARGE
 	// - 新しく生成されるフリーチャンクのブロックサイズが2以上
-	if (blocks_required < blocks_current) {
+	if (type_current != YOYO_ZONE_LARGE && blocks_required < blocks_current) {
 		const size_t	blocks_new_free = blocks_current - blocks_required;
 		DEBUGOUT("blocks_new_free: %zu", blocks_new_free);
 		const t_yoyo_zone_type	type_new_free = zone_type_for_bytes(blocks_new_free * BLOCK_UNIT_SIZE);

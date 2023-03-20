@@ -37,6 +37,7 @@ FILES_TEST	:=\
 			test_multithread.c\
 			test_extreme.c\
 			test_fine.c\
+			test_utils.c\
 
 
 OBJS_TEST	:=	$(FILES_TEST:%.c=$(OBJDIR)/%.o)

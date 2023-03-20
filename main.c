@@ -1,10 +1,5 @@
-#include "includes/structure.h"
-#include "includes/internal.h"
-#include "includes/malloc.h"
-
 #include "test_malloc.h"
 
-#include <stdio.h>
 
 void	malloc_tiny_basic() {
 	void* mem;
@@ -68,18 +63,18 @@ void	realloc_basic() {
 
 
 int main() {
-	// EXEC_TEST(malloc_tiny_basic);
-	// EXEC_TEST(malloc_tiny_all);
-	// EXEC_TEST(malloc_large_basic);
+	EXEC_TEST(malloc_tiny_basic);
+	EXEC_TEST(malloc_tiny_all);
+	EXEC_TEST(malloc_large_basic);
 
-	// EXEC_TEST(realloc_basic);
-	// EXEC_TEST(test_mass_basic);
-	// EXEC_TEST(test_multithread_basic);
-	// EXEC_TEST(test_multithread_realloc);
+	EXEC_TEST(realloc_basic);
+	EXEC_TEST(test_mass_basic);
+	EXEC_TEST(test_multithread_basic);
+	EXEC_TEST(test_multithread_realloc);
 
-	// EXEC_TEST(test_extreme_malloc);
+	EXEC_TEST(test_extreme_malloc);
 	EXEC_TEST(test_extreme_realloc);
 
-	// EXEC_TEST(test_tiny_fine);
-	// EXEC_TEST(test_realloc_fine);
+	EXEC_TEST(test_tiny_fine);
+	EXEC_TEST(test_realloc_fine);
 }
