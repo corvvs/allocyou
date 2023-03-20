@@ -62,16 +62,16 @@ t_yoyo_exit	exec_test(void	(*func)(void), int* signal);
 	t_tv yo_t1; gettimeofday(&yo_t1, NULL);\
 	switch (ex) {\
 		case YOYO_EXIT_OK:\
-			OUT_TEST_LABEL(TX_BLU, 120, "successfully end: %s, duration: %llums", #func, TIME_DIFF(yo_t0, yo_t1) / 1000);\
+			OUT_TEST_LABEL(TX_BLU, 120, "end successfully: %s, duration: %llums", #func, TIME_DIFF(yo_t0, yo_t1) / 1000);\
 			break;\
 		case YOYO_EXIT_ERROR:\
-			OUT_TEST_LABEL(TX_RED, 120, "ERROR end: %s", #func);\
+			OUT_TEST_LABEL(TX_RED, 120, "end ERROR: %s", #func);\
 			abort();\
 		case YOYO_EXIT_SIGNAL:\
-			OUT_TEST_LABEL(BG_RED, 120, "SIGNAL end: %s, %s", #func, strsignal(signal));\
+			OUT_TEST_LABEL(BG_RED, 120, "end SIGNAL: %s, %s", #func, strsignal(signal));\
 			abort();\
 		default:\
-			OUT_TEST_LABEL(TX_RED, 120, "UNEXPECTEDLY end: %s", #func);\
+			OUT_TEST_LABEL(TX_RED, 120, "end UNEXPECTEDLY: %s", #func);\
 			abort();\
 	}\
 }

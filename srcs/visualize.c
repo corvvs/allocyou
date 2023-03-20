@@ -6,8 +6,12 @@ static void	visualize_chunk(const t_yoyo_chunk* chunk) {
 
 // 指定した zone を可視化する
 static void	visualize_locked_zone(t_yoyo_zone* zone) {
-	yoyo_dprintf(STDOUT_FILENO, "\t\t[zone: %p]\n", zone);
-	yoyo_dprintf(STDOUT_FILENO, "\t\tusing %u blocks / %u blocks\n", zone->blocks_used, zone->blocks_zone);
+	yoyo_dprintf(STDOUT_FILENO, "\t\tzone %p:", zone);
+	if (zone->blocks_used > 0) {
+		yoyo_dprintf(STDOUT_FILENO, " using %u blocks / %u blocks\n", zone->blocks_used, zone->blocks_zone);
+	} else {
+		yoyo_dprintf(STDOUT_FILENO, " %u blocks ALL FREE\n", zone->blocks_zone);
+	}
 	// 使用中チャンクを表示していく
 	unsigned int	block_index = 0;
 	while (block_index < zone->blocks_heap) {
@@ -47,7 +51,8 @@ static void	visualize_locked_tiny_small_subarena(const char* zone_name, t_yoyo_a
 		zone = next;
 		n_zone += 1;
 	}
-	yoyo_dprintf(STDOUT_FILENO, "\t%zu zones in this subarena\n", n_zone);
+	yoyo_dprintf(STDOUT_FILENO, "\t%zu %s in this subarena\n",
+		n_zone, n_zone > 1 ? "zones" : "zone");
 }
 
 static void	visualize_large_chunk(const t_yoyo_large_chunk* large_chunk) {

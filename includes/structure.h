@@ -5,7 +5,9 @@
 # include <stdbool.h>
 # include <pthread.h>
 
-# define ARENA_MAX	5
+# ifndef ARENA_MAX
+#  define ARENA_MAX	1
+# endif
 // a を bの倍数に切り上げる
 # define CEIL_BY(a, b) (a ? ((a - 1) / b + 1) * b : b)
 // a を bの倍数に切り下げる

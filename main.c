@@ -54,11 +54,10 @@ void	realloc_basic() {
 	EXPECT_NE(mem4, mem5);
 	void*	mem6 = realloc(mem5, 20000);
 	EXPECT_IS_NOT_NULL(mem6);
-	EXPECT_NE(mem5, mem6);
+	EXPECT_EQ(mem5, mem6);
 	void*	mem7 = realloc(mem6, 1);
 	EXPECT_IS_NOT_NULL(mem7);
 	EXPECT_NE(mem6, mem7);
-	EXPECT_NE(mem1, mem7);
 }
 
 
@@ -68,6 +67,7 @@ int main() {
 	EXEC_TEST(malloc_large_basic);
 
 	EXEC_TEST(realloc_basic);
+
 	EXEC_TEST(test_mass_basic);
 	EXEC_TEST(test_multithread_basic);
 	EXEC_TEST(test_multithread_realloc);

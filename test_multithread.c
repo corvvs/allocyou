@@ -65,10 +65,13 @@ static void*	test_multithread_basic_sub(void* index) {
 }
 
 void	test_multithread_basic(void) {
+	yoyo_dprintf(STDOUT_FILENO, "start: %d - %d\n", N_THREADS, N_LOCKS);
+	yoyo_dprintf(STDOUT_FILENO, "init %d locks\n", N_LOCKS);
 	for (int i = 0; i < N_LOCKS; ++i) {
 		pthread_mutex_init(&basket.locks[i], NULL);
 		basket.strings[i] = NULL;
 	}
+	yoyo_dprintf(STDOUT_FILENO, "start %d threads\n", N_THREADS);
 	for (int i = 0; i < N_THREADS; ++i) {
 		indexes[i] = i + 1;
 		int* ip = &indexes[i];
@@ -78,20 +81,16 @@ void	test_multithread_basic(void) {
 	for (int i = 0; i < N_THREADS; ++i) {
 		pthread_join(basket.threads[i], NULL);
 	}
+	yoyo_dprintf(STDOUT_FILENO, "joined %d threads\n", N_THREADS);
 	for (int i = 0; i < N_LOCKS; ++i) {
 		pthread_mutex_destroy(&basket.locks[i]);
 	}
+	yoyo_dprintf(STDOUT_FILENO, "destroyed %d threads\n", N_LOCKS);
 	// show_alloc_mem();
 	for (int i = 0; i < N_LOCKS; ++i) {
 		free(basket.strings[i]);
 	}
-	DEBUGWARN("done: %d - %d", N_THREADS, N_LOCKS);
-	dprintf(2, "%zu\n", sizeof(t_basket_1));
-	dprintf(2, "%zu\n", sizeof(basket));
-	dprintf(2, "%zu\n", sizeof(g_yoyo_realm));
-	dprintf(2, "%p\n", &basket);
-	dprintf(2, "%p\n", (void*)&basket + sizeof(basket));
-	dprintf(2, "%p\n", &g_yoyo_realm);
+	yoyo_dprintf(STDOUT_FILENO, "done: %d - %d\n", N_THREADS, N_LOCKS);
 }
 
 
@@ -144,10 +143,13 @@ static void*	test_multithread_realloc_sub(void* index) {
 }
 
 void	test_multithread_realloc(void) {
+	yoyo_dprintf(STDOUT_FILENO, "start: %d - %d\n", N_THREADS, N_LOCKS);
+	yoyo_dprintf(STDOUT_FILENO, "init %d locks\n", N_LOCKS);
 	for (int i = 0; i < N_LOCKS; ++i) {
 		pthread_mutex_init(&basket.locks[i], NULL);
 		basket.strings[i] = NULL;
 	}
+	yoyo_dprintf(STDOUT_FILENO, "start %d threads\n", N_THREADS);
 	for (int i = 0; i < N_THREADS; ++i) {
 		indexes[i] = i + 1;
 		int* ip = &indexes[i];
@@ -157,19 +159,15 @@ void	test_multithread_realloc(void) {
 	for (int i = 0; i < N_THREADS; ++i) {
 		pthread_join(basket.threads[i], NULL);
 	}
+	yoyo_dprintf(STDOUT_FILENO, "joined %d threads\n", N_THREADS);
 	for (int i = 0; i < N_LOCKS; ++i) {
 		pthread_mutex_destroy(&basket.locks[i]);
 	}
+	yoyo_dprintf(STDOUT_FILENO, "destroyed %d locks\n", N_LOCKS);
 	// show_alloc_mem();
 	for (int i = 0; i < N_LOCKS; ++i) {
 		free(basket.strings[i]);
 	}
-	DEBUGWARN("done: %d - %d", N_THREADS, N_LOCKS);
-	dprintf(2, "%zu\n", sizeof(t_basket_1));
-	dprintf(2, "%zu\n", sizeof(basket));
-	dprintf(2, "%zu\n", sizeof(g_yoyo_realm));
-	dprintf(2, "%p\n", &basket);
-	dprintf(2, "%p\n", (void*)&basket + sizeof(basket));
-	dprintf(2, "%p\n", &g_yoyo_realm);
+	yoyo_dprintf(STDOUT_FILENO, "done: %d - %d\n", N_THREADS, N_LOCKS);
 }
 
