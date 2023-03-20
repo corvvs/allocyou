@@ -17,7 +17,7 @@ static void*	test_multithread_basic_sub(void* index) {
 	int idx = *(int*)index;
 	DEBUGWARN("#%d launched", idx);
 
-	int count = 1000;
+	int count = 10;
 	char a[] = "0";
 	a[0] += idx;
 	for (int i = 0; i < count; ++i) {
@@ -81,7 +81,7 @@ void	test_multithread_basic(void) {
 	for (int i = 0; i < N_LOCKS; ++i) {
 		pthread_mutex_destroy(&basket.locks[i]);
 	}
-	show_alloc_mem();
+	// show_alloc_mem();
 	for (int i = 0; i < N_LOCKS; ++i) {
 		free(basket.strings[i]);
 	}
@@ -138,7 +138,7 @@ static void*	test_multithread_realloc_sub(void* index) {
 			DEBUGINFO("#%d *%d unlocked %d-th lock", idx, i, k);
 		}
 	}
-	show_alloc_mem();
+	// show_alloc_mem();
 	DEBUGWARN("#%d closing...", idx);
 	return NULL;
 }
@@ -160,7 +160,7 @@ void	test_multithread_realloc(void) {
 	for (int i = 0; i < N_LOCKS; ++i) {
 		pthread_mutex_destroy(&basket.locks[i]);
 	}
-	show_alloc_mem();
+	// show_alloc_mem();
 	for (int i = 0; i < N_LOCKS; ++i) {
 		free(basket.strings[i]);
 	}

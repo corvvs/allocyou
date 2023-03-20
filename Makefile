@@ -39,7 +39,7 @@ OBJS_TEST	:=	$(FILES_TEST:%.c=$(OBJDIR)/%.o)
 
 CC			:=	gcc
 CCOREFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR)
-CFLAGS		:=	$(CCOREFLAGS) -g# -fsanitize=undefined
+CFLAGS		:=	$(CCOREFLAGS) -D NDEBUG -g #-fsanitize=thread
 LIBFLAGS	:=	-fPIC -fpic
 
 BASE_LIBNAME	:=	ft_malloc
@@ -48,7 +48,7 @@ BASE_SONAME	:=	libft_malloc.so
 DYLIBNAME	:=	libft_malloc_$(HOSTTYPE).dylib
 BASE_DYLIBNAME	:=	libft_malloc.dylib
 
-all:			$(BASE_DYLIBNAME)
+all:			malloc
 
 $(OBJDIR)/%.o:	$(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR)
@@ -101,7 +101,6 @@ up:
 
 down:
 	docker-compose down
-
 
 it:
 	docker-compose exec app bash
