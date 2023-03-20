@@ -4,6 +4,7 @@
 # include <stdlib.h>
 # include <unistd.h>
 # include <signal.h>
+# include <sys/wait.h>
 # include "includes/internal.h"
 
 typedef enum e_yoyo_exit {

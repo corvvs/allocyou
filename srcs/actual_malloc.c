@@ -203,11 +203,11 @@ static void*	allocate_memory_from_zone_list(t_yoyo_arena* arena, t_yoyo_zone_typ
 	while (current_zone != NULL) {
 		if (try_lock_zone(current_zone)) {
 			// zone ロックが取れた -> アロケートを試みる
-			print_zone_state(current_zone);
-			print_zone_bitmap_state(current_zone);
+			// print_zone_state(current_zone);
+			// print_zone_bitmap_state(current_zone);
 			void*	mem = try_allocate_chunk_from_zone(current_zone, n);
-			print_zone_state(current_zone);
-			print_zone_bitmap_state(current_zone);
+			// print_zone_state(current_zone);
+			// print_zone_bitmap_state(current_zone);
 			unlock_zone(current_zone);
 			if (mem != NULL) {
 				return mem;

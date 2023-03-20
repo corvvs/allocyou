@@ -65,7 +65,6 @@ $(OBJDIR)/%.o:	%.c
 
 .PHONY:			malloc
 malloc:			$(NAME) $(OBJS_TEST) $(LIBFT) #$(BASE_DYLIBNAME)
-	# $(CC) $(CFLAGS) -o $@ $(OBJS_TEST) -L . -l $(BASE_LIBNAME)
 	$(CC) $(CFLAGS) -o $@ $(OBJS_TEST) $(LIBFT) $(NAME)
 	./$@
 

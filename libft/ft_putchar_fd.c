@@ -6,7 +6,7 @@
 /*   By: corvvs <corvvs@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/17 01:34:51 by corvvs            #+#    #+#             */
-/*   Updated: 2023/02/17 15:32:14 by corvvs           ###   ########.fr       */
+/*   Updated: 2023/03/21 03:07:55 by corvvs           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,5 +15,8 @@
 
 void	ft_putchar_fd(char c, int fd)
 {
-	write(fd, &c, 1);
+	ssize_t	w;
+
+	w = write(fd, &c, 1);
+	(void)w;
 }

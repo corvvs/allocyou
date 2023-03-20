@@ -6,7 +6,7 @@
 /*   By: corvvs <corvvs@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/10 18:59:27 by corvvs            #+#    #+#             */
-/*   Updated: 2023/03/16 22:30:27 by corvvs           ###   ########.fr       */
+/*   Updated: 2023/03/21 03:07:13 by corvvs           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 # define LIBFT_H
 # include <stdlib.h>
 # include <stdbool.h>
+# include <stdint.h>
 
 size_t	ft_strlen(const char *str);
 size_t	ft_strnlen(const char *str, size_t nmax);
