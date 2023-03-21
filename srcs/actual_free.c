@@ -156,11 +156,12 @@ void	yoyo_actual_free(void* addr) {
 	free_from_tiny_small_zone(chunk);
 }
 
-size_t 	yoyo_actual_malloc_usable_size (void *ptr) {
+size_t	yoyo_actual_malloc_usable_size(void *ptr) {
 	if (ptr == NULL) {
 		return 0;
 	}
 	assert((uintptr_t)ptr >= CEILED_CHUNK_SIZE);
 	t_yoyo_chunk*	chunk = (void*)ptr - CEILED_CHUNK_SIZE;
-	return chunk->blocks * BLOCK_UNIT_SIZE;
+	assert(chunk->blocks >= 2);
+	return (chunk->blocks - 1) * BLOCK_UNIT_SIZE;
 }
