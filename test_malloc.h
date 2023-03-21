@@ -8,6 +8,14 @@
 # include "test_utils.h"
 typedef struct timeval t_tv;
 
+// test_basic.c
+void	malloc_tiny_basic(void);
+void	malloc_tiny_basic2(void);
+void	malloc_tiny_all(void);
+void	malloc_large_basic(void);
+void	realloc_basic(void);
+void	malloc_usable_size_basic(void);
+
 // test_mass.c
 void	test_mass_malloc_and_free(void);
 
@@ -24,7 +32,7 @@ void	test_tiny_fine(void);
 void	test_realloc_fine(void);
 
 // test_utils.c
-t_yoyo_exit	exec_test(void	(*func)(void), int* signal);
+t_yoyo_exit	exec_test(void (*func)(void), int* signal);
 
 // テキスト色変
 # define TX_RED "\e[31m"
@@ -122,6 +130,14 @@ t_yoyo_exit	exec_test(void	(*func)(void), int* signal);
 		abort();\
 	}\
 	OUT_OK("v1 %s == v2 %s", #v1, #v2);\
+}
+
+# define EXPECT_NE_I(v1, v2) {\
+	if (v1 == v2) {\
+		OUT_KO("v1 %s == v2 %s", #v1, #v2);\
+		abort();\
+	}\
+	OUT_OK("v1 %s != v2 %s", #v1, #v2);\
 }
 
 # define EXPECT_NE_STR(v1, v2) {\

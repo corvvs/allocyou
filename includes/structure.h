@@ -8,6 +8,11 @@
 # ifndef ARENA_MAX
 #  define ARENA_MAX	1
 # endif
+
+# ifndef CHAR_BIT
+#  define CHAR_BIT 8
+# endif
+
 // a を bの倍数に切り上げる
 # define CEIL_BY(a, b) (a ? ((a - 1) / b + 1) * b : b)
 // a を bの倍数に切り下げる

@@ -311,3 +311,41 @@ void*	yoyo_actual_calloc(size_t count, size_t size) {
 	return mem;
 }
 
+void*	yoyo_actual_memalign(size_t alignment, size_t size) {
+	// [alignemt のチェック]
+	if (!is_power_of_2(alignment) || size % alignment != 0) {
+		errno = EINVAL;
+		return NULL;
+	}
+	// [オーバーフローチェック]
+	if (overflow_by_addtion(size, alignment)) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	const size_t ceiled_size = CEIL_BY(size + alignment, BLOCK_UNIT_SIZE);
+	if (ceiled_size == 0 || overflow_by_addtion(ceiled_size, CEILED_CHUNK_SIZE)) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	// [malloc]
+	const size_t	alloc_size = ceiled_size + CEILED_CHUNK_SIZE;
+	void*	mem = yoyo_actual_malloc(alloc_size);
+	if (mem == NULL) {
+		return NULL;
+	}
+	// [アライメント調整]
+	uintptr_t	ptr = (uintptr_t)mem;
+	if (ptr % alignment == 0) {
+		return mem;
+	}
+	t_yoyo_chunk*	actual_header = addr_to_actual_header(mem);
+	ptr += CEILED_CHUNK_SIZE;
+
+	size_t offset = (alignment - (ptr % alignment)) % alignment;
+	mem = (void*)(ptr + offset);
+	t_yoyo_chunk*	pseudo_header = addr_to_actual_header(mem);
+	pseudo_header->blocks = BLOCKS_FOR_SIZE(size) + 1;
+	pseudo_header->next = SET_FLAGS(actual_header, YOYO_FLAG_PSEUDO_HEADER);
+	assert((uintptr_t)mem % alignment == 0);
+	return mem;
+}

@@ -4,7 +4,6 @@
 
 __attribute__((constructor))
 static void	yoyo_init() {
-	DEBUGSTR("INIT");
 	init_realm(true);	
 }
 
@@ -12,7 +11,7 @@ void*	malloc(size_t n) {
 	DEBUGOUT("** bytes: %zu **", n);
 	SPRINT_START;
 	void	*mem = yoyo_actual_malloc(n);
-	SPRINT_END("malloc");
+	SPRINT_END(__func__);
 	DEBUGOUT("** malloc end, returning %p for %zu B **", mem, n);
 	return mem;
 }
@@ -21,7 +20,7 @@ void	free(void* addr) {
 	DEBUGOUT("** addr: %p **", addr);
 	SPRINT_START;
 	yoyo_actual_free(addr);
-	SPRINT_END("free");
+	SPRINT_END(__func__);
 	DEBUGSTR("** free end **");
 }
 
@@ -29,7 +28,7 @@ void*	realloc(void* addr, size_t n) {
 	DEBUGOUT("** addr: %p, n: %zu **", addr, n);
 	SPRINT_START;
 	void*	mem = yoyo_actual_realloc(addr, n);
-	SPRINT_END("realloc");
+	SPRINT_END(__func__);
 	DEBUGOUT("** realloc end, returning %p for %p, %zu B **", mem, addr, n);
 	return mem;
 }
@@ -45,15 +44,15 @@ void*	calloc(size_t count, size_t size) {
 
 __attribute__((visibility("default")))
 void	show_alloc_mem(void) {
-	DEBUGSTR("** show_alloc_mem **");
+	DEBUGOUT("** %s **", __func__);
 	SPRINT_START;
 	actual_show_alloc_mem();
 	SPRINT_END(__func__);
 	DEBUGSTR("** show_alloc_mem end **");
 }
 
-size_t 	malloc_usable_size (void *ptr) {
-	DEBUGSTR("** malloc_usable_size **");
+size_t 	malloc_usable_size(void *ptr) {
+	DEBUGOUT("** %s **", __func__);
 	SPRINT_START;
 	size_t	rv = yoyo_actual_malloc_usable_size(ptr);
 	SPRINT_END(__func__);
@@ -61,8 +60,17 @@ size_t 	malloc_usable_size (void *ptr) {
 	return rv;
 }
 
+void*	memalign(size_t alignment, size_t size) {
+	DEBUGOUT("** %s **", __func__);
+	SPRINT_START;
+	void*	rv = yoyo_actual_memalign(alignment, size);
+	SPRINT_END(__func__);
+	DEBUGOUT("** memalign end, returning %p for (%zu, %zu) **", rv, alignment, size);
+	return rv;
+}
+
 __attribute__((destructor))
 static void	yoyo_exit() {
-	// show_alloc_mem();
+	show_alloc_mem();
 	// DEBUGSTR("EXIT");
 }

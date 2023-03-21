@@ -18,6 +18,7 @@ extern t_yoyo_realm	g_yoyo_realm;
 // actual_malloc.c
 void*	yoyo_actual_malloc(size_t n);
 void*	yoyo_actual_calloc(size_t count, size_t size);
+void*	yoyo_actual_memalign(size_t alignment, size_t size);
 
 // actual_free.c
 void	yoyo_actual_free(void* addr);
@@ -66,17 +67,23 @@ t_yoyo_chunk*	get_chunk_by_index(t_yoyo_zone* zone, unsigned int block_index);
 bool			is_header_and_used(const t_yoyo_zone* zone, const t_yoyo_chunk* chunk);
 
 // zone_utils.c
-size_t	zone_bytes_for_zone_type(t_yoyo_zone_type zone_type);
-size_t	max_chunk_blocks_for_zone_type(t_yoyo_zone_type zone_type);
+size_t				zone_bytes_for_zone_type(t_yoyo_zone_type zone_type);
+size_t				max_chunk_blocks_for_zone_type(t_yoyo_zone_type zone_type);
 t_yoyo_zone_type	zone_type_for_bytes(size_t n);
-unsigned int	get_block_index(const t_yoyo_zone* zone, const t_yoyo_chunk* head);
-t_yoyo_zone*	get_zone_of_chunk(const t_yoyo_chunk* chunk);
-void	sort_zone_list(t_yoyo_zone** list);
+unsigned int		get_block_index(const t_yoyo_zone* zone, const t_yoyo_chunk* head);
+t_yoyo_zone*		get_zone_of_chunk(const t_yoyo_chunk* chunk);
+void				sort_zone_list(t_yoyo_zone** list);
 
 // zone_operation.c
 void	unmark_chunk(t_yoyo_zone* zone, const t_yoyo_chunk* chunk);
 void	mark_chunk_as_free(t_yoyo_zone* zone, const t_yoyo_chunk* chunk);
 void	mark_chunk_as_used(t_yoyo_zone* zone, const t_yoyo_chunk* chunk);
+
+// memory_utils
+bool			is_power_of_2(size_t bytes);
+bool			overflow_by_addtion(size_t a, size_t b);
+t_yoyo_chunk*	addr_to_actual_header(void* addr);
+t_yoyo_chunk*	addr_to_nominal_header(void* addr);
 
 // debug.c
 void	print_zone_state(const t_yoyo_zone* zone);

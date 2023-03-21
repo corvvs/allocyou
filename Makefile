@@ -20,6 +20,7 @@ FILES	:=	\
 			zone_bitmap.c\
 			zone_operation.c\
 			zone_utils.c\
+			memory_utils.c\
 			debug.c\
 			printf.c\
 
@@ -33,6 +34,7 @@ RM		:=	rm -rf
 
 FILES_TEST	:=\
 			main.c\
+			test_basic.c\
 			test_mass.c\
 			test_multithread.c\
 			test_extreme.c\
