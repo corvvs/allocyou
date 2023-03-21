@@ -99,3 +99,25 @@ void	malloc_usable_size_basic(void) {
 	mem = realloc(mem, 10000);
 	EXPECT_EQ_I(malloc_usable_size(mem), 10000);
 }
+
+void	memalign_basic_sub(size_t alignment, size_t size) {
+	void* mem = memalign(alignment, size);
+	EXPECT_IS_NOT_NULL(mem);
+	// yoyo_dprintf(STDOUT_FILENO, "mem = %p, usable = %zu\n", mem, malloc_usable_size(mem));
+	EXPECT_EQ_I((uintptr_t)mem % alignment, 0);
+	EXPECT_GE_I(malloc_usable_size(mem), size);
+}
+
+void	memalign_basic(void) {
+	for (size_t n = 1; n < 10; ++n) {
+		size_t	a = 1u << n;
+		for (size_t size = a; size < 10000; size *= a) {
+			// yoyo_dprintf(STDOUT_FILENO, "(alignment, size) = (%zu, %zu)\n", a, size);
+			memalign_basic_sub(a, size);
+		}
+	}
+}
+
+// void	memalign_error(void) {
+
+// }

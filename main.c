@@ -7,6 +7,7 @@ int main() {
 	EXEC_TEST(malloc_tiny_all);
 	EXEC_TEST(malloc_large_basic);
 	EXEC_TEST(malloc_usable_size_basic);
+	EXEC_TEST(memalign_basic);
 
 	EXEC_TEST(realloc_basic);
 

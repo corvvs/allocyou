@@ -15,6 +15,7 @@ void	malloc_tiny_all(void);
 void	malloc_large_basic(void);
 void	realloc_basic(void);
 void	malloc_usable_size_basic(void);
+void	memalign_basic(void);
 
 // test_mass.c
 void	test_mass_malloc_and_free(void);
@@ -93,7 +94,7 @@ t_yoyo_exit	exec_test(void (*func)(void), int* signal);
 # define EXPECT_IS_NULL(ptr) {\
 	if (ptr != NULL) {\
 		OUT_KO("ptr %s is NOT NULL: %p", #ptr, ptr);\
-		assert(ptr != NULL);\
+		abort();\
 		return;\
 	}\
 	OUT_OK("ptr %s is NULL", #ptr);\
@@ -102,7 +103,7 @@ t_yoyo_exit	exec_test(void (*func)(void), int* signal);
 # define EXPECT_IS_NOT_NULL(ptr) {\
 	if (ptr == NULL) {\
 		OUT_KO("ptr %s is NULL", #ptr);\
-		assert(ptr == NULL);\
+		abort();\
 		return;\
 	}\
 	OUT_OK("ptr %s is not NULL: %p", #ptr, ptr);\
@@ -130,6 +131,22 @@ t_yoyo_exit	exec_test(void (*func)(void), int* signal);
 		abort();\
 	}\
 	OUT_OK("v1 %s == v2 %s", #v1, #v2);\
+}
+
+# define EXPECT_GE_I(v1, v2) {\
+	if (v1 < v2) {\
+		OUT_KO("v1 %s < v2 %s", #v1, #v2);\
+		abort();\
+	}\
+	OUT_OK("v1 %s >= v2 %s", #v1, #v2);\
+}
+
+# define EXPECT_GT_I(v1, v2) {\
+	if (v1 <= v2) {\
+		OUT_KO("v1 %s <= v2 %s", #v1, #v2);\
+		abort();\
+	}\
+	OUT_OK("v1 %s > v2 %s", #v1, #v2);\
 }
 
 # define EXPECT_NE_I(v1, v2) {\
