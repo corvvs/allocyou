@@ -146,6 +146,33 @@ static bool	is_exhaustible(const t_yoyo_chunk* chunk, size_t blocks_needed) {
 	return just_fit || semi_just_fit;
 }
 
+// current_free_chunk をすべて使用中にする.
+static void	exhaust_chunk(t_yoyo_zone* zone, t_yoyo_chunk** current_lot, t_yoyo_chunk* current_free_chunk) {
+	DEBUGSTR("EXHAUSTIBLE");
+	*current_lot = current_free_chunk->next;
+	mark_chunk_as_used(zone, current_free_chunk);
+	zone->blocks_free -= current_free_chunk->blocks;
+	zone->blocks_used += current_free_chunk->blocks;
+}
+
+// current_free_chunk の先頭を分離して blocks_needed + 1 の使用中ブロックを生成する.
+static void	separate_chunk(t_yoyo_zone* zone, t_yoyo_chunk** current_lot, t_yoyo_chunk* current_free_chunk, size_t whole_needed) {
+	DEBUGSTR("SEPARATABLE");
+	t_yoyo_chunk*	rest = (void*)current_free_chunk + whole_needed * BLOCK_UNIT_SIZE;
+	rest->blocks = current_free_chunk->blocks - whole_needed;
+	assert(2 <= rest->blocks);
+	current_free_chunk->blocks = whole_needed;
+	rest->next = current_free_chunk->next;
+	*current_lot = COPY_FLAGS(rest, current_free_chunk->next);
+	mark_chunk_as_free(zone, rest);
+	mark_chunk_as_used(zone, current_free_chunk);
+	zone->blocks_free -= whole_needed;
+	zone->blocks_used += whole_needed;
+	print_zone_state(zone);
+	print_zone_bitmap_state(zone);
+	DEBUGINFO("rest: %p - %zu", rest, rest->blocks);
+}
+
 // zone からサイズ n の chunk を取得しようとする.
 static void*	try_allocate_chunk_from_zone(t_yoyo_zone* zone, size_t n) {
 	DEBUGOUT("try from zone: %p, for %zu B", zone, n);
@@ -156,42 +183,36 @@ static void*	try_allocate_chunk_from_zone(t_yoyo_zone* zone, size_t n) {
 		DEBUGWARN("no enough blocks in this zone: %u", zone->blocks_free);
 		return NULL;
 	}
-	t_yoyo_chunk**	current_lot = &zone->frees;
-	while (*current_lot != NULL) {
-		t_yoyo_chunk*	current_free_chunk = ADDRESS_OF(*current_lot);
-		DEBUGOUT("current_free_chunk: %p", current_free_chunk);
-		unsigned int	bi = get_block_index(zone, current_free_chunk);
-		(void)bi;
-		assert(is_head(zone, bi));
-		assert(!is_used(zone, bi));
-		if (is_exhaustible(current_free_chunk, blocks_needed)) {
-			// current_free_chunk をすべて使用中にする.
-			DEBUGSTR("EXHAUSTIBLE");
-			*current_lot = current_free_chunk->next;
-			mark_chunk_as_used(zone, current_free_chunk);
-			zone->blocks_free -= current_free_chunk->blocks;
-			zone->blocks_used += current_free_chunk->blocks;
-			return (void*)current_free_chunk + CEILED_CHUNK_SIZE;
+	t_yoyo_chunk*	prev = zone->free_prev;
+	t_yoyo_chunk*	head = prev != NULL ? NEXT_OF(prev) : zone->frees;
+	if (head == NULL) {
+		head = zone->frees;
+		prev = NULL;
+	}
+	// initial_head: head の初期値
+	// head がふたたび initial_head に達したら, 使えるフリーチャンクが見つからなかったことにする
+	const t_yoyo_chunk*	initial_head = head;
+	while (true) {
+		assert(check_is_free(zone, head));
+		t_yoyo_chunk**	current_lot = prev != NULL ? &(prev->next) : &(zone->frees);
+		if (is_exhaustible(head, blocks_needed)) {
+			exhaust_chunk(zone, current_lot, head);
+		} else if (is_separatable(head, blocks_needed)) {
+			separate_chunk(zone, current_lot, head, whole_needed);
+		} else {
+			prev = head;
+			head = NEXT_OF(head);
+			if (head == NULL) {
+				head = zone->frees;
+				prev = NULL;
+			}
+			if (head == initial_head) {
+				break;
+			}
+			continue;
 		}
-		if (is_separatable(current_free_chunk, blocks_needed)) {
-			// current_free_chunk の先頭を分離して blocks_needed + 1 の使用中ブロックを生成する.
-			DEBUGSTR("SEPARATABLE");
-			t_yoyo_chunk*	rest = (void*)current_free_chunk + whole_needed * BLOCK_UNIT_SIZE;
-			rest->blocks = current_free_chunk->blocks - whole_needed;
-			assert(2 <= rest->blocks);
-			current_free_chunk->blocks = whole_needed;
-			rest->next = current_free_chunk->next;
-			*current_lot = COPY_FLAGS(rest, current_free_chunk->next);
-			mark_chunk_as_free(zone, rest);
-			mark_chunk_as_used(zone, current_free_chunk);
-			zone->blocks_free -= whole_needed;
-			zone->blocks_used += whole_needed;
-			print_zone_state(zone);
-			print_zone_bitmap_state(zone);
-			DEBUGINFO("rest: %p - %zu", rest, rest->blocks);
-			return (void*)current_free_chunk + CEILED_CHUNK_SIZE;
-		}
-		current_lot = &(current_free_chunk->next);
+		zone->free_prev = zone->frees;
+		return (void*)head + CEILED_CHUNK_SIZE;
 	}
 	DEBUGWARN("FAILED from: %p - %zu B", zone, n);
 	return NULL;
@@ -281,11 +302,12 @@ void*	yoyo_actual_calloc(size_t count, size_t size) {
 	}
 	if (count != 0 && SIZE_MAX / count < size) {
 		errno = ENOMEM;
-		return (NULL);
+		return NULL;
 	}
 	void* mem = yoyo_actual_malloc(count * size);
 	if (mem) {
 		yo_memset(mem, 0, count * size);
 	}
-	return (mem);
+	return mem;
 }
+

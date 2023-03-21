@@ -8,4 +8,6 @@ RUN apt-get update && apt-get install -y\
 	vim
 RUN apt-get install -y emacs
 RUN apt-get install -y man-db
+RUN apt-get install -y curl
+RUN apt-get install -y git
 

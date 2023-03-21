@@ -9,7 +9,7 @@
 typedef struct timeval t_tv;
 
 // test_mass.c
-void	test_mass_basic(void);
+void	test_mass_malloc_and_free(void);
 
 // test_multithread.c
 void	test_multithread_basic(void);

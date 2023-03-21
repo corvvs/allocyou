@@ -1,20 +1,22 @@
 #include "internal.h"
 
 // フリーリスト上のチャンク front_chunk とその次の chunk を可能なら統合する
-static void	try_unite_free_chunks(t_yoyo_zone* zone, t_yoyo_chunk* front_chunk) {
+// 統合できたかどうかを返す
+static bool	try_unite_free_chunks(t_yoyo_zone* zone, t_yoyo_chunk* front_chunk) {
 	// [連結可能性を判定]
-	if (front_chunk == NULL) { return; }
+	if (front_chunk == NULL) { return false; }
 	t_yoyo_chunk*	back_chunk = NEXT_OF(front_chunk);
 	DEBUGOUT("TRY to unite %p (%zu) + %p", front_chunk, front_chunk->blocks, back_chunk);
-	if (back_chunk == NULL)	{ return; }
+	if (back_chunk == NULL)	{ return false; }
 	unsigned int	front_index = get_block_index(zone, front_chunk);
 	unsigned int	back_index = get_block_index(zone, back_chunk);
-	if (front_index + front_chunk->blocks != back_index) { return; }
+	if (front_index + front_chunk->blocks != back_index) { return false; }
 	// [連結可能なので連結する]
 	DEBUGOUT("UNITE %p (%zu) + %p", front_chunk, front_chunk->blocks, back_chunk);
 	front_chunk->next = back_chunk->next;
 	front_chunk->blocks += back_chunk->blocks;
 	unmark_chunk(zone, back_chunk);
+	return true;
 }
 
 static void insert_chunk_to_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
@@ -22,42 +24,45 @@ static void insert_chunk_to_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chu
 	DEBUGOUT("chunk      : %p", chunk);
 	const size_t	chunk_blocks = chunk->blocks; // 後で使う
 	t_yoyo_chunk**	current_lot = &(zone->frees);
-	t_yoyo_chunk*	front = NULL;
-	t_yoyo_chunk*	back = ADDRESS_OF(*current_lot);
+	t_yoyo_chunk*	left = NULL;
+	t_yoyo_chunk*	right = ADDRESS_OF(*current_lot);
 
 	// [挿入場所を見つける]
-	while (!(back == NULL) && !((uintptr_t)chunk < (uintptr_t)back)) {
-		DEBUGOUT("front: %p, back: %p", front, back);
-		front = back;
-		current_lot = &(back->next);
-		back = ADDRESS_OF(*current_lot);
+	while (!(right == NULL) && !((uintptr_t)chunk < (uintptr_t)right)) {
+		DEBUGOUT("front: %p, back: %p", left, right);
+		left = right;
+		current_lot = &(right->next);
+		right = ADDRESS_OF(*current_lot);
 	}
-	if (back == NULL) {
-		DEBUGOUT("PUSH BACK a chunk %p into %p (back of %p)", chunk, current_lot, front);
+	if (right == NULL) {
+		DEBUGOUT("PUSH BACK a chunk %p into %p (back of %p)", chunk, current_lot, left);
 	} else {
-		DEBUGOUT("INSERT a chunk %p between %p and %p", chunk, front, back);
+		DEBUGOUT("INSERT a chunk %p between %p and %p", chunk, left, right);
 	}
 	// [後挿入操作]
 	chunk->next = COPY_FLAGS(ADDRESS_OF(*current_lot), chunk->next);
+	bool	is_unified;
 	// [合体できるなら合体]
-	try_unite_free_chunks(zone, chunk);
+	is_unified = try_unite_free_chunks(zone, chunk);
 	// [前挿入操作]
 	*current_lot = chunk;
-	try_unite_free_chunks(zone, front);
+	is_unified = try_unite_free_chunks(zone, left);
+	zone->free_prev = is_unified ? left : chunk;
+	assert(zone->free_prev != NULL);
 	// [zone のblocks を変更する]
 	zone->blocks_free += chunk_blocks;
 	zone->blocks_used -= chunk_blocks;
 }
 
 void	yoyo_free_from_locked_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
-	print_zone_state(zone);
-	print_zone_bitmap_state(zone);
+	// print_zone_state(zone);
+	// print_zone_bitmap_state(zone);
 	// [zone のfreeマップの状態を変更する]
 	mark_chunk_as_free(zone, chunk);
 	// [zone のフリーリストに chunk を挿入する]
 	insert_chunk_to_tiny_small_zone(zone, chunk);
-	print_zone_state(zone);
-	print_zone_bitmap_state(zone);
+	// print_zone_state(zone);
+	// print_zone_bitmap_state(zone);
 }
 
 
@@ -68,7 +73,6 @@ static void	free_from_tiny_small_zone(t_yoyo_chunk* chunk) {
 	DEBUGOUT("zone: %p", zone);
 	// [ロックを取る]
 	if (!lock_zone(zone)) {
-		DEBUGFATAL("FAILED to lock zone: %p", zone);
 		return;
 	}
 	if (is_header_and_used(zone, chunk)) {
@@ -78,9 +82,7 @@ static void	free_from_tiny_small_zone(t_yoyo_chunk* chunk) {
 		assert(false);
 	}
 	// [zone のロックを離す]
-	if (!unlock_zone(zone)) {
-		DEBUGFATAL("FAILED to unlock zone: %p", zone);
-	}
+	unlock_zone(zone);
 }
 
 static void	free_from_large_zone(t_yoyo_chunk* chunk) {
@@ -100,16 +102,13 @@ static void	free_from_large_zone(t_yoyo_chunk* chunk) {
 
 	// [LARGE zoneのchunk_listを見る]
 	t_yoyo_large_chunk**	list = &(subarena->allocated);
-	DEBUGOUT("subarena: %p", subarena);
-	DEBUGOUT("subarena->allocated: %p", subarena->allocated);
 
 	// [LARGEヘッダのactual_nextを見ながら元々freeしたいchunkを見つける]
 	while (true) {
 		t_yoyo_large_chunk*	head = *list;
 		DEBUGOUT("head: %p", head);
 		if (head == NULL) {
-			// TODO: これは致命傷(DEBUGFATAL)なのか検討
-			DEBUGERR("FATAL: not found in the list: %p", &subarena->allocated);
+			DEBUGFATAL("not found in the list: %p", &subarena->allocated);
 			unlock_subarena((t_yoyo_subarena*)subarena);
 			return;
 		}

@@ -1,5 +1,21 @@
 #include "internal.h"
 
+bool	check_is_free(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
+	unsigned int	bi = get_block_index(zone, chunk);
+	(void)bi;
+	assert(is_head(zone, bi));
+	assert(!is_used(zone, bi));
+	return is_head(zone, bi) && !is_used(zone, bi);
+}
+
+bool	check_is_used(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
+	unsigned int	bi = get_block_index(zone, chunk);
+	(void)bi;
+	assert(is_head(zone, bi));
+	assert(is_used(zone, bi));
+	return is_head(zone, bi) && is_used(zone, bi);
+}
+
 // このブロックが chunk のヘッダかどうか
 bool	is_head(const t_yoyo_zone* zone, unsigned int block_index) {
 	unsigned int	byte_index = block_index / 8;

@@ -15,16 +15,7 @@
 # define TX_GRY "\e[30m"
 # define TX_RST "\e[0m"
 
-# ifdef NDEBUG
-#  define DEBUGSTRN(format) ((void)0)
-#  define DEBUGSTR(format) ((void)0)
-#  define DEBUGOUT(format, ...) ((void)0)
-#  define DEBUGINFO(format, ...) ((void)0)
-#  define DEBUGWARN(format, ...) ((void)0)
-#  define DEBUGERR(format, ...) ((void)0)
-#  define DEBUGFATAL(format, ...) yoyo_dprintf(STDOUT_FILENO, "%s[%s:%d %s] " format "%s\n", BG_RED, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
-#  define PRINT_STATE_AFTER(proc) proc;
-# else
+# ifdef DEBUG
 #  define DEBUGSTRN(format) yoyo_dprintf(STDOUT_FILENO, "%s[%s:%d %s] " format "%s", TX_GRY, __FILE__, __LINE__, __func__, TX_RST)
 #  define DEBUGSTR(format) yoyo_dprintf(STDOUT_FILENO, "%s[%s:%d %s] " format "%s\n", TX_GRY, __FILE__, __LINE__, __func__, TX_RST)
 #  define DEBUGOUT(format, ...) yoyo_dprintf(STDOUT_FILENO, "%s[%s:%d %s] " format "%s\n", TX_GRY, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
@@ -33,6 +24,15 @@
 #  define DEBUGERR(format, ...) yoyo_dprintf(STDOUT_FILENO, "%s[%s:%d %s] " format "%s\n", TX_RED, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
 #  define DEBUGFATAL(format, ...) yoyo_dprintf(STDOUT_FILENO, "%s[%s:%d %s] " format "%s\n", BG_RED, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
 #  define PRINT_STATE_AFTER(proc) DEBUGSTR("DA: " #proc); proc; show_alloc_mem();
+# else
+#  define DEBUGSTRN(format) ((void)0)
+#  define DEBUGSTR(format) ((void)0)
+#  define DEBUGOUT(format, ...) ((void)0)
+#  define DEBUGINFO(format, ...) ((void)0)
+#  define DEBUGWARN(format, ...) ((void)0)
+#  define DEBUGERR(format, ...) ((void)0)
+#  define DEBUGFATAL(format, ...) yoyo_dprintf(STDOUT_FILENO, "%s[%s:%d %s] " format "%s\n", BG_RED, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
+#  define PRINT_STATE_AFTER(proc) proc;
 # endif
 
 #endif
