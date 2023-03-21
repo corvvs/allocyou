@@ -3,7 +3,7 @@
 
 
 #define N 1000
-void	test_mass_basic(void) {
+void	test_mass_malloc_and_free(void) {
 	char*	mems[N];
 	for (int i = 0; i < N; ++i) {
 		mems[i] = malloc(rand() % 123 + 23);

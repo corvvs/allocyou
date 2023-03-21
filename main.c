@@ -68,7 +68,7 @@ int main() {
 
 	EXEC_TEST(realloc_basic);
 
-	EXEC_TEST(test_mass_basic);
+	EXEC_TEST(test_mass_malloc_and_free);
 	EXEC_TEST(test_multithread_basic);
 	EXEC_TEST(test_multithread_realloc);
 

@@ -51,7 +51,7 @@ void	test_realloc_fine(void) {
 	EXPECT_EQ_STR(str4, "hello world");
 
 	char*	str5 = realloc(str4, 16);
-	yoyo_dprintf(STDOUT_FILENO, "str5 should be SHRINKED\n");
+	yoyo_dprintf(STDOUT_FILENO, "str5 should not be RELOCATED\n");
 	EXPECT_EQ(str4, str5);
 	EXPECT_IS_NOT_NULL(str5);
 	EXPECT_EQ_STR(str5, "hello world");

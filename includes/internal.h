@@ -58,6 +58,8 @@ t_yoyo_subarena*	get_subarena(const t_yoyo_arena* arena, t_yoyo_zone_type zone_t
 t_yoyo_zone*	allocate_zone(const t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
 
 // zone_bitmap.c
+bool			check_is_free(t_yoyo_zone* zone, t_yoyo_chunk* chunk);
+bool			check_is_used(t_yoyo_zone* zone, t_yoyo_chunk* chunk);
 bool			is_head(const t_yoyo_zone* zone, unsigned int block_index);
 bool			is_used(const t_yoyo_zone* zone, unsigned int block_index);
 t_yoyo_chunk*	get_chunk_by_index(t_yoyo_zone* zone, unsigned int block_index);
