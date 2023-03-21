@@ -48,12 +48,21 @@ void	show_alloc_mem(void) {
 	DEBUGSTR("** show_alloc_mem **");
 	SPRINT_START;
 	actual_show_alloc_mem();
-	SPRINT_END("show_alloc_mem");
+	SPRINT_END(__func__);
 	DEBUGSTR("** show_alloc_mem end **");
+}
+
+size_t 	malloc_usable_size (void *ptr) {
+	DEBUGSTR("** malloc_usable_size **");
+	SPRINT_START;
+	size_t	rv = yoyo_actual_malloc_usable_size(ptr);
+	SPRINT_END(__func__);
+	DEBUGOUT("** malloc_usable_size end, returning %zu B for %p **", rv, ptr);
+	return rv;
 }
 
 __attribute__((destructor))
 static void	yoyo_exit() {
-	show_alloc_mem();
-	DEBUGSTR("EXIT");
+	// show_alloc_mem();
+	// DEBUGSTR("EXIT");
 }

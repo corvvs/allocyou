@@ -19,9 +19,9 @@ extern t_yoyo_realm	g_yoyo_realm;
 void*	yoyo_actual_malloc(size_t n);
 void*	yoyo_actual_calloc(size_t count, size_t size);
 
-
 // actual_free.c
 void	yoyo_actual_free(void* addr);
+size_t	yoyo_actual_malloc_usable_size(void* ptr);
 void	yoyo_free_from_locked_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chunk);
 
 // actual_realloc.c
