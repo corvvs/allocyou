@@ -120,6 +120,7 @@ void	memalign_basic(void) {
 }
 
 void	history_basic(void) {
+	actual_show_alloc_mem_ex();
 	char*	mem = malloc(1);
 	mem[0] = 'a';
 	write(1, mem, 1);

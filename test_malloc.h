@@ -20,6 +20,8 @@ void	history_basic(void);
 
 // test_mass.c
 void	test_mass_malloc_and_free(void);
+void	test_mass_history(void);
+
 
 // test_multithread.c
 void	test_multithread_basic(void);

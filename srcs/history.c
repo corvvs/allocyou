@@ -22,11 +22,14 @@ bool	init_history(bool multi_thread) {
 
 #if TAKE_HISTORY == 0
 
-void	take_history(t_yoyo_operation_type operation, void* addr, size_t size) {
+void	take_history(t_yoyo_operation_type operation, void* addr, size_t size1, size_t size2) {
 	(void)operation;
 	(void)addr;
-	(void)size;
+	(void)size1;
+	(void)size2;
 }
+
+void	show_history(void);
 
 #else
 
@@ -45,11 +48,11 @@ static bool	extend_items(t_yoyo_history_book* history) {
 	// [拡張が必要]
 	// -> 拡張中フラグを立てる
 	history->in_extend = true;
-	const size_t	new_cap = history->cap_items > 0 ? history->cap_items * 2 : (sizeof(t_yoyo_history_item) * 64);
+	const size_t	new_cap = history->cap_items > 0 ? history->cap_items * 2 : 64;
 	DEBUGOUT("EXTEND items: %zu -> %zu", history->cap_items, new_cap);
 	// デッドロック防止のため一旦ロックを外す
 	pthread_mutex_unlock(&history->lock);
-	t_yoyo_history_item*	extended = malloc(new_cap);
+	t_yoyo_history_item*	extended = malloc(sizeof(t_yoyo_history_item) * new_cap);
 	if (!extended) {
 		pthread_mutex_lock(&history->lock);
 		return false;
@@ -82,7 +85,7 @@ static	t_yoyo_history_item make_item(t_yoyo_operation_type operation, void* addr
 
 void	take_history(t_yoyo_operation_type operation, void* addr, size_t size1, size_t size2) {
 	t_yoyo_history_book*	history = &g_yoyo_realm.history;
-	// [ロック取得]
+	// [履歴取得フラグが降りているなら何もしない]
 	if (!history->preserve) {
 		return;
 	}
@@ -119,6 +122,51 @@ void	take_history(t_yoyo_operation_type operation, void* addr, size_t size1, siz
 
 	// 終わったのでロック解除
 	pthread_mutex_unlock(&history->lock);
+}
+
+static void	print_history_item(size_t index, const t_yoyo_history_item* item) {
+	yoyo_dprintf(STDOUT_FILENO, "[#%zu] ", index);
+	switch (item->operation) {
+		case YOYO_OP_MALLOC:
+			yoyo_dprintf(STDOUT_FILENO, "malloc(%zu) -> %p\n", item->size1, (void*)item->addr);
+			break;
+		case YOYO_OP_FREE:
+			yoyo_dprintf(STDOUT_FILENO, "free(%p)\n", (void*)item->addr);
+			break;
+		case YOYO_OP_REALLOC:
+			yoyo_dprintf(STDOUT_FILENO, "realloc(%p, %zu) -> %p\n", (void*)item->size2, item->size1, (void*)item->addr);
+			break;
+		case YOYO_OP_CALLOC:
+			yoyo_dprintf(STDOUT_FILENO, "calloc(%zu, %zu) -> %p\n", item->size1, item->size2, (void*)item->addr);
+			break;
+		case YOYO_OP_MEMALIGN:
+			yoyo_dprintf(STDOUT_FILENO, "memalign(%zu, %zu) -> %p\n", item->size1, item->size2, (void*)item->addr);
+			break;
+		default:
+			yoyo_dprintf(STDOUT_FILENO, "UNKNOWN OP: %d (%p, %zu, %zu)\n", item->operation, item->addr, item->size1, item->size2);
+			break;
+	}
+}
+
+void	show_history(void) {
+	t_yoyo_history_book*	history = &g_yoyo_realm.history;
+	if (!history->preserve) {
+		return; 
+	}
+	if (pthread_mutex_lock(&history->lock)) {
+		DEBUGFATAL("FAILED to lock history: %p", &history->lock);
+		return;
+	}
+	if (history->n_items == 0) {
+		yoyo_dprintf(STDOUT_FILENO, "<< NO operation history >>\n");
+	} else {
+		yoyo_dprintf(STDOUT_FILENO, "<< operation history >>\n");
+		for (size_t i = 0; i < history->n_items; ++i) {
+			print_history_item(i, &history->items[i]);
+		}
+	}
+	pthread_mutex_unlock(&history->lock);
+	return;
 }
 
 #endif

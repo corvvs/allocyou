@@ -328,13 +328,16 @@ void*	yoyo_actual_memalign(size_t alignment, size_t size) {
 	// [アライメント調整]
 	uintptr_t	ptr = (uintptr_t)mem;
 	if (ptr % alignment == 0) {
+		// 何もしなくても既にアラインされている
 		return mem;
 	}
+	// 頑張ってアラインする
 	t_yoyo_chunk*	actual_header = addr_to_actual_header(mem);
 	ptr += CEILED_CHUNK_SIZE;
 
 	size_t offset = (alignment - (ptr % alignment)) % alignment;
 	mem = (void*)(ptr + offset);
+	// [擬似ヘッダの設定]
 	t_yoyo_chunk*	pseudo_header = addr_to_actual_header(mem);
 	pseudo_header->blocks = BLOCKS_FOR_SIZE(size) + 1;
 	pseudo_header->next = SET_FLAGS(actual_header, YOYO_FLAG_PSEUDO_HEADER);

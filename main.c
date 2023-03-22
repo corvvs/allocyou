@@ -9,6 +9,7 @@ int main() {
 	EXEC_TEST(malloc_usable_size_basic);
 	EXEC_TEST(memalign_basic);
 	EXEC_TEST(history_basic);
+	EXEC_TEST(test_mass_history);
 
 	EXEC_TEST(realloc_basic);
 

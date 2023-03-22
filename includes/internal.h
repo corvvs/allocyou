@@ -98,6 +98,7 @@ void	print_memory_state(const void* addr);
 // history.c
 bool	init_history(bool multi_thread);
 void	take_history(t_yoyo_operation_type operation, void* addr, size_t size1, size_t size2);
+void	show_history(void);
 
 
 #endif
