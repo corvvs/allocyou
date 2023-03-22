@@ -23,7 +23,7 @@ static void	unmap_range(void* begin, void* end) {
 // align がtrueなら領域は bytes バイトアラインされる.
 // ただしその場合 bytes が2冪でなければならない.
 void*	yoyo_map_memory(size_t bytes, bool align) {
-	assert(!align || ((bytes & (bytes - 1)) == 0));
+	assert(!align || is_power_of_2(bytes));
 	const size_t	bulk_size = align ? 2 * bytes : bytes;
 	void*	bulk;
 	errno = 0;

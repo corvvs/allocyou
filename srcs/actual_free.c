@@ -145,7 +145,7 @@ void	yoyo_actual_free(void* addr) {
 		DEBUGSTR("addr is NULL; DO NOTHING");
 		return;
 	}
-	t_yoyo_chunk*	chunk = (void*)addr - CEILED_CHUNK_SIZE;
+	t_yoyo_chunk*	chunk = addr_to_actual_header(addr);
 
 	if (IS_LARGE_CHUNK(chunk)) {
 		// LARGE chunk を解放する.
@@ -154,4 +154,14 @@ void	yoyo_actual_free(void* addr) {
 	}
 	// TINY / SMALL の解放処理
 	free_from_tiny_small_zone(chunk);
+}
+
+size_t	yoyo_actual_malloc_usable_size(void *ptr) {
+	if (ptr == NULL) {
+		return 0;
+	}
+	assert((uintptr_t)ptr >= CEILED_CHUNK_SIZE);
+	t_yoyo_chunk*	chunk = addr_to_nominal_header(ptr);
+	assert(chunk->blocks >= 2);
+	return (chunk->blocks - 1) * BLOCK_UNIT_SIZE;
 }

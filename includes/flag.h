@@ -4,8 +4,13 @@
 # include <stdlib.h>
 # include "structure.h"
 
+// このチャンクがLARGEであることを示すフラグ
 # define YOYO_FLAG_LARGE 1u
+// このチャンクヘッダが「擬似ヘッダ」であることを示すフラグ
+# define YOYO_FLAG_PSEUDO_HEADER 2u
+// フラグ部分をカバーするマスク
 # define YOYO_FLAG_MASK 7u
+// フラグ部分以外をカバーするマスク
 # define YOYO_FLAG_NOT_MASK (~(uintptr_t)7)
 
 // アドレス addr からフラグを切り落として正常なアドレスを返す
@@ -22,5 +27,7 @@
 
 // この chunk が LARGE かどうかを判定する
 # define IS_LARGE_CHUNK(chunk) (!!((uintptr_t)((chunk)->next) & YOYO_FLAG_LARGE))
+// このチャンクヘッダが擬似かどうかを判定する
+# define IS_PSEUDO_HEADER(chunk) (!!((uintptr_t)((chunk)->next) & YOYO_FLAG_PSEUDO_HEADER))
 
 #endif
