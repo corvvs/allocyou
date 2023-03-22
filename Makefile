@@ -23,6 +23,8 @@ FILES	:=	\
 			memory_utils.c\
 			debug.c\
 			printf.c\
+			history.c\
+			release.c\
 
 
 SRCS	:=	$(FILES:%.c=$(SRCDIR)/%.c)

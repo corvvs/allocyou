@@ -33,6 +33,9 @@ void	test_mass_history(void) {
 	}
 	yoyo_dprintf(STDOUT_FILENO, "total = %zu B\n", n);
 	show_alloc_mem_ex();
+	release_memory();
+	show_alloc_mem_ex();
 }
+
 
 #undef N

@@ -6,7 +6,7 @@ static void	dump_chunk_body(const t_yoyo_chunk* chunk) {
 	// [in hex]
 	// すべてのチャンクは少なくとも1ブロック分の使用可能領域を持つので, 1ブロック分は必ずダンプできる.
 	const unsigned char*	body = (void*)chunk + CEILED_CHUNK_SIZE;
-	yoyo_dprintf(STDOUT_FILENO, "\t\t");
+	yoyo_dprintf(STDOUT_FILENO, "\t\thexdump: ");
 	for (size_t i = 0; i < BLOCK_UNIT_SIZE; ++i) {
 		unsigned char ch = body[i];
 		if (i > 0) {
