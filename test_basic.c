@@ -119,6 +119,10 @@ void	memalign_basic(void) {
 	}
 }
 
-// void	memalign_error(void) {
+void	history_basic(void) {
+	char*	mem = malloc(1);
+	mem[0] = 'a';
+	write(1, mem, 1);
+	free(mem);
+}
 
-// }

@@ -24,6 +24,7 @@ bool	init_realm(bool multi_thread) {
 		pthread_mutex_unlock(&init_mutex); // pthread_mutex_lock が通ったのなら, unlock は失敗しないはず
 		return true;
 	}
+	// [アリーナの初期化]
 	g_yoyo_realm.arena_count = multi_thread ? ARENA_MAX : 1;
 	for (unsigned int i = 0; i < g_yoyo_realm.arena_count; ++i) {
 		const bool succeeded = init_arena(i, multi_thread);
@@ -34,6 +35,13 @@ bool	init_realm(bool multi_thread) {
 			return false;
 		}
 	}
+
+	// [BONUS: 履歴管理構造体の初期化]
+	if (!init_history(multi_thread)) {
+		pthread_mutex_unlock(&init_mutex);
+		return false;
+	}
+
 	g_yoyo_realm.initialized = true;
 	DEBUGINFO("initialized realm: arena_count = %u, multi_thread: %s", g_yoyo_realm.arena_count, multi_thread ? "y" : "n");
 	pthread_mutex_unlock(&init_mutex); // pthread_mutex_lock が通ったのなら, unlock は失敗しないはず

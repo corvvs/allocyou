@@ -82,6 +82,8 @@ void	mark_chunk_as_free(t_yoyo_zone* zone, const t_yoyo_chunk* chunk);
 void	mark_chunk_as_used(t_yoyo_zone* zone, const t_yoyo_chunk* chunk);
 
 // memory_utils
+void*			yo_memset(void* dst, int ch, size_t n);
+void*			yo_memcpy(void* dst, const void* src, size_t n);
 bool			is_power_of_2(size_t bytes);
 bool			overflow_by_addtion(size_t a, size_t b);
 t_yoyo_chunk*	addr_to_actual_header(void* addr);
@@ -91,6 +93,10 @@ t_yoyo_chunk*	addr_to_nominal_header(void* addr);
 void	print_zone_state(const t_yoyo_zone* zone);
 void	print_zone_bitmap_state(const t_yoyo_zone* zone);
 void	print_memory_state(const void* addr);
+
+// history.c
+bool	init_history(bool multi_thread);
+void	take_history(t_yoyo_operation_type operation, void* addr, size_t size1, size_t size2);
 
 
 #endif

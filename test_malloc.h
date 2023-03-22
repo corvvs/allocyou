@@ -16,6 +16,7 @@ void	malloc_large_basic(void);
 void	realloc_basic(void);
 void	malloc_usable_size_basic(void);
 void	memalign_basic(void);
+void	history_basic(void);
 
 // test_mass.c
 void	test_mass_malloc_and_free(void);

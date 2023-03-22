@@ -1,13 +1,5 @@
 #include "internal.h"
 
-static	void*	yo_memset(void* dst, int ch, size_t n) {
-	unsigned char*	ud = dst;
-	while (n--) {
-		*(ud++) = (unsigned char)ch;
-	}
-	return dst;
-}
-
 // arena を1つロックして返す.
 // どの arena もロックできなかった場合は NULL を返す.
 static t_yoyo_arena*	occupy_arena(t_yoyo_zone_type zone_type) {

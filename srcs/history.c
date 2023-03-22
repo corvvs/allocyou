@@ -1,0 +1,124 @@
+#include "internal.h"
+
+bool	init_history(bool multi_thread) {
+	g_yoyo_realm.history.preserve = false;
+	DEBUGINFO("TAKE_HISTORY: %d", TAKE_HISTORY);
+	if (!TAKE_HISTORY) {
+		return true;
+	}
+	if (multi_thread) {
+		if (pthread_mutex_init(&g_yoyo_realm.history.lock, NULL)) {
+			DEBUGFATAL("failed to init history lock: errno: %d (%s)", errno, strerror(errno));
+			return false;
+		}
+	}
+	g_yoyo_realm.history.items = NULL;
+	g_yoyo_realm.history.n_items = 0;
+	g_yoyo_realm.history.cap_items = 0;
+	g_yoyo_realm.history.preserve = true;
+	DEBUGINFO("%s", "ok.");
+	return true;
+}
+
+#if TAKE_HISTORY == 0
+
+void	take_history(t_yoyo_operation_type operation, void* addr, size_t size) {
+	(void)operation;
+	(void)addr;
+	(void)size;
+}
+
+#else
+
+// history->items を必要なら拡張する
+// **この関数は, history がロックされた状態で呼び出され, history がロックされた状態で終了する.**
+static bool	extend_items(t_yoyo_history_book* history) {
+	// [拡張の要否を判定する]
+	if (history->in_extend) {
+		// すでに拡張中
+		return true;
+	}
+	if (history->n_items + 1 <= history->cap_items) {
+		// 拡張しなくて良い
+		return true;
+	}
+	// [拡張が必要]
+	// -> 拡張中フラグを立てる
+	history->in_extend = true;
+	const size_t	new_cap = history->cap_items > 0 ? history->cap_items * 2 : (sizeof(t_yoyo_history_item) * 64);
+	DEBUGOUT("EXTEND items: %zu -> %zu", history->cap_items, new_cap);
+	// デッドロック防止のため一旦ロックを外す
+	pthread_mutex_unlock(&history->lock);
+	t_yoyo_history_item*	extended = malloc(new_cap);
+	if (!extended) {
+		pthread_mutex_lock(&history->lock);
+		return false;
+	}
+	// ロックを取り直す
+	pthread_mutex_lock(&history->lock);
+	// コピー
+	void*	old_items = history->items;
+	DEBUGOUT("COPYING items: %p -> %p", old_items, extended);
+	yo_memcpy(extended, old_items, sizeof(t_yoyo_history_item) * history->n_items);
+	history->items = extended;
+	history->cap_items = new_cap;
+
+	// ロックを離してから(デッドロック防止)古い items を解放
+	DEBUGOUT("DESTROY old items: %p", old_items);
+	pthread_mutex_unlock(&history->lock);
+	free(old_items);
+	pthread_mutex_lock(&history->lock);
+	// [拡張終了]
+	// -> 拡張中フラグを外す
+	history->in_extend = false;
+	return true;
+}
+
+static	t_yoyo_history_item make_item(t_yoyo_operation_type operation, void* addr, size_t size1, size_t size2) {
+	return (t_yoyo_history_item){
+		.operation = operation, .addr = (uintptr_t)addr, .size1 = size1, .size2 = size2,
+	};
+}
+
+void	take_history(t_yoyo_operation_type operation, void* addr, size_t size1, size_t size2) {
+	t_yoyo_history_book*	history = &g_yoyo_realm.history;
+	// [ロック取得]
+	if (!history->preserve) {
+		return;
+	}
+	// [ロック取得]
+	if (pthread_mutex_lock(&history->lock)) {
+		DEBUGFATAL("FAILED to take history-lock: %p", &history->lock);
+		return;
+	}
+	// [必要なら items を延長]
+	if (!extend_items(history)) {
+		pthread_mutex_unlock(&history->lock);
+		return;
+	}
+	// [履歴を追加]
+	if (history->in_extend) {
+		// 拡張中の場合は temp_buff に追加
+		if (history->n_temp < YOYO_HISTORY_TEMP_SIZE) {
+			history->temp_buf[history->n_temp] = make_item(operation, addr, size1, size2);
+			history->n_temp += 1;
+			DEBUGOUT("added item into temp_buf: (%d, %p, %zu, %zu)", operation, addr, size1, size2);
+		}
+	} else {
+		// そうでない場合は items に直接追加
+		history->items[history->n_items] = make_item(operation, addr, size1, size2);
+		history->n_items += 1;
+		DEBUGOUT("added item into items: (%d, %p, %zu, %zu)", operation, addr, size1, size2);
+		// temp_buff が空でない場合はそれも追加
+		for (size_t i = 0; i < history->n_temp; ++i) {
+			history->items[history->n_items] = history->temp_buf[i];
+			history->n_items += 1;
+		}
+		history->n_temp = 0;
+	}
+
+	// 終わったのでロック解除
+	pthread_mutex_unlock(&history->lock);
+}
+
+#endif

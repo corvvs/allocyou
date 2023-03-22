@@ -195,8 +195,11 @@ typedef enum e_yoyo_operation_type {
 typedef struct	s_yoyo_history_item {
 	t_yoyo_operation_type	operation;
 	uintptr_t				addr;
-	size_t					size;
+	size_t					size1;
+	size_t					size2;
 }	t_yoyo_history_item;
+
+# define YOYO_HISTORY_TEMP_SIZE 10
 
 // [履歴管理構造体]
 typedef struct	s_yoyo_history_book {
@@ -210,6 +213,14 @@ typedef struct	s_yoyo_history_book {
 	t_yoyo_history_item*	items;
 	// items の要素数
 	size_t					n_items;
+	// items のキャパシティ
+	size_t					cap_items;
+	// 現在拡張中かどうか
+	bool					in_extend;
+	// 一時バッファ
+	t_yoyo_history_item		temp_buf[YOYO_HISTORY_TEMP_SIZE];
+	// temp_buf の使用中要素数
+	size_t					n_temp;
 }	t_yoyo_history_book;
 
 // [realm 構造体]
