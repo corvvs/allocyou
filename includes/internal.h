@@ -19,6 +19,8 @@ extern t_yoyo_realm	g_yoyo_realm;
 void*	yoyo_actual_malloc(size_t n);
 void*	yoyo_actual_calloc(size_t count, size_t size);
 void*	yoyo_actual_memalign(size_t alignment, size_t size);
+void*	yoyo_actual_aligned_alloc(size_t alignment, size_t size);
+int		yoyo_actual_posix_memalign(void **memptr, size_t alignment, size_t size);
 
 // actual_free.c
 void	yoyo_actual_free(void* addr);

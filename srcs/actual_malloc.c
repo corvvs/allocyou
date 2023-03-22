@@ -313,7 +313,7 @@ void*	yoyo_actual_calloc(size_t count, size_t size) {
 
 void*	yoyo_actual_memalign(size_t alignment, size_t size) {
 	// [alignemt のチェック]
-	if (!is_power_of_2(alignment) || size % alignment != 0) {
+	if (!is_power_of_2(alignment)) {
 		errno = EINVAL;
 		return NULL;
 	}
@@ -348,4 +348,29 @@ void*	yoyo_actual_memalign(size_t alignment, size_t size) {
 	pseudo_header->next = SET_FLAGS(actual_header, YOYO_FLAG_PSEUDO_HEADER);
 	assert((uintptr_t)mem % alignment == 0);
 	return mem;
+}
+
+void*	yoyo_actual_aligned_alloc(size_t alignment, size_t size) {
+	if (alignment == 0 || size % alignment != 0) {
+		errno = EINVAL;
+		return NULL;
+	}
+	return yoyo_actual_memalign(alignment, size);
+}
+
+int		yoyo_actual_posix_memalign(void **memptr, size_t alignment, size_t size) {
+	if (memptr == NULL) {
+		return EINVAL;
+	}
+	int init_errno = errno;
+	void*	mem = aligned_alloc(alignment, size);
+	if (mem == NULL) {
+		int e = errno;
+		errno = init_errno;
+		return e;
+	}
+	errno = init_errno;
+	assert((uintptr_t)mem % alignment == 0);
+	*memptr = mem;
+	return 0;
 }

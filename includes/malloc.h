@@ -10,5 +10,7 @@ extern void*	realloc(void* addr, size_t n);
 extern void		show_alloc_mem(void);
 extern size_t 	malloc_usable_size (void *ptr);
 extern void*	memalign(size_t alignment, size_t size);
+extern void*	aligned_alloc(size_t alignment, size_t size);
+extern int		posix_memalign(void **memptr, size_t alignment, size_t size);
 
 #endif
