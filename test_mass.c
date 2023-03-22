@@ -21,3 +21,18 @@ void	test_mass_malloc_and_free(void) {
 }
 #undef N
 
+
+#define N 1000
+
+void	test_mass_history(void) {
+	size_t n = 0;
+	for (int i = 0; i < N; ++i) {
+		void* mem = malloc(rand() % 2000 + 1);
+		n += malloc_usable_size(mem);
+		free(mem);
+	}
+	yoyo_dprintf(STDOUT_FILENO, "total = %zu B\n", n);
+	show_alloc_mem_ex();
+}
+
+#undef N

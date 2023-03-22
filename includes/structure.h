@@ -13,6 +13,12 @@
 #  define CHAR_BIT 8
 # endif
 
+# ifdef BONUS_HISTORY
+#  define TAKE_HISTORY 0
+# else
+#  define TAKE_HISTORY 1
+# endif
+
 // a を bの倍数に切り上げる
 # define CEIL_BY(a, b) (a ? ((a - 1) / b + 1) * b : b)
 // a を bの倍数に切り下げる
@@ -128,6 +134,7 @@ typedef struct	s_yoyo_zone {
 
 }	t_yoyo_zone;
 
+// [TINY / SMALL zone を保持するサブアリーナ構造体]
 typedef struct	s_yoyo_normal_arena {
 	// arena ロック
 	pthread_mutex_t	lock;
@@ -137,6 +144,7 @@ typedef struct	s_yoyo_normal_arena {
 	t_yoyo_zone*	head;
 }	t_yoyo_normal_arena;
 
+// [LARGE zone を保持するサブアリーナ構造体]
 typedef struct	s_yoyo_large_arena {
 	// arena ロック
 	pthread_mutex_t		lock;
@@ -146,6 +154,7 @@ typedef struct	s_yoyo_large_arena {
 	t_yoyo_large_chunk*	allocated;
 }	t_yoyo_large_arena;
 
+// [t_yoyo_normal_arena, t_yoyo_large_arena の「基底」構造体]
 typedef struct	s_yoyo_subarena {
 	// arena ロック
 	pthread_mutex_t	lock;
@@ -172,6 +181,48 @@ typedef struct	s_yoyo_arena {
 }	t_yoyo_arena;
 
 
+typedef enum e_yoyo_operation_type {
+	YOYO_OP_UNKNOWN,
+	YOYO_OP_MALLOC,
+	YOYO_OP_FREE,
+	YOYO_OP_REALLOC,
+	YOYO_OP_CALLOC,
+	YOYO_OP_MEMALIGN,
+	YOYO_OP_EXTRA,
+}	t_yoyo_operation_type;
+
+// [操作履歴構造体]
+typedef struct	s_yoyo_history_item {
+	t_yoyo_operation_type	operation;
+	uintptr_t				addr;
+	size_t					size1;
+	size_t					size2;
+}	t_yoyo_history_item;
+
+# define YOYO_HISTORY_TEMP_SIZE 10
+
+// [履歴管理構造体]
+typedef struct	s_yoyo_history_book {
+	// 操作履歴を保持するかどうかのフラグ
+	bool					preserve;
+	// 履歴操作用のロック
+	// 読み書きロックでもいいかもしれない
+	pthread_mutex_t			lock;
+	// 操作履歴の配列
+	// 必要に応じて拡張される
+	t_yoyo_history_item*	items;
+	// items の要素数
+	size_t					n_items;
+	// items のキャパシティ
+	size_t					cap_items;
+	// 現在拡張中かどうか
+	bool					in_extend;
+	// 一時バッファ
+	t_yoyo_history_item		temp_buf[YOYO_HISTORY_TEMP_SIZE];
+	// temp_buf の使用中要素数
+	size_t					n_temp;
+}	t_yoyo_history_book;
+
 // [realm 構造体]
 typedef struct	s_yoyo_realm {
 	// 初期化済みフラグ
@@ -184,6 +235,9 @@ typedef struct	s_yoyo_realm {
 	// arena 配列
 	// インデックス 0...arena_count の範囲が実際に利用可能.
 	t_yoyo_arena	arenas[ARENA_MAX];
+
+	// BONUS: 履歴管理
+	t_yoyo_history_book	history;
 
 }	t_yoyo_realm;
 

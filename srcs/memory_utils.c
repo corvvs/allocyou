@@ -1,5 +1,30 @@
 #include "internal.h"
 
+void*	yo_memset(void* dst, int ch, size_t n) {
+	unsigned char*	ud = dst;
+	while (n--) {
+		*(ud++) = (unsigned char)ch;
+	}
+	return dst;
+}
+
+void*	yo_memcpy(void* dst, const void* src, size_t n) {
+	if (dst == src || n == 0) {
+		return dst;
+	}
+	unsigned char*			ud = dst;
+	const unsigned char*	us = src;
+	while (n--) {
+		*(ud++) = *(us++);
+	}
+	return dst;
+}
+
+int	yo_isprint(int ch)
+{
+	return (' ' <= ch && ch <= '~');
+}
+
 bool	is_power_of_2(size_t bytes) {
 	return bytes && (bytes & (bytes - 1)) == 0;
 }

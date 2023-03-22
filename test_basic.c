@@ -119,6 +119,19 @@ void	memalign_basic(void) {
 	}
 }
 
-// void	memalign_error(void) {
+void	history_basic(void) {
+	actual_show_alloc_mem_ex();
+	char*	mem = malloc(1);
+	mem[0] = 'a';
+	write(1, mem, 1);
+	free(mem);
+	mem = calloc(12, 34);
+	mem = realloc(mem, 123);
+	mem = realloc(mem, 1234);
+	free(mem);
+	mem = memalign(64, 10000);
+	free(mem);
+	mem = memalign(31, 10000);
+	actual_show_alloc_mem_ex();
+}
 
-// }

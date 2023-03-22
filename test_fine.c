@@ -24,6 +24,8 @@ void	test_tiny_fine(void) {
 	str2 = malloc(16);
 	EXPECT_IS_NOT_NULL(str2);
 	EXPECT_EQ_STR(str1, "hello world");
+
+	show_alloc_mem_ex();
 }
 
 void	test_realloc_fine(void) {

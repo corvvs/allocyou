@@ -13,6 +13,7 @@ void*	malloc(size_t n) {
 	void	*mem = yoyo_actual_malloc(n);
 	SPRINT_END(__func__);
 	DEBUGOUT("** %s end, returning %p for %zu B **", __func__, mem, n);
+	take_history(YOYO_OP_MALLOC, mem, n, 0);
 	return mem;
 }
 
@@ -22,6 +23,7 @@ void	free(void* addr) {
 	yoyo_actual_free(addr);
 	SPRINT_END(__func__);
 	DEBUGOUT("** %s end **", __func__);
+	take_history(YOYO_OP_FREE, addr, 0, 0);
 }
 
 void*	realloc(void* addr, size_t n) {
@@ -30,6 +32,7 @@ void*	realloc(void* addr, size_t n) {
 	void*	mem = yoyo_actual_realloc(addr, n);
 	SPRINT_END(__func__);
 	DEBUGOUT("** %s end, returning %p for %p, %zu B **", __func__, mem, addr, n);
+	take_history(YOYO_OP_REALLOC, mem, n, (size_t)addr);
 	return mem;
 }
 
@@ -39,6 +42,7 @@ void*	calloc(size_t count, size_t size) {
 	void	*mem = yoyo_actual_calloc(count, size);
 	SPRINT_END("malloc");
 	DEBUGOUT("** %s end, returning %p for %zu x %zu B **", __func__, mem, count, size);
+	take_history(YOYO_OP_CALLOC, mem, count, size);
 	return mem;
 }
 
@@ -47,6 +51,15 @@ void	show_alloc_mem(void) {
 	DEBUGOUT("** %s **", __func__);
 	SPRINT_START;
 	actual_show_alloc_mem();
+	SPRINT_END(__func__);
+	DEBUGOUT("** %s end **", __func__);
+}
+
+__attribute__((visibility("default")))
+void	show_alloc_mem_ex(void) {
+	DEBUGOUT("** %s **", __func__);
+	SPRINT_START;
+	actual_show_alloc_mem_ex();
 	SPRINT_END(__func__);
 	DEBUGOUT("** %s end **", __func__);
 }
@@ -66,6 +79,7 @@ void*	memalign(size_t alignment, size_t size) {
 	void*	rv = yoyo_actual_memalign(alignment, size);
 	SPRINT_END(__func__);
 	DEBUGOUT("** %s end, returning %p for (%zu, %zu) **", __func__, rv, alignment, size);
+	take_history(YOYO_OP_MEMALIGN, rv, alignment, size);
 	return rv;
 }
 
@@ -75,6 +89,7 @@ void*	aligned_alloc(size_t alignment, size_t size) {
 	void*	rv = yoyo_actual_aligned_alloc(alignment, size);
 	SPRINT_END(__func__);
 	DEBUGOUT("** %s end, returning %p for (%zu, %zu) **", __func__, rv, alignment, size);
+	take_history(YOYO_OP_EXTRA, rv, alignment, size);
 	return rv;
 }
 
@@ -84,6 +99,7 @@ int		posix_memalign(void **memptr, size_t alignment, size_t size) {
 	int	rv = yoyo_actual_posix_memalign(memptr, alignment, size);
 	SPRINT_END(__func__);
 	DEBUGOUT("** %s end, returning %d for (%p, %zu, %zu) **", __func__, rv, memptr, alignment, size);
+	take_history(YOYO_OP_EXTRA, memptr, alignment, size);
 	return rv;
 }
 
