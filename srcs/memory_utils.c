@@ -20,6 +20,11 @@ void*	yo_memcpy(void* dst, const void* src, size_t n) {
 	return dst;
 }
 
+int	yo_isprint(int ch)
+{
+	return (' ' <= ch && ch <= '~');
+}
+
 bool	is_power_of_2(size_t bytes) {
 	return bytes && (bytes & (bytes - 1)) == 0;
 }

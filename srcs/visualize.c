@@ -1,24 +1,51 @@
 #include "internal.h"
 
+// チャンクの先頭1ブロック分を16進ダンプする.
+// !! 前提: チャンクが適切に排他制御されている !!
+static void	dump_chunk_body(const t_yoyo_chunk* chunk) {
+	// [in hex]
+	// すべてのチャンクは少なくとも1ブロック分の使用可能領域を持つので, 1ブロック分は必ずダンプできる.
+	const unsigned char*	body = (void*)chunk + CEILED_CHUNK_SIZE;
+	yoyo_dprintf(STDOUT_FILENO, "\t\t");
+	for (size_t i = 0; i < BLOCK_UNIT_SIZE; ++i) {
+		unsigned char ch = body[i];
+		if (i > 0) {
+			yoyo_dprintf(STDOUT_FILENO, i % (BLOCK_UNIT_SIZE / 2) == 0 ? "  " : " ");
+		}
+		yoyo_dprintf(STDOUT_FILENO, "%x", ch / 16);
+		yoyo_dprintf(STDOUT_FILENO, "%x", ch % 16);
+	}
+	// [in ASCII]
+	yoyo_dprintf(STDOUT_FILENO, "  |");
+	for (size_t i = 0; i < BLOCK_UNIT_SIZE; ++i) {
+		unsigned char ch = body[i];
+		yoyo_dprintf(STDOUT_FILENO, "%c", yo_isprint(ch) ? ch : '.');
+	}
+	yoyo_dprintf(STDOUT_FILENO, "|\n");
+}
+
+// チャンク情報を表示する
 static void	visualize_chunk(const t_yoyo_chunk* chunk) {
-	yoyo_dprintf(STDOUT_FILENO, "\t\tchunk @ %p: %zu blocks (%zu B)\n", chunk, chunk->blocks, chunk->blocks * BLOCK_UNIT_SIZE);
+	yoyo_dprintf(STDOUT_FILENO, "\t\tchunk @ %p: %zu blocks (%zu B)\n",
+		chunk, chunk->blocks, chunk->blocks * BLOCK_UNIT_SIZE);
+	dump_chunk_body(chunk);
 }
 
 // 指定した zone を可視化する
 static void	visualize_locked_zone(t_yoyo_zone* zone) {
+	// [zone 情報を表示]
 	yoyo_dprintf(STDOUT_FILENO, "\t\tzone %p:", zone);
 	if (zone->blocks_used > 0) {
 		yoyo_dprintf(STDOUT_FILENO, " using %u blocks / %u blocks\n", zone->blocks_used, zone->blocks_zone);
 	} else {
 		yoyo_dprintf(STDOUT_FILENO, " %u blocks ALL FREE\n", zone->blocks_zone);
 	}
-	// 使用中チャンクを表示していく
+	// [使用中チャンク情報を表示]
 	unsigned int	block_index = 0;
 	while (block_index < zone->blocks_heap) {
 		t_yoyo_chunk*	chunk = get_chunk_by_index(zone, block_index);
 		if (chunk == NULL) { break; }
 		if (is_used(zone, block_index)) {
-			// 表示
 			visualize_chunk(chunk);
 		}
 		assert(2 <= chunk->blocks);
@@ -41,12 +68,12 @@ static void	visualize_locked_tiny_small_subarena(const char* zone_name, t_yoyo_a
 	size_t	n_zone = 0;
 	while (zone != NULL) {
 		if (!lock_zone(zone)) {
-			return;
+			return; // 致命的
 		}
 		visualize_locked_zone(zone);
 		t_yoyo_zone*	next = zone->next;
 		if (!unlock_zone(zone)) {
-			return;
+			return; // 致命的
 		}
 		zone = next;
 		n_zone += 1;
@@ -122,4 +149,5 @@ void	actual_show_alloc_mem_ex(void) {
 	}
 	// [履歴の表示]
 	show_history();
+	// [ダンプ付きメモリステータスの表示]
 }
