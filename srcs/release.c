@@ -17,9 +17,10 @@ static void	release_entirely_free_zone(t_yoyo_normal_arena* subarena) {
 			yoyo_dprintf(STDOUT_FILENO, "RELEASE zone: %p\n", zone);
 			yoyo_unmap_memory(zone, zone->blocks_zone * BLOCK_UNIT_SIZE);
 			zone = *current_lot;
-		}
-		if (zone != NULL) {
-			current_lot = &(zone->next);
+		} else {
+			if (zone != NULL) {
+				current_lot = &(zone->next);
+			}
 		}
 	}
 }

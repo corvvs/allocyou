@@ -104,6 +104,7 @@ clean:
 
 fclean:			clean
 	$(RM) $(NAME) $(SONAME) $(DYLIBNAME) $(BASE_SONAME) $(BASE_DYLIBNAME)
+	$(MAKE) -C $(LIBFT_DIR) fclean
 
 re:				fclean all
 
