@@ -106,6 +106,7 @@ void	memalign_basic_sub(size_t alignment, size_t size) {
 	// yoyo_dprintf(STDOUT_FILENO, "mem = %p, usable = %zu\n", mem, malloc_usable_size(mem));
 	EXPECT_EQ_I((uintptr_t)mem % alignment, 0);
 	EXPECT_GE_I(malloc_usable_size(mem), size);
+	free(mem);
 }
 
 void	memalign_basic(void) {
