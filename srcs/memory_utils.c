@@ -12,7 +12,7 @@ bool	overflow_by_addtion(size_t a, size_t b) {
 t_yoyo_chunk*	addr_to_actual_header(void* addr) {
 	t_yoyo_chunk*	header = addr_to_nominal_header(addr);
 	if (IS_PSEUDO_HEADER(header)) {
-		header = NEXT_OF(header->next);
+		header = NEXT_OF(header);
 	}
 	return header;
 }
