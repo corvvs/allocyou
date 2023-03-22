@@ -32,7 +32,7 @@ void*	realloc(void* addr, size_t n) {
 	void*	mem = yoyo_actual_realloc(addr, n);
 	SPRINT_END(__func__);
 	DEBUGOUT("** %s end, returning %p for %p, %zu B **", __func__, mem, addr, n);
-	take_history(YOYO_OP_REALLOC, addr, n, 0);
+	take_history(YOYO_OP_REALLOC, mem, n, (size_t)addr);
 	return mem;
 }
 
@@ -51,6 +51,15 @@ void	show_alloc_mem(void) {
 	DEBUGOUT("** %s **", __func__);
 	SPRINT_START;
 	actual_show_alloc_mem();
+	SPRINT_END(__func__);
+	DEBUGOUT("** %s end **", __func__);
+}
+
+__attribute__((visibility("default")))
+void	show_alloc_mem_ex(void) {
+	DEBUGOUT("** %s **", __func__);
+	SPRINT_START;
+	actual_show_alloc_mem_ex();
 	SPRINT_END(__func__);
 	DEBUGOUT("** %s end **", __func__);
 }

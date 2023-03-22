@@ -32,6 +32,7 @@ void*	yoyo_actual_realloc(void* addr, size_t n);
 
 // visualize.c
 void	actual_show_alloc_mem(void);
+void	actual_show_alloc_mem_ex(void);
 
 // lock.c
 bool	lock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type);
