@@ -4,7 +4,7 @@
 
 __attribute__((constructor))
 static void	yoyo_init() {
-	init_realm(true);	
+	init_realm();	
 }
 
 void*	malloc(size_t n) {

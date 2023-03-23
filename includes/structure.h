@@ -220,15 +220,20 @@ typedef struct	s_yoyo_history_book {
 // [デバッグ環境変数キー]
 
 // チャンク埋めバイト:
-// 指定されている場合, 1文字目がチャンク埋めに使うバイトになる
+// 定義されている場合, 1文字目がチャンク埋めに使うバイトになる
 # define YOYO_ENVKEY_SCRIBLLER "MALLOC_PERTURB_"
 // 操作履歴マスタースイッチ:
-// 指定されている場合, 操作履歴の取得を行う
+// 定義されている場合, 操作履歴の取得を行う
 # define YOYO_ENVKEY_HISTORY "MALLOC_HISTORY_"
-// 操作履歴表示数
+// 操作履歴表示数:
 // 値が"none"の場合, 全履歴を表示する
 // そうでない場合は直近128アイテムを表示する
 # define YOYO_ENVKEY_HISTORY_LIMIT "MALLOC_HISTORY_LIMIT_"
+// シングルスレッドモード:
+// 定義されている場合, シングルスレッドモードで動作する.
+// すなわち一切のロック取得操作を省略する.
+# define YOYO_ENVKEY_SINGLE_THEAD "MALLOC_SINGLE_THREAD_"
+
 
 // [デバッグ用パラメータ管理構造体]
 typedef struct	s_yoyo_debug {
@@ -239,6 +244,9 @@ typedef struct	s_yoyo_debug {
 	// 操作履歴の表示数が無制限かどうか
 	// (二重否定になっているのは, デフォルトで制限ありにしたいから)
 	bool			history_unlimited;
+	// シングルスレッドモードかどうか
+	// (二重否定になっているのは, デフォルトでマルチスレッドにしたいから)
+	bool			single_theard_mode;
 }	t_yoyo_debug;
 
 // [realm 構造体]

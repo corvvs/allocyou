@@ -93,4 +93,9 @@ void	init_debug(void) {
 		debug->history_unlimited = (value != NULL && yo_strcmp(value, "none") == 0);
 	}
 
+	// YOYO_ENVKEY_SINGLE_THEAD
+	{
+		char*	value = getenv(YOYO_ENVKEY_SINGLE_THEAD);
+		debug->single_theard_mode = value != NULL;
+	}
 }

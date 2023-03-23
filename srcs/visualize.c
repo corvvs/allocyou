@@ -143,7 +143,7 @@ static void	visualize_subarena(
 
 // 指定した arena を可視化する
 static void	visualize_arena(t_yoyo_arena* arena, bool exec_hexdump) {
-	yoyo_dprintf(STDOUT_FILENO, "[arena #%u (%s)]\n", arena->index, arena->multi_thread ? "multi-thread mode" : "single-thread mode");
+	yoyo_dprintf(STDOUT_FILENO, "[arena #%u (%s mode)]\n", arena->index, arena->multi_thread ? "multi-thread" : "single-thread");
 	visualize_subarena("TINY", arena, YOYO_ZONE_TINY, visualize_locked_tiny_small_subarena, exec_hexdump);
 	visualize_subarena("SMALL", arena, YOYO_ZONE_SMALL, visualize_locked_tiny_small_subarena, exec_hexdump);
 	visualize_subarena("LARGE", arena, YOYO_ZONE_LARGE, visualize_locked_large_subarena, exec_hexdump);

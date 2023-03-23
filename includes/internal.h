@@ -53,7 +53,7 @@ void*	yoyo_map_memory(size_t bytes, bool align);
 void	yoyo_unmap_memory(void* start, size_t size);
 
 // init_realm.c
-bool	init_realm(bool multi_thread);
+bool	init_realm(void);
 
 // arena_initialize.c
 bool				init_arena(unsigned int index, bool multi_thread);
