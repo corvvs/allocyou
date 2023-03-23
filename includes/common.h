@@ -18,10 +18,10 @@
 # ifdef DEBUG
 #  define DEBUGSTRN(format) yoyo_dprintf(STDOUT_FILENO, "%s[%s:%d %s] " format "%s", TX_GRY, __FILE__, __LINE__, __func__, TX_RST)
 #  define DEBUGSTR(format) yoyo_dprintf(STDOUT_FILENO, "%s[%s:%d %s] " format "%s\n", TX_GRY, __FILE__, __LINE__, __func__, TX_RST)
-#  define DEBUGOUT(format, ...) yoyo_dprintf(STDOUT_FILENO, "[D] %s[%s:%d %s] " format "%s\n", TX_GRY, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
+#  define DEBUGOUT(format, ...) yoyo_dprintf(STDOUT_FILENO, "%s[D] [%s:%d %s] " format "%s\n", TX_GRY, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
 #  define DEBUGINFO(format, ...) yoyo_dprintf(STDOUT_FILENO, "[I] [%s:%d %s] " format "\n", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#  define DEBUGWARN(format, ...) yoyo_dprintf(STDOUT_FILENO, "[W] %s[%s:%d %s] " format "%s\n", TX_YLW, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
-#  define DEBUGERR(format, ...) yoyo_dprintf(STDOUT_FILENO, "[E] %s[%s:%d %s] " format "%s\n", TX_RED, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
+#  define DEBUGWARN(format, ...) yoyo_dprintf(STDOUT_FILENO, "%s[W] [%s:%d %s] " format "%s\n", TX_YLW, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
+#  define DEBUGERR(format, ...) yoyo_dprintf(STDOUT_FILENO, "%s[E] [%s:%d %s] " format "%s\n", TX_RED, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
 # else
 #  define DEBUGSTRN(format) ((void)0)
 #  define DEBUGSTR(format) ((void)0)
@@ -30,6 +30,6 @@
 #  define DEBUGWARN(format, ...) ((void)0)
 #  define DEBUGERR(format, ...) ((void)0)
 # endif
-# define DEBUGFATAL(format, ...) yoyo_dprintf(STDOUT_FILENO, "[F] %s[%s:%d %s] " format "%s\n", BG_RED, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
+# define DEBUGFATAL(format, ...) yoyo_dprintf(STDOUT_FILENO, "%s[F] [%s:%d %s] " format "%s\n", BG_RED, __FILE__, __LINE__, __func__, __VA_ARGS__, TX_RST)
 
 #endif

@@ -68,11 +68,36 @@ void	fill_chunk_by_scribbler(void* mem, bool complement) {
 	yo_memset(mem, filler, (chunk->blocks - 1) * BLOCK_UNIT_SIZE);
 }
 
+// 一時ファイルにオンディスクログを書き込むための準備
+static void	prepare_ondisk_log_temp(t_yoyo_debug* debug) {
+	char	path[] = "/tmp/yoyo_malloc.log.XXXXXX";
+	errno = 0;
+	int fd = mkstemp(path);
+	if (fd < 0) {
+		DEBUGFATAL("failed to mkstemp: %d, %s", errno, strerror(errno));
+		return;
+	}
+	debug->fd_ondisk_log = fd;
+	yoyo_dprintf(STDERR_FILENO, "** taking on-disk log into %s **\n", path);
+}
+
+#include <fcntl.h>
+
+// 通常ファイルにオンディスクログを書き込むための準備
+static void	prepare_ondisk_log_file(t_yoyo_debug* debug, const char* path) {
+	int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	if (fd < 0) {
+		DEBUGFATAL("failed to open %s: %d, %s", path, errno, strerror(errno));
+		return;
+	}
+	debug->fd_ondisk_log = fd;
+	yoyo_dprintf(STDERR_FILENO, "** taking on-disk log into %s **\n", path);
+}
+
 void	init_debug(void) {
 	t_yoyo_debug* debug = &g_yoyo_realm.debug;
 
-	// YOYO_ENVKEY_SCRIBLLER: 確保/解放したチャンク(のヘッダ以外)を特定のバイトで埋める.
-	{
+	{ // YOYO_ENVKEY_SCRIBLLER
 		char*	value = getenv(YOYO_ENVKEY_SCRIBLLER);
 		if (value != NULL) {
 			debug->scribbler = *value;
@@ -81,21 +106,32 @@ void	init_debug(void) {
 		}
 	}
 
-	// YOYO_ENVKEY_HISTORY
-	{
+	{ // YOYO_ENVKEY_HISTORY
 		char*	value = getenv(YOYO_ENVKEY_HISTORY);
 		debug->take_history = value != NULL;
 	}
 
-	// YOYO_ENVKEY_HISTORY_LIMIT
-	{
+	{ // YOYO_ENVKEY_HISTORY_LIMIT
 		char*	value = getenv(YOYO_ENVKEY_HISTORY_LIMIT);
 		debug->history_unlimited = (value != NULL && yo_strcmp(value, "none") == 0);
 	}
 
-	// YOYO_ENVKEY_SINGLE_THEAD
-	{
+	{ // YOYO_ENVKEY_SINGLE_THEAD
 		char*	value = getenv(YOYO_ENVKEY_SINGLE_THEAD);
 		debug->single_theard_mode = value != NULL;
+	}
+
+	{
+		char*	value = getenv(YOYO_ENVKEY_HISTORY_ONDISK);
+		debug->take_ondisk_log = value != NULL;
+		if (debug->take_ondisk_log) {
+			if (yo_strcmp(value, "") == 0) {
+				// path が空文字列 -> 一時ファイル作成
+				prepare_ondisk_log_temp(debug);
+			} else {
+				// path が空でない文字列 -> 通常ファイル
+				prepare_ondisk_log_file(debug, value);
+			}
+		}
 	}
 }

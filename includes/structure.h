@@ -215,6 +215,11 @@ typedef struct	s_yoyo_history_book {
 	t_yoyo_history_item		temp_buf[YOYO_HISTORY_TEMP_SIZE];
 	// temp_buf の使用中要素数
 	size_t					n_temp;
+	// オンディスクログを取るかどうか
+	bool			take_ondisk_log;
+	// オンディスクログの書き込み先FD
+	// take_ondisk_log が true かつこれが非負の場合は, この fd に対して書き込みを行う
+	int				fd_ondisk_log;
 }	t_yoyo_history_book;
 
 // [デバッグ環境変数キー]
@@ -233,7 +238,11 @@ typedef struct	s_yoyo_history_book {
 // 定義されている場合, シングルスレッドモードで動作する.
 // すなわち一切のロック取得操作を省略する.
 # define YOYO_ENVKEY_SINGLE_THEAD "MALLOC_SINGLE_THREAD_"
-
+// オンディスクログ:
+// 定義されている場合, 操作履歴を/tmp以下に作成される一時ファイルに書き出す.
+// ただし空でない値がある場合は, 値をファイルパスとみなし, そのファイルへの書き出しを試みる.
+// (この場合, ファイルは一時ファイルではない)
+# define YOYO_ENVKEY_HISTORY_ONDISK "MALLOC_HISTORY_ONDISK_"
 
 // [デバッグ用パラメータ管理構造体]
 typedef struct	s_yoyo_debug {
@@ -247,6 +256,11 @@ typedef struct	s_yoyo_debug {
 	// シングルスレッドモードかどうか
 	// (二重否定になっているのは, デフォルトでマルチスレッドにしたいから)
 	bool			single_theard_mode;
+	// オンディスクログを取るかどうか
+	bool			take_ondisk_log;
+	// オンディスクログの書き込み先FD
+	// take_ondisk_log が true かつこれが非負の場合は書き込みを行う
+	int				fd_ondisk_log;
 }	t_yoyo_debug;
 
 // [realm 構造体]

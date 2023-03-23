@@ -18,6 +18,11 @@ bool	init_history(bool multi_thread) {
 	history->n_items = 0;
 	history->cap_items = 0;
 	history->preserve = true;
+	yoyo_dprintf(STDERR_FILENO, "debug->take_ondisk_log = %d\n", debug->take_ondisk_log);
+	if (debug->take_ondisk_log) {
+		history->take_ondisk_log = debug->take_ondisk_log;
+		history->fd_ondisk_log = debug->fd_ondisk_log;
+	}
 	DEBUGINFO("%s", "ok.");
 	return true;
 }
@@ -68,8 +73,47 @@ static bool	extend_items(t_yoyo_history_book* history) {
 
 static	t_yoyo_history_item make_item(t_yoyo_operation_type operation, void* addr, size_t size1, size_t size2) {
 	return (t_yoyo_history_item){
-		.operation = operation, .addr = (uintptr_t)addr, .size1 = size1, .size2 = size2,
+		.operation = operation,
+		.addr = (uintptr_t)addr, .size1 = size1, .size2 = size2,
 	};
+}
+
+static void	print_history_item(int fd, size_t index, const t_yoyo_history_item* item) {
+	if (index != (size_t)-1) {
+		yoyo_dprintf(fd, "[#%zu] ", index);
+	}
+	switch (item->operation) {
+		case YOYO_OP_MALLOC:
+			yoyo_dprintf(fd,
+				"malloc(%zu) -> %p\n",
+				item->size1, (void*)item->addr);
+			break;
+		case YOYO_OP_FREE:
+			yoyo_dprintf(fd,
+				"free(%p)\n",
+				(void*)item->addr);
+			break;
+		case YOYO_OP_REALLOC:
+			yoyo_dprintf(fd,
+				"realloc(%p, %zu) -> %p\n",
+				(void*)item->size2, item->size1, (void*)item->addr);
+			break;
+		case YOYO_OP_CALLOC:
+			yoyo_dprintf(fd,
+				"calloc(%zu, %zu) -> %p\n",
+				item->size1, item->size2, (void*)item->addr);
+			break;
+		case YOYO_OP_MEMALIGN:
+			yoyo_dprintf(fd,
+				"memalign(%zu, %zu) -> %p\n",
+				item->size1, item->size2, (void*)item->addr);
+			break;
+		default:
+			yoyo_dprintf(fd,
+				"UNKNOWN OP: %d (%p, %zu, %zu)\n",
+				item->operation, item->addr, item->size1, item->size2);
+			break;
+	}
 }
 
 void	take_history(t_yoyo_operation_type operation, void* addr, size_t size1, size_t size2) {
@@ -89,16 +133,19 @@ void	take_history(t_yoyo_operation_type operation, void* addr, size_t size1, siz
 		return;
 	}
 	// [履歴を追加]
+	t_yoyo_history_item*	ptr_item = NULL;
 	if (history->in_extend) {
 		// 拡張中の場合は temp_buff に追加
 		if (history->n_temp < YOYO_HISTORY_TEMP_SIZE) {
 			history->temp_buf[history->n_temp] = make_item(operation, addr, size1, size2);
+			ptr_item = &history->temp_buf[history->n_temp];
 			history->n_temp += 1;
 			DEBUGOUT("added item into temp_buf: (%d, %p, %zu, %zu)", operation, addr, size1, size2);
 		}
 	} else {
 		// そうでない場合は items に直接追加
 		history->items[history->n_items] = make_item(operation, addr, size1, size2);
+		ptr_item = &history->items[history->n_items];
 		history->n_items += 1;
 		DEBUGOUT("added item into items: (%d, %p, %zu, %zu)", operation, addr, size1, size2);
 		// temp_buff が空でない場合はそれも追加
@@ -108,45 +155,12 @@ void	take_history(t_yoyo_operation_type operation, void* addr, size_t size1, siz
 		}
 		history->n_temp = 0;
 	}
+	if (ptr_item != NULL && history->take_ondisk_log) {
+		print_history_item(history->fd_ondisk_log, -1, ptr_item);
+	}
 
 	// 終わったのでロック解除
 	pthread_mutex_unlock(&history->lock);
-}
-
-static void	print_history_item(size_t index, const t_yoyo_history_item* item) {
-	yoyo_dprintf(STDOUT_FILENO, "[#%zu] ", index);
-	switch (item->operation) {
-		case YOYO_OP_MALLOC:
-			yoyo_dprintf(STDOUT_FILENO,
-				"malloc(%zu) -> %p\n",
-				item->size1, (void*)item->addr);
-			break;
-		case YOYO_OP_FREE:
-			yoyo_dprintf(STDOUT_FILENO,
-				"free(%p)\n",
-				(void*)item->addr);
-			break;
-		case YOYO_OP_REALLOC:
-			yoyo_dprintf(STDOUT_FILENO,
-				"realloc(%p, %zu) -> %p\n",
-				(void*)item->size2, item->size1, (void*)item->addr);
-			break;
-		case YOYO_OP_CALLOC:
-			yoyo_dprintf(STDOUT_FILENO,
-				"calloc(%zu, %zu) -> %p\n",
-				item->size1, item->size2, (void*)item->addr);
-			break;
-		case YOYO_OP_MEMALIGN:
-			yoyo_dprintf(STDOUT_FILENO,
-				"memalign(%zu, %zu) -> %p\n",
-				item->size1, item->size2, (void*)item->addr);
-			break;
-		default:
-			yoyo_dprintf(STDOUT_FILENO,
-				"UNKNOWN OP: %d (%p, %zu, %zu)\n",
-				item->operation, item->addr, item->size1, item->size2);
-			break;
-	}
 }
 
 // 操作履歴を表示する.
@@ -175,7 +189,7 @@ void	show_history(void) {
 		}
 		// 開始インデックス以降の履歴アイテムを表示
 		for (size_t i = i0; i < n_items; ++i) {
-			print_history_item(i, &history->items[i]);
+			print_history_item(STDOUT_FILENO, i, &history->items[i]);
 		}
 	}
 	pthread_mutex_unlock(&history->lock);
