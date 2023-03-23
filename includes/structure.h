@@ -13,12 +13,6 @@
 #  define CHAR_BIT 8
 # endif
 
-# ifdef BONUS_HISTORY
-#  define TAKE_HISTORY 0
-# else
-#  define TAKE_HISTORY 1
-# endif
-
 // a を bの倍数に切り上げる
 # define CEIL_BY(a, b) (a ? ((a - 1) / b + 1) * b : b)
 // a を bの倍数に切り下げる
@@ -228,11 +222,16 @@ typedef struct	s_yoyo_history_book {
 // チャンク埋めバイト:
 // 指定されている場合, 1文字目がチャンク埋めに使うバイトになる
 # define YOYO_ENVKEY_SCRIBLLER "MALLOC_PERTURB_"
+// 操作履歴マスタースイッチ:
+// 指定されている場合, 操作履歴の取得を行う
+# define YOYO_ENVKEY_HISTORY "MALLOC_HISTORY_"
 
 // [デバッグ用パラメータ管理構造体]
 typedef struct	s_yoyo_debug {
 	// チャンク埋めバイト
 	unsigned char	scribbler;
+	// 履歴取得するかどうか
+	bool			take_history;
 }	t_yoyo_debug;
 
 // [realm 構造体]

@@ -81,4 +81,10 @@ void	init_debug(void) {
 		}
 	}
 
+	// YOYO_ENVKEY_HISTORY
+	{
+		char*	value = getenv(YOYO_ENVKEY_HISTORY);
+		debug->take_history = value != NULL;
+	}
+
 }

@@ -1,37 +1,26 @@
 #include "internal.h"
 
 bool	init_history(bool multi_thread) {
-	g_yoyo_realm.history.preserve = false;
-	DEBUGINFO("TAKE_HISTORY: %d", TAKE_HISTORY);
-	if (!TAKE_HISTORY) {
+	t_yoyo_history_book*	history = &g_yoyo_realm.history;
+	t_yoyo_debug*			debug = &g_yoyo_realm.debug;
+	history->preserve = false;
+	DEBUGINFO("TAKE_HISTORY: %d", debug->take_history);
+	if (!debug->take_history) {
 		return true;
 	}
 	if (multi_thread) {
-		if (pthread_mutex_init(&g_yoyo_realm.history.lock, NULL)) {
+		if (pthread_mutex_init(&history->lock, NULL)) {
 			DEBUGFATAL("failed to init history lock: errno: %d (%s)", errno, strerror(errno));
 			return false;
 		}
 	}
-	g_yoyo_realm.history.items = NULL;
-	g_yoyo_realm.history.n_items = 0;
-	g_yoyo_realm.history.cap_items = 0;
-	g_yoyo_realm.history.preserve = true;
+	history->items = NULL;
+	history->n_items = 0;
+	history->cap_items = 0;
+	history->preserve = true;
 	DEBUGINFO("%s", "ok.");
 	return true;
 }
-
-#if TAKE_HISTORY == 0
-
-void	take_history(t_yoyo_operation_type operation, void* addr, size_t size1, size_t size2) {
-	(void)operation;
-	(void)addr;
-	(void)size1;
-	(void)size2;
-}
-
-void	show_history(void);
-
-#else
 
 // history->items を必要なら拡張する
 // **この関数は, history がロックされた状態で呼び出され, history がロックされた状態で終了する.**
@@ -168,5 +157,3 @@ void	show_history(void) {
 	pthread_mutex_unlock(&history->lock);
 	return;
 }
-
-#endif
