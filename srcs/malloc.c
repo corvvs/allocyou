@@ -103,6 +103,13 @@ int		posix_memalign(void **memptr, size_t alignment, size_t size) {
 	return rv;
 }
 
+void	release_memory(void) {
+	SPRINT_START;
+	yoyo_actual_release_memory();
+	SPRINT_END(__func__);
+	DEBUGOUT("** %s end **", __func__);
+}
+
 __attribute__((destructor))
 static void	yoyo_exit() {
 	show_alloc_mem();

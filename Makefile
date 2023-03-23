@@ -23,6 +23,8 @@ FILES	:=	\
 			memory_utils.c\
 			debug.c\
 			printf.c\
+			history.c\
+			release.c\
 
 
 SRCS	:=	$(FILES:%.c=$(SRCDIR)/%.c)
@@ -102,6 +104,7 @@ clean:
 
 fclean:			clean
 	$(RM) $(NAME) $(SONAME) $(DYLIBNAME) $(BASE_SONAME) $(BASE_DYLIBNAME)
+	$(MAKE) -C $(LIBFT_DIR) fclean
 
 re:				fclean all
 

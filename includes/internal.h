@@ -27,6 +27,9 @@ void	yoyo_actual_free(void* addr);
 size_t	yoyo_actual_malloc_usable_size(void* ptr);
 void	yoyo_free_from_locked_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chunk);
 
+// release.c
+void	yoyo_actual_release_memory(void);
+
 // actual_realloc.c
 void*	yoyo_actual_realloc(void* addr, size_t n);
 

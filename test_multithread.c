@@ -86,10 +86,12 @@ void	test_multithread_basic(void) {
 		pthread_mutex_destroy(&basket.locks[i]);
 	}
 	yoyo_dprintf(STDOUT_FILENO, "destroyed %d threads\n", N_LOCKS);
-	// show_alloc_mem();
+	show_alloc_mem_ex();
 	for (int i = 0; i < N_LOCKS; ++i) {
 		free(basket.strings[i]);
 	}
+	release_memory();
+	show_alloc_mem_ex();
 	yoyo_dprintf(STDOUT_FILENO, "done: %d - %d\n", N_THREADS, N_LOCKS);
 }
 
