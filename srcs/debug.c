@@ -50,3 +50,35 @@ void	print_memory_state(const void* addr) {
 		);
 	}
 }
+
+// g_yoyo_realm.debug.scribbler が0でない時, 
+// チャンクのヘッダ以外を g_yoyo_realm.debug.scribbler で埋める.
+// ただし complement が true の場合は g_yoyo_realm.debug.scribbler をビット反転する.
+void	fill_chunk_by_scribbler(void* mem, bool complement) {
+	if (!g_yoyo_realm.debug.scribbler) {
+		return;
+	}
+	t_yoyo_chunk*	chunk = addr_to_actual_header(mem);
+	assert(chunk != NULL);
+	assert(chunk->blocks >= 2);
+	unsigned char	filler = g_yoyo_realm.debug.scribbler;
+	if (complement) {
+		filler = ~filler;
+	}
+	yo_memset(mem, filler, (chunk->blocks - 1) * BLOCK_UNIT_SIZE);
+}
+
+void	init_debug(void) {
+	t_yoyo_debug* debug = &g_yoyo_realm.debug;
+
+	// YOYO_ENVKEY_SCRIBLLER: 確保/解放したチャンク(のヘッダ以外)を特定のバイトで埋める.
+	{
+		char*	value = getenv(YOYO_ENVKEY_SCRIBLLER);
+		if (value != NULL) {
+			debug->scribbler = *value;
+		} else {
+			debug->scribbler = 0;
+		}
+	}
+
+}

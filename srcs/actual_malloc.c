@@ -203,6 +203,7 @@ static void*	try_allocate_chunk_from_zone(t_yoyo_zone* zone, size_t n) {
 			}
 			continue;
 		}
+		// チャンクが取れたらここで返す
 		zone->free_prev = zone->frees;
 		return (void*)head + CEILED_CHUNK_SIZE;
 	}
@@ -237,8 +238,8 @@ static void*	allocate_memory_from_zone_list(t_yoyo_arena* arena, t_yoyo_zone_typ
 	if (new_zone == NULL) {
 		return NULL;
 	}
-	print_zone_state(new_zone);
-	print_zone_bitmap_state(new_zone);
+	// print_zone_state(new_zone);
+	// print_zone_bitmap_state(new_zone);
 	zone_push_front(&subarena->head, new_zone);
 
 	// new_zone はロック取らなくていい.
@@ -284,6 +285,8 @@ void*	yoyo_actual_malloc(size_t n) {
 
 	// [アリーナをアンロックする]
 	unlock_arena(arena, zone_type);
+	// [埋め]
+	fill_chunk_by_scribbler(mem, false);
 	return mem;
 }
 

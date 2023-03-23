@@ -36,6 +36,9 @@ bool	init_realm(bool multi_thread) {
 		}
 	}
 
+	// [BONUS: デバッグパラメータ管理構造体の初期化]
+	init_debug();
+
 	// [BONUS: 履歴管理構造体の初期化]
 	if (!init_history(multi_thread)) {
 		pthread_mutex_unlock(&init_mutex);

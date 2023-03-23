@@ -98,6 +98,8 @@ t_yoyo_chunk*	addr_to_nominal_header(void* addr);
 void	print_zone_state(const t_yoyo_zone* zone);
 void	print_zone_bitmap_state(const t_yoyo_zone* zone);
 void	print_memory_state(const void* addr);
+void	fill_chunk_by_scribbler(void* mem, bool complement);
+void	init_debug(void);
 
 // history.c
 bool	init_history(bool multi_thread);

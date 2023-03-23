@@ -63,6 +63,8 @@ void	yoyo_free_from_locked_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chun
 	insert_chunk_to_tiny_small_zone(zone, chunk);
 	// print_zone_state(zone);
 	// print_zone_bitmap_state(zone);
+	// [DEBUG: 埋め]
+	fill_chunk_by_scribbler((void*)chunk + CEILED_CHUNK_SIZE, true);
 }
 
 
@@ -133,9 +135,10 @@ static void	free_from_large_zone(t_yoyo_chunk* chunk) {
 	}
 	large_chunk->large_next = NULL;
 
+	// [DEBUG: munmap前に埋め]
+	fill_chunk_by_scribbler((void*)large_chunk + LARGE_OFFSET_USABLE, true);
 	// [chunkをmunmapする]
 	yoyo_unmap_memory(large_chunk, large_chunk->memory_byte);
-
 	// [LARGE zoneのロックを離す]
 	unlock_subarena((t_yoyo_subarena*)subarena);
 }

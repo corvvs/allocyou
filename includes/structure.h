@@ -223,6 +223,18 @@ typedef struct	s_yoyo_history_book {
 	size_t					n_temp;
 }	t_yoyo_history_book;
 
+// [デバッグ環境変数キー]
+
+// チャンク埋めバイト:
+// 指定されている場合, 1文字目がチャンク埋めに使うバイトになる
+# define YOYO_ENVKEY_SCRIBLLER "MALLOC_PERTURB_"
+
+// [デバッグ用パラメータ管理構造体]
+typedef struct	s_yoyo_debug {
+	// チャンク埋めバイト
+	unsigned char	scribbler;
+}	t_yoyo_debug;
+
 // [realm 構造体]
 typedef struct	s_yoyo_realm {
 	// 初期化済みフラグ
@@ -238,6 +250,9 @@ typedef struct	s_yoyo_realm {
 
 	// BONUS: 履歴管理
 	t_yoyo_history_book	history;
+
+	// BONUS: デバッグパラメータ
+	t_yoyo_debug		debug;
 
 }	t_yoyo_realm;
 
