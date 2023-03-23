@@ -87,4 +87,10 @@ void	init_debug(void) {
 		debug->take_history = value != NULL;
 	}
 
+	// YOYO_ENVKEY_HISTORY_LIMIT
+	{
+		char*	value = getenv(YOYO_ENVKEY_HISTORY_LIMIT);
+		debug->history_unlimited = (value != NULL && yo_strcmp(value, "none") == 0);
+	}
+
 }

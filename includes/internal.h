@@ -88,6 +88,7 @@ void	mark_chunk_as_used(t_yoyo_zone* zone, const t_yoyo_chunk* chunk);
 // memory_utils
 void*			yo_memset(void* dst, int ch, size_t n);
 void*			yo_memcpy(void* dst, const void* src, size_t n);
+int				yo_strcmp(const char* s1, const char* s2);
 int				yo_isprint(int ch);
 bool			is_power_of_2(size_t bytes);
 bool			overflow_by_addtion(size_t a, size_t b);

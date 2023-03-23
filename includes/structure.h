@@ -225,6 +225,10 @@ typedef struct	s_yoyo_history_book {
 // 操作履歴マスタースイッチ:
 // 指定されている場合, 操作履歴の取得を行う
 # define YOYO_ENVKEY_HISTORY "MALLOC_HISTORY_"
+// 操作履歴表示数
+// 値が"none"の場合, 全履歴を表示する
+// そうでない場合は直近128アイテムを表示する
+# define YOYO_ENVKEY_HISTORY_LIMIT "MALLOC_HISTORY_LIMIT_"
 
 // [デバッグ用パラメータ管理構造体]
 typedef struct	s_yoyo_debug {
@@ -232,6 +236,9 @@ typedef struct	s_yoyo_debug {
 	unsigned char	scribbler;
 	// 履歴取得するかどうか
 	bool			take_history;
+	// 操作履歴の表示数が無制限かどうか
+	// (二重否定になっているのは, デフォルトで制限ありにしたいから)
+	bool			history_unlimited;
 }	t_yoyo_debug;
 
 // [realm 構造体]

@@ -117,27 +117,41 @@ static void	print_history_item(size_t index, const t_yoyo_history_item* item) {
 	yoyo_dprintf(STDOUT_FILENO, "[#%zu] ", index);
 	switch (item->operation) {
 		case YOYO_OP_MALLOC:
-			yoyo_dprintf(STDOUT_FILENO, "malloc(%zu) -> %p\n", item->size1, (void*)item->addr);
+			yoyo_dprintf(STDOUT_FILENO,
+				"malloc(%zu) -> %p\n",
+				item->size1, (void*)item->addr);
 			break;
 		case YOYO_OP_FREE:
-			yoyo_dprintf(STDOUT_FILENO, "free(%p)\n", (void*)item->addr);
+			yoyo_dprintf(STDOUT_FILENO,
+				"free(%p)\n",
+				(void*)item->addr);
 			break;
 		case YOYO_OP_REALLOC:
-			yoyo_dprintf(STDOUT_FILENO, "realloc(%p, %zu) -> %p\n", (void*)item->size2, item->size1, (void*)item->addr);
+			yoyo_dprintf(STDOUT_FILENO,
+				"realloc(%p, %zu) -> %p\n",
+				(void*)item->size2, item->size1, (void*)item->addr);
 			break;
 		case YOYO_OP_CALLOC:
-			yoyo_dprintf(STDOUT_FILENO, "calloc(%zu, %zu) -> %p\n", item->size1, item->size2, (void*)item->addr);
+			yoyo_dprintf(STDOUT_FILENO,
+				"calloc(%zu, %zu) -> %p\n",
+				item->size1, item->size2, (void*)item->addr);
 			break;
 		case YOYO_OP_MEMALIGN:
-			yoyo_dprintf(STDOUT_FILENO, "memalign(%zu, %zu) -> %p\n", item->size1, item->size2, (void*)item->addr);
+			yoyo_dprintf(STDOUT_FILENO,
+				"memalign(%zu, %zu) -> %p\n",
+				item->size1, item->size2, (void*)item->addr);
 			break;
 		default:
-			yoyo_dprintf(STDOUT_FILENO, "UNKNOWN OP: %d (%p, %zu, %zu)\n", item->operation, item->addr, item->size1, item->size2);
+			yoyo_dprintf(STDOUT_FILENO,
+				"UNKNOWN OP: %d (%p, %zu, %zu)\n",
+				item->operation, item->addr, item->size1, item->size2);
 			break;
 	}
 }
 
+// 操作履歴を表示する.
 void	show_history(void) {
+	t_yoyo_debug*			debug = &g_yoyo_realm.debug;
 	t_yoyo_history_book*	history = &g_yoyo_realm.history;
 	if (!history->preserve) {
 		return; 
@@ -146,11 +160,21 @@ void	show_history(void) {
 		DEBUGFATAL("FAILED to lock history: %p", &history->lock);
 		return;
 	}
-	if (history->n_items == 0) {
+	const size_t n_items = history->n_items;
+	if (n_items == 0) {
 		yoyo_dprintf(STDOUT_FILENO, "<< NO operation history >>\n");
 	} else {
-		yoyo_dprintf(STDOUT_FILENO, "<< operation history >>\n");
-		for (size_t i = 0; i < history->n_items; ++i) {
+		// 開始インデックスを決める
+		size_t i0;
+		if (debug->history_unlimited) {
+			i0 = 0;
+			yoyo_dprintf(STDOUT_FILENO, "<< operation history >>\n");
+		} else {
+			i0 = (n_items > 64 ? n_items : 64) - 64;
+			yoyo_dprintf(STDOUT_FILENO, "<< operation history (only latest %zu items) >>\n", n_items - i0);
+		}
+		// 開始インデックス以降の履歴アイテムを表示
+		for (size_t i = i0; i < n_items; ++i) {
 			print_history_item(i, &history->items[i]);
 		}
 	}
