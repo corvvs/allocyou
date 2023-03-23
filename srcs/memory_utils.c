@@ -35,6 +35,11 @@ int	yo_isprint(int ch)
 	return (' ' <= ch && ch <= '~');
 }
 
+int	yo_isdigit(int ch) {
+	return (!((unsigned int)ch & ~63u)
+		&& (0x3ff000000000000ull & (1ull << ch)));
+}
+
 bool	is_power_of_2(size_t bytes) {
 	return bytes && (bytes & (bytes - 1)) == 0;
 }
@@ -47,6 +52,7 @@ bool	overflow_by_addtion(size_t a, size_t b) {
 t_yoyo_chunk*	addr_to_actual_header(void* addr) {
 	t_yoyo_chunk*	header = addr_to_nominal_header(addr);
 	if (IS_PSEUDO_HEADER(header)) {
+		DEBUGOUT("JUMP %p -> %p", header, NEXT_OF(header));
 		header = NEXT_OF(header);
 	}
 	return header;

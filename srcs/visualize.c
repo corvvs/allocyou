@@ -5,23 +5,36 @@
 static void	dump_chunk_body(const t_yoyo_chunk* chunk) {
 	// [in hex]
 	// すべてのチャンクは少なくとも1ブロック分の使用可能領域を持つので, 1ブロック分は必ずダンプできる.
+	if (g_yoyo_realm.debug.xd_blocks < 1) {
+		return;
+	}
+	assert(chunk->blocks >= 2);
+	const size_t			xd_bytes = g_yoyo_realm.debug.xd_blocks * BLOCK_UNIT_SIZE;
+	const size_t			chunk_bytes = (chunk->blocks - 1) * BLOCK_UNIT_SIZE;
+	const size_t			max_bytes = xd_bytes < chunk_bytes ? xd_bytes : chunk_bytes;
 	const unsigned char*	body = (void*)chunk + CEILED_CHUNK_SIZE;
-	yoyo_dprintf(STDOUT_FILENO, "\t\thexdump: ");
-	for (size_t i = 0; i < BLOCK_UNIT_SIZE; ++i) {
+	size_t					i_ascii = 0;
+	for (size_t i = 0; i < max_bytes; ++i) {
 		unsigned char ch = body[i];
-		if (i > 0) {
+		if (i % 16 == 0) {
+			yoyo_dprintf(STDOUT_FILENO, "\t\txd: ");
+		} else {
 			yoyo_dprintf(STDOUT_FILENO, i % (BLOCK_UNIT_SIZE / 2) == 0 ? "  " : " ");
 		}
+		// [in HEX]
 		yoyo_dprintf(STDOUT_FILENO, "%x", ch / 16);
 		yoyo_dprintf(STDOUT_FILENO, "%x", ch % 16);
+		if (!((i + 1) % 16 == 0 || i + 1 == max_bytes)) {
+			continue;
+		}
+		// [in ASCII]
+		yoyo_dprintf(STDOUT_FILENO, "  |");
+		for (; i_ascii <= i; ++i_ascii) {
+			unsigned char ch = body[i_ascii];
+			yoyo_dprintf(STDOUT_FILENO, "%c", yo_isprint(ch) ? ch : '.');
+		}
+		yoyo_dprintf(STDOUT_FILENO, "|\n");
 	}
-	// [in ASCII]
-	yoyo_dprintf(STDOUT_FILENO, "  |");
-	for (size_t i = 0; i < BLOCK_UNIT_SIZE; ++i) {
-		unsigned char ch = body[i];
-		yoyo_dprintf(STDOUT_FILENO, "%c", yo_isprint(ch) ? ch : '.');
-	}
-	yoyo_dprintf(STDOUT_FILENO, "|\n");
 }
 
 // チャンク情報を表示する

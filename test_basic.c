@@ -123,7 +123,8 @@ void	history_basic(void) {
 	actual_show_alloc_mem_ex();
 	char*	mem = malloc(1);
 	mem[0] = 'a';
-	write(1, mem, 1);
+	int r = write(1, mem, 1);
+	(void)r;
 	free(mem);
 	mem = calloc(12, 34);
 	mem = realloc(mem, 123);

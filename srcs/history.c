@@ -18,7 +18,6 @@ bool	init_history(bool multi_thread) {
 	history->n_items = 0;
 	history->cap_items = 0;
 	history->preserve = true;
-	yoyo_dprintf(STDERR_FILENO, "debug->take_ondisk_log = %d\n", debug->take_ondisk_log);
 	if (debug->take_ondisk_log) {
 		history->take_ondisk_log = debug->take_ondisk_log;
 		history->fd_ondisk_log = debug->fd_ondisk_log;

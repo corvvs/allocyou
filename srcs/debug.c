@@ -106,6 +106,11 @@ void	init_debug(void) {
 		}
 	}
 
+	{ // YOYO_ENVKEY_SINGLE_THEAD
+		char*	value = getenv(YOYO_ENVKEY_SINGLE_THEAD);
+		debug->single_theard_mode = value != NULL;
+	}
+
 	{ // YOYO_ENVKEY_HISTORY
 		char*	value = getenv(YOYO_ENVKEY_HISTORY);
 		debug->take_history = value != NULL;
@@ -116,12 +121,7 @@ void	init_debug(void) {
 		debug->history_unlimited = (value != NULL && yo_strcmp(value, "none") == 0);
 	}
 
-	{ // YOYO_ENVKEY_SINGLE_THEAD
-		char*	value = getenv(YOYO_ENVKEY_SINGLE_THEAD);
-		debug->single_theard_mode = value != NULL;
-	}
-
-	{
+	{ // YOYO_ENVKEY_HISTORY_ONDISK
 		char*	value = getenv(YOYO_ENVKEY_HISTORY_ONDISK);
 		debug->take_ondisk_log = value != NULL;
 		if (debug->take_ondisk_log) {
@@ -132,6 +132,28 @@ void	init_debug(void) {
 				// path が空でない文字列 -> 通常ファイル
 				prepare_ondisk_log_file(debug, value);
 			}
+		}
+	}
+
+	{ // YOYO_ENVKEY_XD_BLOCKS
+		char*	value = getenv(YOYO_ENVKEY_XD_BLOCKS);
+		if (value == NULL) {
+			debug->xd_blocks = 1;
+		} else {
+			char*			ch = value;
+			unsigned int	blocks = 0;
+			while (*ch) {
+				if (yo_isdigit(*ch)) {
+					blocks = blocks * 10 + *ch - '0';
+					if (blocks <= YOYO_MAX_XD_BLOCKS) {
+						++ch;
+						continue;
+					}
+				}
+				blocks = 0;
+				break;
+			}
+			debug->xd_blocks = blocks;
 		}
 	}
 }
