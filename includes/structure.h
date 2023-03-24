@@ -220,7 +220,7 @@ typedef struct	s_yoyo_history_book {
 	bool			take_ondisk_log;
 	// オンディスクログの書き込み先FD
 	// take_ondisk_log が true かつこれが非負の場合は, この fd に対して書き込みを行う
-	int				fd_ondisk_log;
+	int				fd_history_log;
 }	t_yoyo_history_book;
 
 // [デバッグ環境変数キー]
@@ -251,6 +251,17 @@ typedef struct	s_yoyo_history_book {
 // 環境変数値が解釈できない場合は0.
 // 最大値はYOYO_MAX_XD_BLOCKS(256).
 # define YOYO_ENVKEY_XD_BLOCKS "MALLOC_XD_BLOCKS_"
+// デバッグ出力先指定:
+// 定義されている場合, 「デバッグ出力」を`/tmp`以下に作成される一時ファイルに書き出す.
+// ただし空でない値がある場合は, 値をファイルパスとみなし, そのファイルへの書き出しを試みる.
+// (この場合, ファイルは一時ファイルではない)
+// なお「デバッグ出力」とは
+// - `show_alloc_mem`の出力
+// - `show_alloc_mem_ex`の出力
+// - コンパイルオプションに`-D DEBUG`を指定した場合のログ出力
+// を指す.
+// デフォルトではいずれも`STDERR_FILENO`に出力する.
+# define YOYO_ENVKEY_DEBUG_ONDISK "MALLOC_DEBUG_ONDISK_"
 
 # define YOYO_MAX_XD_BLOCKS 256
 
@@ -271,7 +282,10 @@ typedef struct	s_yoyo_debug {
 	bool			take_ondisk_log;
 	// オンディスクログの書き込み先FD
 	// take_ondisk_log が true かつこれが非負の場合は書き込みを行う
-	int				fd_ondisk_log;
+	int				fd_history_log;
+	// デバッグログの書き込み先FD
+	// これが非負の場合は, この fd に対して書き込みを行う
+	int				fd_debug_log;
 	// 16進ダンプするブロック数
 	unsigned int	xd_blocks;
 }	t_yoyo_debug;

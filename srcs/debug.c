@@ -68,30 +68,43 @@ void	fill_chunk_by_scribbler(void* mem, bool complement) {
 	yo_memset(mem, filler, (chunk->blocks - 1) * BLOCK_UNIT_SIZE);
 }
 
-// 一時ファイルにオンディスクログを書き込むための準備
-static void	prepare_ondisk_log_temp(t_yoyo_debug* debug) {
-	char	path[] = "/tmp/yoyo_malloc.log.XXXXXX";
+// 一時ファイルに操作履歴ログを書き込むための準備
+static int	prepare_history_log_temp(void) {
+	char	path[] = "/tmp/yoyo_malloc_history.log.XXXXXX";
 	errno = 0;
 	int fd = mkstemp(path);
 	if (fd < 0) {
 		DEBUGFATAL("failed to mkstemp: %d, %s", errno, strerror(errno));
-		return;
+		return -1;
 	}
-	debug->fd_ondisk_log = fd;
-	yoyo_dprintf(STDERR_FILENO, "** taking on-disk log into %s **\n", path);
+	yoyo_dprintf(STDERR_FILENO, "** taking history-log into %s **\n", path);
+	return fd;
+}
+
+// 一時ファイルにデバッグログを書き込むための準備
+static int	prepare_debug_log_temp(void) {
+	char	path[] = "/tmp/yoyo_malloc_debug.log.XXXXXX";
+	errno = 0;
+	int fd = mkstemp(path);
+	if (fd < 0) {
+		DEBUGFATAL("failed to mkstemp: %d, %s", errno, strerror(errno));
+		return -1;
+	}
+	yoyo_dprintf(STDERR_FILENO, "** taking debug-log into %s **\n", path);
+	return fd;
 }
 
 #include <fcntl.h>
 
 // 通常ファイルにオンディスクログを書き込むための準備
-static void	prepare_ondisk_log_file(t_yoyo_debug* debug, const char* path) {
+static int	prepare_ondisk_log_file(const char* log_type, const char* path) {
 	int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if (fd < 0) {
 		DEBUGFATAL("failed to open %s: %d, %s", path, errno, strerror(errno));
-		return;
+		return -1;
 	}
-	debug->fd_ondisk_log = fd;
-	yoyo_dprintf(STDERR_FILENO, "** taking on-disk log into %s **\n", path);
+	yoyo_dprintf(STDERR_FILENO, "** taking %s into %s **\n", log_type, path);
+	return fd;
 }
 
 void	init_debug(void) {
@@ -127,11 +140,27 @@ void	init_debug(void) {
 		if (debug->take_ondisk_log) {
 			if (yo_strcmp(value, "") == 0) {
 				// path が空文字列 -> 一時ファイル作成
-				prepare_ondisk_log_temp(debug);
+				debug->fd_history_log = prepare_history_log_temp();
 			} else {
 				// path が空でない文字列 -> 通常ファイル
-				prepare_ondisk_log_file(debug, value);
+				debug->fd_history_log = prepare_ondisk_log_file("history-log", value);
 			}
+		}
+	}
+
+	{ // YOYO_ENVKEY_DEBUG_ONDISK
+		char*	value = getenv(YOYO_ENVKEY_DEBUG_ONDISK);
+		if (value) {
+			if (yo_strcmp(value, "") == 0) {
+				// path が空文字列 -> 一時ファイル作成
+				debug->fd_debug_log = prepare_debug_log_temp();
+			} else {
+				// path が空でない文字列 -> 通常ファイル
+				debug->fd_debug_log = prepare_ondisk_log_file("debug-log", value);
+			}
+		} else {
+			// path がない -> STDERR
+			debug->fd_debug_log = STDERR_FILENO;
 		}
 	}
 

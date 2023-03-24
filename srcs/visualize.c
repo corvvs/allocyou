@@ -17,29 +17,29 @@ static void	dump_chunk_body(const t_yoyo_chunk* chunk) {
 	for (size_t i = 0; i < max_bytes; ++i) {
 		unsigned char ch = body[i];
 		if (i % 16 == 0) {
-			yoyo_dprintf(STDOUT_FILENO, "\t\txd: ");
+			YOYO_DPRINTF("\t\txd: ");
 		} else {
-			yoyo_dprintf(STDOUT_FILENO, i % (BLOCK_UNIT_SIZE / 2) == 0 ? "  " : " ");
+			YOYO_DPRINTF(i % (BLOCK_UNIT_SIZE / 2) == 0 ? "  " : " ");
 		}
 		// [in HEX]
-		yoyo_dprintf(STDOUT_FILENO, "%x", ch / 16);
-		yoyo_dprintf(STDOUT_FILENO, "%x", ch % 16);
+		YOYO_DPRINTF("%x", ch / 16);
+		YOYO_DPRINTF("%x", ch % 16);
 		if (!((i + 1) % 16 == 0 || i + 1 == max_bytes)) {
 			continue;
 		}
 		// [in ASCII]
-		yoyo_dprintf(STDOUT_FILENO, "  |");
+		YOYO_DPRINTF("  |");
 		for (; i_ascii <= i; ++i_ascii) {
 			unsigned char ch = body[i_ascii];
-			yoyo_dprintf(STDOUT_FILENO, "%c", yo_isprint(ch) ? ch : '.');
+			YOYO_DPRINTF("%c", yo_isprint(ch) ? ch : '.');
 		}
-		yoyo_dprintf(STDOUT_FILENO, "|\n");
+		YOYO_DPRINTF("|\n");
 	}
 }
 
 // チャンク情報を表示する
 static void	visualize_chunk(const t_yoyo_chunk* chunk, bool exec_hexdump) {
-	yoyo_dprintf(STDOUT_FILENO, "\t\tchunk @ %p: %zu blocks (%zu B)\n",
+	YOYO_DPRINTF("\t\tchunk @ %p: %zu blocks (%zu B)\n",
 		chunk, chunk->blocks, chunk->blocks * BLOCK_UNIT_SIZE);
 	if (exec_hexdump) {
 		dump_chunk_body(chunk);
@@ -49,11 +49,11 @@ static void	visualize_chunk(const t_yoyo_chunk* chunk, bool exec_hexdump) {
 // 指定した zone を可視化する
 static void	visualize_locked_zone(t_yoyo_zone* zone, bool exec_hexdump) {
 	// [zone 情報を表示]
-	yoyo_dprintf(STDOUT_FILENO, "\t\tzone %p:", zone);
+	YOYO_DPRINTF("\t\tzone %p:", zone);
 	if (zone->blocks_used > 0) {
-		yoyo_dprintf(STDOUT_FILENO, " using %u blocks / %u blocks\n", zone->blocks_used, zone->blocks_zone);
+		YOYO_DPRINTF(" using %u blocks / %u blocks\n", zone->blocks_used, zone->blocks_zone);
 	} else {
-		yoyo_dprintf(STDOUT_FILENO, " %u blocks ALL FREE\n", zone->blocks_zone);
+		YOYO_DPRINTF(" %u blocks ALL FREE\n", zone->blocks_zone);
 	}
 	// [使用中チャンク情報を表示]
 	unsigned int	block_index = 0;
@@ -83,7 +83,7 @@ static void	visualize_locked_tiny_small_subarena(
 	// zone リスト(subarena->head)をアドレスの昇順にソートする
 	sort_zone_list(&subarena->head);
 
-	yoyo_dprintf(STDOUT_FILENO, "\t< %s >\n", zone_name);
+	YOYO_DPRINTF("\t< %s >\n", zone_name);
 	t_yoyo_zone*	zone = subarena->head;
 	size_t	n_zone = 0;
 	while (zone != NULL) {
@@ -98,13 +98,13 @@ static void	visualize_locked_tiny_small_subarena(
 		zone = next;
 		n_zone += 1;
 	}
-	yoyo_dprintf(STDOUT_FILENO, "\t%zu %s in this subarena\n",
+	YOYO_DPRINTF("\t%zu %s in this subarena\n",
 		n_zone, n_zone > 1 ? "zones" : "zone");
 }
 
 static void	visualize_large_chunk(const t_yoyo_large_chunk* large_chunk, bool exec_hexdump) {
 	const t_yoyo_chunk* chunk = (void*)large_chunk + CEILED_LARGE_CHUNK_SIZE;
-	yoyo_dprintf(STDOUT_FILENO, 
+	YOYO_DPRINTF(
 		"\tlarge chunk @ %p: %zu B (usable: %zu B)\n",
 		large_chunk, large_chunk->memory_byte, chunk->blocks * BLOCK_UNIT_SIZE - CEILED_CHUNK_SIZE
 	);
@@ -126,7 +126,7 @@ static void	visualize_locked_large_subarena(
 	if (subarena->allocated == NULL) {
 		return;
 	}
-	yoyo_dprintf(STDOUT_FILENO, "\t< %s >\n", zone_name);
+	YOYO_DPRINTF("\t< %s >\n", zone_name);
 	t_yoyo_large_chunk*	large_chunk = subarena->allocated;
 	size_t	n_large_chunk = 0;
 	while (large_chunk != NULL) {
@@ -134,7 +134,7 @@ static void	visualize_locked_large_subarena(
 		large_chunk = large_chunk->large_next;
 		n_large_chunk += 1;
 	}
-	yoyo_dprintf(STDOUT_FILENO, "\t%zu large chunk in this subarena\n", n_large_chunk);
+	YOYO_DPRINTF("\t%zu large chunk in this subarena\n", n_large_chunk);
 }
 
 // 指定した subarena を可視化する
@@ -156,7 +156,7 @@ static void	visualize_subarena(
 
 // 指定した arena を可視化する
 static void	visualize_arena(t_yoyo_arena* arena, bool exec_hexdump) {
-	yoyo_dprintf(STDOUT_FILENO, "[arena #%u (%s mode)]\n", arena->index, arena->multi_thread ? "multi-thread" : "single-thread");
+	YOYO_DPRINTF("[arena #%u (%s mode)]\n", arena->index, arena->multi_thread ? "multi-thread" : "single-thread");
 	visualize_subarena("TINY", arena, YOYO_ZONE_TINY, visualize_locked_tiny_small_subarena, exec_hexdump);
 	visualize_subarena("SMALL", arena, YOYO_ZONE_SMALL, visualize_locked_tiny_small_subarena, exec_hexdump);
 	visualize_subarena("LARGE", arena, YOYO_ZONE_LARGE, visualize_locked_large_subarena, exec_hexdump);

@@ -20,7 +20,7 @@ bool	init_history(bool multi_thread) {
 	history->preserve = true;
 	if (debug->take_ondisk_log) {
 		history->take_ondisk_log = debug->take_ondisk_log;
-		history->fd_ondisk_log = debug->fd_ondisk_log;
+		history->fd_history_log = debug->fd_history_log;
 	}
 	DEBUGINFO("%s", "ok.");
 	return true;
@@ -155,7 +155,7 @@ void	take_history(t_yoyo_operation_type operation, void* addr, size_t size1, siz
 		history->n_temp = 0;
 	}
 	if (ptr_item != NULL && history->take_ondisk_log) {
-		print_history_item(history->fd_ondisk_log, -1, ptr_item);
+		print_history_item(history->fd_history_log, -1, ptr_item);
 	}
 
 	// 終わったのでロック解除
@@ -166,7 +166,8 @@ void	take_history(t_yoyo_operation_type operation, void* addr, size_t size1, siz
 void	show_history(void) {
 	t_yoyo_debug*			debug = &g_yoyo_realm.debug;
 	t_yoyo_history_book*	history = &g_yoyo_realm.history;
-	if (!history->preserve) {
+	int						fd = g_yoyo_realm.debug.fd_debug_log;
+	if (!history->preserve || fd < 0) {
 		return; 
 	}
 	if (pthread_mutex_lock(&history->lock)) {
@@ -175,20 +176,20 @@ void	show_history(void) {
 	}
 	const size_t n_items = history->n_items;
 	if (n_items == 0) {
-		yoyo_dprintf(STDOUT_FILENO, "<< NO operation history >>\n");
+		yoyo_dprintf(fd, "<< NO operation history >>\n");
 	} else {
 		// 開始インデックスを決める
 		size_t i0;
 		if (debug->history_unlimited) {
 			i0 = 0;
-			yoyo_dprintf(STDOUT_FILENO, "<< operation history >>\n");
+			yoyo_dprintf(fd, "<< operation history >>\n");
 		} else {
 			i0 = (n_items > 64 ? n_items : 64) - 64;
-			yoyo_dprintf(STDOUT_FILENO, "<< operation history (only latest %zu items) >>\n", n_items - i0);
+			yoyo_dprintf(fd, "<< operation history (only latest %zu items) >>\n", n_items - i0);
 		}
 		// 開始インデックス以降の履歴アイテムを表示
 		for (size_t i = i0; i < n_items; ++i) {
-			print_history_item(STDOUT_FILENO, i, &history->items[i]);
+			print_history_item(fd, i, &history->items[i]);
 		}
 	}
 	pthread_mutex_unlock(&history->lock);
