@@ -14,6 +14,9 @@
 # include <stdint.h>
 
 extern t_yoyo_realm	g_yoyo_realm;
+// extern __thread int	yoyo_thread_id;
+// extern __thread int yoyo_invokation_id;
+// extern __thread const char* yoyo_invokation_name;
 
 // actual_malloc.c
 void*	yoyo_actual_malloc(size_t n);

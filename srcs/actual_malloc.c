@@ -304,6 +304,7 @@ void*	yoyo_actual_malloc(size_t n) {
 
 	// [アリーナをアンロックする]
 	unsigned int ai = arena->index;
+	(void)ai;
 	DEBUGOUT("unlocking arenas[%u] (%p) for %zu B", ai, arena, n);
 	unlock_arena(arena, zone_type);
 	DEBUGOUT("unlocked arenas[%u] (%p) for %zu B", ai, arena, n);

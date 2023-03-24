@@ -1,8 +1,8 @@
 #include "malloc.h"
 #include "internal.h"
 
-#define N_THREADS 400
-#define N_LOCKS 20
+#define N_THREADS 800
+#define N_LOCKS 50
 
 typedef struct s_basket_1 {
 	pthread_mutex_t	locks[N_LOCKS];

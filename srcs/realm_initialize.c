@@ -1,6 +1,9 @@
 #include "internal.h"
 
 t_yoyo_realm	g_yoyo_realm;
+// __thread int	yoyo_thread_id;
+// __thread int	yoyo_invokation_id;
+// __thread const char*	yoyo_invokation_name;
 
 // n個までの arena を破棄する
 static void	destroy_n_arenas(unsigned int n) {
