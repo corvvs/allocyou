@@ -16,14 +16,15 @@ static void	*yoyo_memcpy(void* dst, const void* src, size_t n) {
 // chunk を解放する.
 static void*	relocate_chunk(t_yoyo_chunk* chunk, size_t blocks_required) {
 	// [引っ越し先チャンクを確保]
-	DEBUGINFO("%s", "ALLOCATE");
+	DEBUGINFO("ALLOCATE: (%p, %zu) -> %zu", chunk, chunk->blocks, blocks_required);
 	void*	relocated = yoyo_actual_malloc((blocks_required - 1) * BLOCK_UNIT_SIZE);
+	DEBUGINFO("RELOCATED: (%p, %zu) -> %p", chunk, chunk->blocks, relocated);
 	if (relocated == NULL) {
 		return NULL;
 	}
 	// [データをコピー]
-	DEBUGINFO("%s", "COPY");
 	t_yoyo_chunk*	chunk_relocated = relocated - CEILED_CHUNK_SIZE;
+	DEBUGINFO("COPY: (%p, %zu) -> (%p, %zu)", chunk, chunk->blocks, chunk_relocated, chunk_relocated->blocks);
 	DEBUGOUT("chunk: %p", chunk);
 	DEBUGOUT("chunk_relocated: %p", chunk_relocated);
 	DEBUGOUT("chunk_relocated->blocks: %zu, chunk->blocks: %zu", chunk_relocated->blocks, chunk->blocks);
@@ -32,7 +33,7 @@ static void*	relocate_chunk(t_yoyo_chunk* chunk, size_t blocks_required) {
 	DEBUGINFO("yoyo_memcpy(%p, %p, %zu)", relocated, addr_current, blocks_copy * BLOCK_UNIT_SIZE);
 	yoyo_memcpy(relocated, addr_current, blocks_copy * BLOCK_UNIT_SIZE);
 	// [現在のチャンクを解放]
-	DEBUGINFO("%s", "DEALLOCATE");
+	DEBUGINFO("DEALLOCATE: (%p, %zu)", chunk, chunk->blocks);
 	yoyo_actual_free(addr_current);
 	return relocated;
 }
@@ -86,10 +87,10 @@ void*	yoyo_actual_realloc(void* addr, size_t n) {
 	const t_yoyo_zone_type	type_required = zone_type_for_bytes(n);
 	const t_yoyo_zone_type	type_current = zone_type_for_bytes(blocks_current * BLOCK_UNIT_SIZE);
 
-	DEBUGOUT("blocks_required: %zu <? blocks_current: %zu", blocks_required, blocks_current);
+	DEBUGOUT("for (%p, %zu): blocks_required: %zu (%d) <? blocks_current: %zu (%d)", addr, n, blocks_required, type_required, blocks_current, type_current);
 	// ゾーン種別が変わる場合は RELOCATE
 	if (type_required != type_current) {
-		DEBUGWARN("%s", "EXEC RELOCATE");
+		DEBUGWARN("for (%p, %zu B): EXEC RELOCATE", addr, n);
 		return relocate_chunk(chunk, blocks_required);
 	}
 	// SHRINK できるか？
@@ -103,7 +104,7 @@ void*	yoyo_actual_realloc(void* addr, size_t n) {
 		const t_yoyo_zone_type	type_new_free = zone_type_for_bytes(blocks_new_free * BLOCK_UNIT_SIZE);
 		if (blocks_new_free >= 2 && type_new_free == type_current) {
 			// SHRINK できる.
-			DEBUGWARN("%s", "EXEC SHRINK");
+			DEBUGWARN("for (%p, %zu): EXEC SHRINK", addr, n);
 			shrink_chunk(chunk, blocks_required);
 			return addr;
 		}
@@ -112,7 +113,7 @@ void*	yoyo_actual_realloc(void* addr, size_t n) {
 	// - 要求ブロックサイズ ≤ 現在ブロックサイズ
 	// - 要求ゾーンタイプ = 現在ゾーンタイプ
 	if (blocks_required <= blocks_current) {
-		DEBUGWARN("%s", "EXEC MAINTAIN");
+		DEBUGWARN("for (%p, %zu): EXEC MAINTAIN", addr, n);
 		return addr;
 	}
 	// RELOCATE

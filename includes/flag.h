@@ -8,6 +8,8 @@
 # define YOYO_FLAG_LARGE 1u
 // このチャンクヘッダが「擬似ヘッダ」であることを示すフラグ
 # define YOYO_FLAG_PSEUDO_HEADER 2u
+// このチャンクがSMALLであることを示すフラグ
+# define YOYO_FLAG_SMALL 4u
 // フラグ部分をカバーするマスク
 # define YOYO_FLAG_MASK 7u
 // フラグ部分以外をカバーするマスク
@@ -22,6 +24,8 @@
 // アドレス addr にフラグ flags をセットしたものを返す
 # define SET_FLAGS(addr, flags) ((void*)((uintptr_t)ADDRESS_OF(addr) | (YOYO_FLAG_MASK & flags)))
 
+# define UNSET_FLAGS(addr, flags) ((void*)((uintptr_t)SET_FLAGS(addr, flags) ^ (uintptr_t)(YOYO_FLAG_MASK & flags)))
+
 // アドレス dst のフラグをアドレス src のフラグにしたものを返す
 # define COPY_FLAGS(dst, src) (SET_FLAGS(dst, (uintptr_t)src))
 
@@ -29,5 +33,7 @@
 # define IS_LARGE_CHUNK(chunk) (!!((uintptr_t)((chunk)->next) & YOYO_FLAG_LARGE))
 // このチャンクヘッダが擬似かどうかを判定する
 # define IS_PSEUDO_HEADER(chunk) (!!((uintptr_t)((chunk)->next) & YOYO_FLAG_PSEUDO_HEADER))
+// この chunk が SMALL かどうかを判定する
+# define IS_SMALL_CHUNK(chunk) (!!((uintptr_t)((chunk)->next) & YOYO_FLAG_SMALL))
 
 #endif

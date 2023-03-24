@@ -80,9 +80,12 @@ void	realloc_basic() {
 	EXPECT_NE(mem6, mem7);
 }
 
+
+int s = 1;
 void	malloc_usable_size_basic(void) {
-	void*	mem = malloc(1);
-	EXPECT_NE_I(malloc_usable_size(mem), 1);
+	void*	mem = malloc(s);
+	yoyo_dprintf(STDOUT_FILENO, "%zu\n", malloc_usable_size(mem));
+	EXPECT_GE_I(malloc_usable_size(mem), 1);
 	EXPECT_EQ_I(malloc_usable_size(mem), 16);
 	mem = realloc(mem, 10);
 	EXPECT_EQ_I(malloc_usable_size(mem), 16);
@@ -123,7 +126,8 @@ void	history_basic(void) {
 	actual_show_alloc_mem_ex();
 	char*	mem = malloc(1);
 	mem[0] = 'a';
-	write(1, mem, 1);
+	int r = write(1, mem, 1);
+	(void)r;
 	free(mem);
 	mem = calloc(12, 34);
 	mem = realloc(mem, 123);

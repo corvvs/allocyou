@@ -1,6 +1,9 @@
 #include "internal.h"
 
 t_yoyo_realm	g_yoyo_realm;
+// __thread int	yoyo_thread_id;
+// __thread int	yoyo_invokation_id;
+// __thread const char*	yoyo_invokation_name;
 
 // n個までの arena を破棄する
 static void	destroy_n_arenas(unsigned int n) {
@@ -11,7 +14,8 @@ static void	destroy_n_arenas(unsigned int n) {
 
 // realm を初期化する.
 // スタートアップルーチンから実行される前提.
-bool	init_realm(bool multi_thread) {
+bool	init_realm(void) {
+
 	static pthread_mutex_t	init_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 	if (pthread_mutex_lock(&init_mutex)) {
@@ -24,6 +28,11 @@ bool	init_realm(bool multi_thread) {
 		pthread_mutex_unlock(&init_mutex); // pthread_mutex_lock が通ったのなら, unlock は失敗しないはず
 		return true;
 	}
+
+	// [BONUS: デバッグパラメータ管理構造体の初期化]
+	init_debug();
+	const bool multi_thread = !g_yoyo_realm.debug.single_theard_mode;
+
 	// [アリーナの初期化]
 	g_yoyo_realm.arena_count = multi_thread ? ARENA_MAX : 1;
 	for (unsigned int i = 0; i < g_yoyo_realm.arena_count; ++i) {

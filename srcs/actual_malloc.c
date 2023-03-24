@@ -2,23 +2,29 @@
 
 // arena を1つロックして返す.
 // どの arena もロックできなかった場合は NULL を返す.
-static t_yoyo_arena*	occupy_arena(t_yoyo_zone_type zone_type) {
-	// まず trylock でロックできるか試してみる
-	for (unsigned int i = 0; i < g_yoyo_realm.arena_count; ++i) {
-		t_yoyo_arena*	arena = &g_yoyo_realm.arenas[i];
-		if (try_lock_arena(arena, zone_type)) {
-			DEBUGOUT("locked arenas[%u] (%p) %u", arena->index, arena, i);
-			return arena;
+static t_yoyo_arena*	occupy_arena(t_yoyo_zone_type zone_type, size_t n) {
+	(void)n;
+	// arena が複数ある場合は, まず trylock でロックできるか試してみる
+	if (g_yoyo_realm.arena_count > 1) {
+		for (unsigned int i = 0; i < g_yoyo_realm.arena_count; ++i) {
+			t_yoyo_arena*	arena = &g_yoyo_realm.arenas[i];
+			DEBUGOUT("locking arenas[%u] (%p) %u for %zu B", arena->index, arena, i, n);
+			if (try_lock_arena(arena, zone_type)) {
+				DEBUGOUT("locked arenas[%u] (%p) %u for %zu B", arena->index, arena, i, n);
+				return arena;
+			}
+			DEBUGOUT("FAILED to lock arenas[%u] (%p) %u for %zu B", arena->index, arena, i, n);
 		}
 	}
 	// trylock できなかった場合はデフォルトの arena がロックできるまで待つ.
 	t_yoyo_arena*	default_arena = &g_yoyo_realm.arenas[0];
+	DEBUGOUT("locking default arena [%u] (%p) for %zu B", default_arena->index, default_arena, n);
 	if (lock_arena(default_arena, zone_type)) {
-		DEBUGOUT("locked arenas[%u] (%p)", default_arena->index, default_arena);
+		DEBUGOUT("locked arenas[%u] (%p) for %zu B", default_arena->index, default_arena, n);
 		return default_arena;
 	}
 	// このエラーは致命傷
-	DEBUGFATAL("%s", "COULDN'T LOCK any arena");
+	DEBUGFATAL("COULDN'T LOCK any arena for %zu B", n);
 	return NULL;
 }
 
@@ -69,7 +75,7 @@ static void	insert_large_chunk_to_subarena(
 	// [挿入場所を見つける]
 	while (true) {
 		t_yoyo_large_chunk*	back = *current_lot;
-		DEBUGOUT("front: %p, back: %p", front, back);
+		DEBUGOUT("insert: (%p, %zu), front: %p, back: %p", large_chunk, large_chunk->memory_byte, front, back);
 		if (back == NULL) {
 			DEBUGOUT("PUSH BACK a chunk %p into %p (back of %p)", large_chunk, current_lot, front);
 			break;
@@ -108,23 +114,31 @@ static void	zone_push_front(t_yoyo_zone** list, t_yoyo_zone* zone) {
 	*list = zone;
 }
 
-// blocks_needed 要求されているとき, chunk を分割することで要求に応えられるか?
-static bool	is_separatable(const t_yoyo_chunk* chunk, size_t blocks_needed) {
-	assert(chunk->blocks > 1);
+// 使用可能領域として blocks_needed ブロックが要求されているとき,
+// フリーチャンク chunk_free を分割することで要求に応えられるか?
+static bool	is_separatable(const t_yoyo_chunk* chunk_free, size_t blocks_needed) {
+	assert(chunk_free->blocks > 1);
+	// 必要総ブロック数
 	const size_t	whole_needed = blocks_needed + 1;
-	if (chunk->blocks < whole_needed) {
-		DEBUGOUT("no: not enough blocks: %zu < %zu", chunk->blocks, whole_needed);
+	if (chunk_free->blocks - 1 <= whole_needed) {
+		// NG: chunk_free のブロック数がそもそも必要ブロック数に満たない
+		DEBUGOUT("no: not enough blocks: %zu < %zu", chunk_free->blocks, whole_needed);
 		return false;
 	}
-	const size_t	whole_rest = chunk->blocks - whole_needed;
+	// chunk_free->blocks <= whole_needed + 1
+	// 残留総ブロック数
+	const size_t	whole_rest = chunk_free->blocks - whole_needed;
 	if (whole_rest >= whole_needed) {
+		// OK: 残留総ブロック数が必要総ブロック数以上である(十分に余る)
 		DEBUGOUT("yes : %zu >= %zu", whole_rest, whole_needed);
 		return true;
 	}
+	// 残留総ブロック数があまり多くない場合
 	t_yoyo_zone_type needed_class = zone_type_for_bytes(blocks_needed * BLOCK_UNIT_SIZE);
 	t_yoyo_zone_type needed_rest = zone_type_for_bytes((whole_rest - 1) * BLOCK_UNIT_SIZE);
 	if (needed_class != needed_rest) {
-		DEBUGOUT("no: not enough rest blocks: %zu < %zu", chunk->blocks, whole_needed);
+		// KO: 分割により残留側のゾーン種別が変わってしまう
+		DEBUGOUT("no: not enough rest blocks: %zu < %zu", chunk_free->blocks, whole_needed);
 		return false;
 	}
 	DEBUGOUT("yes: has enough rest blocks: %zu < %zu", whole_rest, whole_needed);
@@ -134,13 +148,13 @@ static bool	is_separatable(const t_yoyo_chunk* chunk, size_t blocks_needed) {
 // blocks_needed 要求されているとき, chunk を占有することで要求に応えられるか?
 static bool	is_exhaustible(const t_yoyo_chunk* chunk, size_t blocks_needed) {
 	const bool just_fit = chunk->blocks == blocks_needed + 1;
-	const bool semi_just_fit = chunk->blocks == blocks_needed + 2;
-	return just_fit || semi_just_fit;
+	// const bool semi_just_fit = chunk->blocks == blocks_needed + 2;
+	return just_fit;
 }
 
 // current_free_chunk をすべて使用中にする.
 static void	exhaust_chunk(t_yoyo_zone* zone, t_yoyo_chunk** current_lot, t_yoyo_chunk* current_free_chunk) {
-	DEBUGSTR("EXHAUSTIBLE");
+	// DEBUGSTR("EXHAUSTIBLE");
 	*current_lot = current_free_chunk->next;
 	mark_chunk_as_used(zone, current_free_chunk);
 	zone->blocks_free -= current_free_chunk->blocks;
@@ -149,10 +163,14 @@ static void	exhaust_chunk(t_yoyo_zone* zone, t_yoyo_chunk** current_lot, t_yoyo_
 
 // current_free_chunk の先頭を分離して blocks_needed + 1 の使用中ブロックを生成する.
 static void	separate_chunk(t_yoyo_zone* zone, t_yoyo_chunk** current_lot, t_yoyo_chunk* current_free_chunk, size_t whole_needed) {
-	DEBUGSTR("SEPARATABLE");
+	// DEBUGSTR("SEPARATABLE");
 	t_yoyo_chunk*	rest = (void*)current_free_chunk + whole_needed * BLOCK_UNIT_SIZE;
 	rest->blocks = current_free_chunk->blocks - whole_needed;
+	DEBUGINFO("zone: (%p, %d)", zone, zone->zone_type);
+	DEBUGINFO("current: (%p, %zu, %p)", current_free_chunk, current_free_chunk->blocks, current_free_chunk->next);
+	DEBUGINFO("rest:    (%p, %zu, %p)", rest, rest->blocks, rest->next);
 	assert(2 <= rest->blocks);
+	DEBUGINFO("OK: %p - %p", current_free_chunk, rest);
 	current_free_chunk->blocks = whole_needed;
 	rest->next = current_free_chunk->next;
 	*current_lot = COPY_FLAGS(rest, current_free_chunk->next);
@@ -203,7 +221,13 @@ static void*	try_allocate_chunk_from_zone(t_yoyo_zone* zone, size_t n) {
 			}
 			continue;
 		}
+		// チャンクが取れたらここで返す
 		zone->free_prev = zone->frees;
+		// if (zone->zone_type == YOYO_ZONE_SMALL) {
+		// 	head->next = SET_FLAGS(head->next, YOYO_FLAG_SMALL);
+		// } else {
+		// 	head->next = UNSET_FLAGS(head->next, YOYO_FLAG_SMALL);
+		// }
 		return (void*)head + CEILED_CHUNK_SIZE;
 	}
 	DEBUGWARN("FAILED from: %p - %zu B", zone, n);
@@ -216,11 +240,7 @@ static void*	allocate_memory_from_zone_list(t_yoyo_arena* arena, t_yoyo_zone_typ
 	while (current_zone != NULL) {
 		if (try_lock_zone(current_zone)) {
 			// zone ロックが取れた -> アロケートを試みる
-			// print_zone_state(current_zone);
-			// print_zone_bitmap_state(current_zone);
 			void*	mem = try_allocate_chunk_from_zone(current_zone, n);
-			// print_zone_state(current_zone);
-			// print_zone_bitmap_state(current_zone);
 			unlock_zone(current_zone);
 			if (mem != NULL) {
 				return mem;
@@ -237,8 +257,8 @@ static void*	allocate_memory_from_zone_list(t_yoyo_arena* arena, t_yoyo_zone_typ
 	if (new_zone == NULL) {
 		return NULL;
 	}
-	print_zone_state(new_zone);
-	print_zone_bitmap_state(new_zone);
+	// print_zone_state(new_zone);
+	// print_zone_bitmap_state(new_zone);
 	zone_push_front(&subarena->head, new_zone);
 
 	// new_zone はロック取らなくていい.
@@ -273,7 +293,7 @@ void*	yoyo_actual_malloc(size_t n) {
 	t_yoyo_zone_type zone_type = zone_type_for_bytes(n);
 
 	// [アリーナを1つ選択してロックする]
-	t_yoyo_arena* arena = occupy_arena(zone_type);
+	t_yoyo_arena* arena = occupy_arena(zone_type, n);
 	if (arena == NULL) {
 		DEBUGWARN("%s", "failed: couldn't lock any arena");
 		return NULL;
@@ -283,7 +303,13 @@ void*	yoyo_actual_malloc(size_t n) {
 	void*	mem = allocate_from_arena(arena, zone_type, n);
 
 	// [アリーナをアンロックする]
+	unsigned int ai = arena->index;
+	(void)ai;
+	DEBUGOUT("unlocking arenas[%u] (%p) for %zu B", ai, arena, n);
 	unlock_arena(arena, zone_type);
+	DEBUGOUT("unlocked arenas[%u] (%p) for %zu B", ai, arena, n);
+	// [埋め]
+	fill_chunk_by_scribbler(mem, false);
 	return mem;
 }
 
@@ -336,13 +362,14 @@ void*	yoyo_actual_memalign(size_t alignment, size_t size) {
 	ptr += CEILED_CHUNK_SIZE;
 
 	size_t offset = (alignment - (ptr % alignment)) % alignment;
-	mem = (void*)(ptr + offset);
+	void* pseudo_mem = (void*)(ptr + offset);
 	// [擬似ヘッダの設定]
-	t_yoyo_chunk*	pseudo_header = addr_to_actual_header(mem);
+	// pseudo_mem に対して addr_to_actual_header を使ってはならない
+	t_yoyo_chunk*	pseudo_header = pseudo_mem - CEILED_CHUNK_SIZE;
 	pseudo_header->blocks = BLOCKS_FOR_SIZE(size) + 1;
 	pseudo_header->next = SET_FLAGS(actual_header, YOYO_FLAG_PSEUDO_HEADER);
-	assert((uintptr_t)mem % alignment == 0);
-	return mem;
+	assert((uintptr_t)pseudo_mem % alignment == 0);
+	return pseudo_mem;
 }
 
 void*	yoyo_actual_aligned_alloc(size_t alignment, size_t size) {
@@ -358,7 +385,7 @@ int		yoyo_actual_posix_memalign(void **memptr, size_t alignment, size_t size) {
 		return EINVAL;
 	}
 	int init_errno = errno;
-	void*	mem = aligned_alloc(alignment, size);
+	void*	mem = yoyo_actual_aligned_alloc(alignment, size);
 	if (mem == NULL) {
 		int e = errno;
 		errno = init_errno;

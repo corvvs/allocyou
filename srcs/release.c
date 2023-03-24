@@ -14,7 +14,7 @@ static void	release_entirely_free_zone(t_yoyo_normal_arena* subarena) {
 		if (is_releasable) {
 			// 解放可能
 			*current_lot = zone->next;
-			yoyo_dprintf(STDOUT_FILENO, "RELEASE zone: %p\n", zone);
+			YOYO_DPRINTF("RELEASE zone: %p\n", zone);
 			yoyo_unmap_memory(zone, zone->blocks_zone * BLOCK_UNIT_SIZE);
 			zone = *current_lot;
 		} else {

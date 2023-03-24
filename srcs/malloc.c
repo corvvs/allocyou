@@ -4,7 +4,7 @@
 
 __attribute__((constructor))
 static void	yoyo_init() {
-	init_realm(true);	
+	init_realm();
 }
 
 void*	malloc(size_t n) {
@@ -112,6 +112,5 @@ void	release_memory(void) {
 
 __attribute__((destructor))
 static void	yoyo_exit() {
-	show_alloc_mem();
-	// DEBUGSTR("EXIT");
+	show_alloc_mem_ex();
 }

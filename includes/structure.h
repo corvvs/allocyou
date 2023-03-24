@@ -2,6 +2,7 @@
 # define YOYO_STRUCTURE_H
 
 # include <stdlib.h>
+# include <stdint.h>
 # include <stdbool.h>
 # include <pthread.h>
 
@@ -11,12 +12,6 @@
 
 # ifndef CHAR_BIT
 #  define CHAR_BIT 8
-# endif
-
-# ifdef BONUS_HISTORY
-#  define TAKE_HISTORY 0
-# else
-#  define TAKE_HISTORY 1
 # endif
 
 // a を bの倍数に切り上げる
@@ -221,7 +216,79 @@ typedef struct	s_yoyo_history_book {
 	t_yoyo_history_item		temp_buf[YOYO_HISTORY_TEMP_SIZE];
 	// temp_buf の使用中要素数
 	size_t					n_temp;
+	// オンディスクログを取るかどうか
+	bool			take_ondisk_log;
+	// オンディスクログの書き込み先FD
+	// take_ondisk_log が true かつこれが非負の場合は, この fd に対して書き込みを行う
+	int				fd_history_log;
 }	t_yoyo_history_book;
+
+// [デバッグ環境変数キー]
+
+// チャンク埋めバイト:
+// 定義されている場合, 1文字目がチャンク埋めに使うバイトになる
+# define YOYO_ENVKEY_SCRIBLLER "MALLOC_PERTURB_"
+// シングルスレッドモード:
+// 定義されている場合, シングルスレッドモードで動作する.
+// すなわち一切のロック取得操作を省略する.
+# define YOYO_ENVKEY_SINGLE_THEAD "MALLOC_SINGLE_THREAD_"
+// 操作履歴マスタースイッチ:
+// 定義されている場合, 操作履歴の取得を行う
+# define YOYO_ENVKEY_HISTORY "MALLOC_HISTORY_"
+// 操作履歴表示数:
+// 値が"none"の場合, 全履歴を表示する
+// そうでない場合は直近128アイテムを表示する
+# define YOYO_ENVKEY_HISTORY_LIMIT "MALLOC_HISTORY_LIMIT_"
+// オンディスクログ:
+// 定義されている場合, 操作履歴を/tmp以下に作成される一時ファイルに書き出す.
+// ただし空でない値がある場合は, 値をファイルパスとみなし, そのファイルへの書き出しを試みる.
+// (この場合, ファイルは一時ファイルではない)
+# define YOYO_ENVKEY_HISTORY_ONDISK "MALLOC_HISTORY_ONDISK_"
+// ダンプサイズ:
+// 定義されている場合, 値を10進符号なし整数として解釈し,
+// その結果を「show_alloc_mem_ex において使用済みチャンクのダンプを行う際の最大ブロック数」とする.
+// デフォルトの値は1.
+// 環境変数値が解釈できない場合は0.
+// 最大値はYOYO_MAX_XD_BLOCKS(256).
+# define YOYO_ENVKEY_XD_BLOCKS "MALLOC_XD_BLOCKS_"
+// デバッグ出力先指定:
+// 定義されている場合, 「デバッグ出力」を`/tmp`以下に作成される一時ファイルに書き出す.
+// ただし空でない値がある場合は, 値をファイルパスとみなし, そのファイルへの書き出しを試みる.
+// (この場合, ファイルは一時ファイルではない)
+// なお「デバッグ出力」とは
+// - `show_alloc_mem`の出力
+// - `show_alloc_mem_ex`の出力
+// - コンパイルオプションに`-D DEBUG`を指定した場合のログ出力
+// を指す.
+// デフォルトではいずれも`STDERR_FILENO`に出力する.
+# define YOYO_ENVKEY_DEBUG_ONDISK "MALLOC_DEBUG_ONDISK_"
+
+# define YOYO_MAX_XD_BLOCKS 256
+
+
+// [デバッグ用パラメータ管理構造体]
+typedef struct	s_yoyo_debug {
+	// チャンク埋めバイト
+	unsigned char	scribbler;
+	// 履歴取得するかどうか
+	bool			take_history;
+	// 操作履歴の表示数が無制限かどうか
+	// (二重否定になっているのは, デフォルトで制限ありにしたいから)
+	bool			history_unlimited;
+	// シングルスレッドモードかどうか
+	// (二重否定になっているのは, デフォルトでマルチスレッドにしたいから)
+	bool			single_theard_mode;
+	// オンディスクログを取るかどうか
+	bool			take_ondisk_log;
+	// オンディスクログの書き込み先FD
+	// take_ondisk_log が true かつこれが非負の場合は書き込みを行う
+	int				fd_history_log;
+	// デバッグログの書き込み先FD
+	// これが非負の場合は, この fd に対して書き込みを行う
+	int				fd_debug_log;
+	// 16進ダンプするブロック数
+	unsigned int	xd_blocks;
+}	t_yoyo_debug;
 
 // [realm 構造体]
 typedef struct	s_yoyo_realm {
@@ -238,6 +305,9 @@ typedef struct	s_yoyo_realm {
 
 	// BONUS: 履歴管理
 	t_yoyo_history_book	history;
+
+	// BONUS: デバッグパラメータ
+	t_yoyo_debug		debug;
 
 }	t_yoyo_realm;
 

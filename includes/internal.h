@@ -14,6 +14,9 @@
 # include <stdint.h>
 
 extern t_yoyo_realm	g_yoyo_realm;
+// extern __thread int	yoyo_thread_id;
+// extern __thread int yoyo_invokation_id;
+// extern __thread const char* yoyo_invokation_name;
 
 // actual_malloc.c
 void*	yoyo_actual_malloc(size_t n);
@@ -53,7 +56,7 @@ void*	yoyo_map_memory(size_t bytes, bool align);
 void	yoyo_unmap_memory(void* start, size_t size);
 
 // init_realm.c
-bool	init_realm(bool multi_thread);
+bool	init_realm(void);
 
 // arena_initialize.c
 bool				init_arena(unsigned int index, bool multi_thread);
@@ -88,7 +91,9 @@ void	mark_chunk_as_used(t_yoyo_zone* zone, const t_yoyo_chunk* chunk);
 // memory_utils
 void*			yo_memset(void* dst, int ch, size_t n);
 void*			yo_memcpy(void* dst, const void* src, size_t n);
+int				yo_strcmp(const char* s1, const char* s2);
 int				yo_isprint(int ch);
+int				yo_isdigit(int ch);
 bool			is_power_of_2(size_t bytes);
 bool			overflow_by_addtion(size_t a, size_t b);
 t_yoyo_chunk*	addr_to_actual_header(void* addr);
@@ -98,11 +103,12 @@ t_yoyo_chunk*	addr_to_nominal_header(void* addr);
 void	print_zone_state(const t_yoyo_zone* zone);
 void	print_zone_bitmap_state(const t_yoyo_zone* zone);
 void	print_memory_state(const void* addr);
+void	fill_chunk_by_scribbler(void* mem, bool complement);
+void	init_debug(void);
 
 // history.c
 bool	init_history(bool multi_thread);
 void	take_history(t_yoyo_operation_type operation, void* addr, size_t size1, size_t size2);
 void	show_history(void);
-
 
 #endif
