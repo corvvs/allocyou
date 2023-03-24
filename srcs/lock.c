@@ -8,11 +8,12 @@ bool	lock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type) {
 		return true;
 	}
 	t_yoyo_subarena*	subarena = get_subarena(arena, zone_type);
+	DEBUGOUT("LOCKING: #%u(%p)", arena->index, arena);
 	if (!lock_subarena(subarena)) {
 		DEBUGFATAL("FAILED to lock: %d(%s)", errno, strerror(errno));
 		return false;
 	}
-	// DEBUGOUT("LOCKED: #%u(%p)", arena->index, arena);
+	DEBUGOUT("LOCKED: #%u(%p)", arena->index, arena);
 	return true;
 }
 
@@ -26,7 +27,7 @@ bool	try_lock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type) {
 		// DEBUGWARN("FAILED to try lock: %d(%s)", errno, strerror(errno));
 		return false;
 	}
-	// DEBUGOUT("LOCKED: #%u(%p)", arena->index, arena);
+	DEBUGOUT("LOCKED: #%u(%p)", arena->index, arena);
 	return true;
 }
 
@@ -39,7 +40,7 @@ bool	lock_subarena(t_yoyo_subarena* subarena) {
 		DEBUGFATAL("FAILED to lock: %d(%s)", errno, strerror(errno));
 		return false;
 	}
-	// DEBUGOUT("LOCKED: %p", subarena);
+	DEBUGOUT("LOCKED: %p", subarena);
 	return true;
 }
 
@@ -52,7 +53,7 @@ bool	try_lock_subarena(t_yoyo_subarena* subarena) {
 		// DEBUGWARN("FAILED to try lock: %d(%s)", errno, strerror(errno));
 		return false;
 	}
-	// DEBUGOUT("LOCKED: %p", subarena);
+	DEBUGOUT("LOCKED: %p", subarena);
 	return true;
 }
 
@@ -88,11 +89,12 @@ bool	unlock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type) {
 		return true;
 	}
 	t_yoyo_subarena*	subarena = get_subarena(arena, zone_type);
+	DEBUGOUT("UNLOCKING: #%u(%p)", arena->index, arena);
 	if (pthread_mutex_unlock(&subarena->lock)) {
 		DEBUGFATAL("FAILED to unlock: %d(%s)", errno, strerror(errno));
 		return false;
 	}
-	// DEBUGOUT("UNLOCKED: #%u(%p)", arena->index, arena);
+	DEBUGOUT("UNLOCKED: #%u(%p)", arena->index, arena);
 	return true;	
 }
 

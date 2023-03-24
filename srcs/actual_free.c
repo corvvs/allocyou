@@ -12,7 +12,7 @@ static bool	try_unite_free_chunks(t_yoyo_zone* zone, t_yoyo_chunk* front_chunk) 
 	unsigned int	back_index = get_block_index(zone, back_chunk);
 	if (front_index + front_chunk->blocks != back_index) { return false; }
 	// [連結可能なので連結する]
-	DEBUGOUT("UNITE %p (%zu) + %p", front_chunk, front_chunk->blocks, back_chunk);
+	// DEBUGOUT("UNITE %p (%zu) + %p", front_chunk, front_chunk->blocks, back_chunk);
 	front_chunk->next = back_chunk->next;
 	front_chunk->blocks += back_chunk->blocks;
 	unmark_chunk(zone, back_chunk);
@@ -94,13 +94,15 @@ static void	free_from_large_zone(t_yoyo_chunk* chunk) {
 
 	// [LARGEヘッダのto_zoneからLARGE zoneに飛ぶ]
 	t_yoyo_large_arena*	subarena = large_chunk->subarena;
-	DEBUGOUT("LARGE subarena: %p", subarena);
-
+	const size_t chunk_blocks = chunk->blocks;
+	(void)chunk_blocks;
+	DEBUGOUT("locking LARGE subarena %p for free (%p, %zu)", subarena, chunk, chunk_blocks);
 	// [LARGE zone のロックを取る]
 	if (!lock_subarena((t_yoyo_subarena*)subarena)) {
 		DEBUGFATAL("FAILED to lock LARGE subarena: %p", subarena);
 		return;
 	}
+	DEBUGOUT("locked LARGE subarena %p for free (%p, %zu)", subarena, chunk, chunk_blocks);
 
 	// [LARGE zoneのchunk_listを見る]
 	t_yoyo_large_chunk**	list = &(subarena->allocated);
@@ -108,14 +110,14 @@ static void	free_from_large_zone(t_yoyo_chunk* chunk) {
 	// [LARGEヘッダのactual_nextを見ながら元々freeしたいchunkを見つける]
 	while (true) {
 		t_yoyo_large_chunk*	head = *list;
-		DEBUGOUT("head: %p", head);
+		// DEBUGOUT("head: %p", head);
 		if (head == NULL) {
 			DEBUGFATAL("not found in the list: %p", &subarena->allocated);
 			unlock_subarena((t_yoyo_subarena*)subarena);
 			return;
 		}
 		if (head == large_chunk) {
-			DEBUGOUT("POP FRONT chunk %p from the list: %p", large_chunk, &subarena->allocated);
+			// DEBUGOUT("POP FRONT chunk %p from the list: %p", large_chunk, &subarena->allocated);
 			list = NULL;
 			break;
 		}
@@ -140,7 +142,9 @@ static void	free_from_large_zone(t_yoyo_chunk* chunk) {
 	// [chunkをmunmapする]
 	yoyo_unmap_memory(large_chunk, large_chunk->memory_byte);
 	// [LARGE zoneのロックを離す]
+	DEBUGOUT("unlocking LARGE subarena %p for free (%p, %zu)", subarena, chunk, chunk_blocks);
 	unlock_subarena((t_yoyo_subarena*)subarena);
+	DEBUGOUT("unlocked LARGE subarena %p for free (%p, %zu)", subarena, chunk, chunk_blocks);
 }
 
 void	yoyo_actual_free(void* addr) {

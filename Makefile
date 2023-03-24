@@ -48,7 +48,7 @@ OBJS_TEST	:=	$(FILES_TEST:%.c=$(OBJDIR)/%.o)
 
 CC			:=	gcc
 CCOREFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR)
-CFLAGS		:=	$(CCOREFLAGS) -D NDEBUG -g #-fsanitize=thread
+CFLAGS		:=	$(CCOREFLAGS) -D DEBUG -g #-fsanitize=thread
 LIBFLAGS	:=	-fPIC -fpic
 
 BASE_LIBNAME	:=	ft_malloc

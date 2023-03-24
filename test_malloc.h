@@ -26,6 +26,7 @@ void	test_mass_history(void);
 // test_multithread.c
 void	test_multithread_basic(void);
 void	test_multithread_realloc(void);
+void	test_singlethread_realloc(void);
 
 // test_extreme.c
 void	test_extreme_malloc(void);

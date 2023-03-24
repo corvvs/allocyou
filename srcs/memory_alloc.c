@@ -4,7 +4,7 @@ static void	unmap_range(void* begin, void* end) {
 	assert((size_t)begin <= (size_t)end);
 	size_t range_size = (size_t)end - (size_t)begin;
 	if (range_size == 0) {
-		DEBUGOUT("skipped: [%p, %p)", begin, end);
+		// DEBUGOUT("skipped: [%p, %p)", begin, end);
 		return;
 	} else if (begin > end) {
 		DEBUGFATAL("skipped: [%p, %p)", begin, end);
@@ -15,8 +15,8 @@ static void	unmap_range(void* begin, void* end) {
 		DEBUGFATAL("FAILED: errno = %d, %s", errno, strerror(errno));
 		return;
 	}
-	DEBUGOUT("unmap memory: [%p, %p) - %zx", begin, end, range_size);
-	DEBUGINFO("unmapped: [%p, %p) (%zd B)", begin, end, range_size);
+	// DEBUGOUT("unmap memory: [%p, %p) - %zx", begin, end, range_size);
+	// DEBUGINFO("unmapped: [%p, %p) (%zd B)", begin, end, range_size);
 }
 
 // bytes バイトの領域を mmap して返す.
@@ -41,18 +41,18 @@ void*	yoyo_map_memory(size_t bytes, bool align) {
 		return NULL;
 	}
 	void*	bulk_end = bulk + bulk_size;
-	DEBUGOUT("map memory: [%p, %p) - %zx", bulk, bulk_end, bulk_size);
+	// DEBUGOUT("map memory: [%p, %p) - %zx", bulk, bulk_end, bulk_size);
 	if (align) {
-		DEBUGOUT("aligning region %p(%zx B) to %zu B", bulk, bulk_size, bytes);
+		// DEBUGOUT("aligning region %p(%zx B) to %zu B", bulk, bulk_size, bytes);
 		void*	mem = (void*)CEIL_BY((size_t)bulk, bytes);
 		void*	mem_end = mem + bytes;
 		unmap_range(bulk, mem);
 		assert(((uintptr_t)mem & ((uintptr_t)bytes - 1)) == 0); // mem は bytes アラインされている
 		unmap_range(mem_end, bulk_end);
-		DEBUGOUT("returning aligned region %p(%zu B)", mem, bytes);
+		// DEBUGOUT("returning aligned region %p(%zu B)", mem, bytes);
 		return mem;
 	} else {
-		DEBUGOUT("returning bulk region %p(%zu B)", bulk, bulk_size);
+		// DEBUGOUT("returning bulk region %p(%zu B)", bulk, bulk_size);
 		return bulk;
 	}
 }

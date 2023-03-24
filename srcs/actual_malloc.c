@@ -2,23 +2,29 @@
 
 // arena を1つロックして返す.
 // どの arena もロックできなかった場合は NULL を返す.
-static t_yoyo_arena*	occupy_arena(t_yoyo_zone_type zone_type) {
-	// まず trylock でロックできるか試してみる
-	for (unsigned int i = 0; i < g_yoyo_realm.arena_count; ++i) {
-		t_yoyo_arena*	arena = &g_yoyo_realm.arenas[i];
-		if (try_lock_arena(arena, zone_type)) {
-			DEBUGOUT("locked arenas[%u] (%p) %u", arena->index, arena, i);
-			return arena;
+static t_yoyo_arena*	occupy_arena(t_yoyo_zone_type zone_type, size_t n) {
+	(void)n;
+	// arena が複数ある場合は, まず trylock でロックできるか試してみる
+	if (g_yoyo_realm.arena_count > 1) {
+		for (unsigned int i = 0; i < g_yoyo_realm.arena_count; ++i) {
+			t_yoyo_arena*	arena = &g_yoyo_realm.arenas[i];
+			DEBUGOUT("locking arenas[%u] (%p) %u for %zu B", arena->index, arena, i, n);
+			if (try_lock_arena(arena, zone_type)) {
+				DEBUGOUT("locked arenas[%u] (%p) %u for %zu B", arena->index, arena, i, n);
+				return arena;
+			}
+			DEBUGOUT("FAILED to lock arenas[%u] (%p) %u for %zu B", arena->index, arena, i, n);
 		}
 	}
 	// trylock できなかった場合はデフォルトの arena がロックできるまで待つ.
 	t_yoyo_arena*	default_arena = &g_yoyo_realm.arenas[0];
+	DEBUGOUT("locking default arena [%u] (%p) for %zu B", default_arena->index, default_arena, n);
 	if (lock_arena(default_arena, zone_type)) {
-		DEBUGOUT("locked arenas[%u] (%p)", default_arena->index, default_arena);
+		DEBUGOUT("locked arenas[%u] (%p) for %zu B", default_arena->index, default_arena, n);
 		return default_arena;
 	}
 	// このエラーは致命傷
-	DEBUGFATAL("%s", "COULDN'T LOCK any arena");
+	DEBUGFATAL("COULDN'T LOCK any arena for %zu B", n);
 	return NULL;
 }
 
@@ -140,7 +146,7 @@ static bool	is_exhaustible(const t_yoyo_chunk* chunk, size_t blocks_needed) {
 
 // current_free_chunk をすべて使用中にする.
 static void	exhaust_chunk(t_yoyo_zone* zone, t_yoyo_chunk** current_lot, t_yoyo_chunk* current_free_chunk) {
-	DEBUGSTR("EXHAUSTIBLE");
+	// DEBUGSTR("EXHAUSTIBLE");
 	*current_lot = current_free_chunk->next;
 	mark_chunk_as_used(zone, current_free_chunk);
 	zone->blocks_free -= current_free_chunk->blocks;
@@ -149,7 +155,7 @@ static void	exhaust_chunk(t_yoyo_zone* zone, t_yoyo_chunk** current_lot, t_yoyo_
 
 // current_free_chunk の先頭を分離して blocks_needed + 1 の使用中ブロックを生成する.
 static void	separate_chunk(t_yoyo_zone* zone, t_yoyo_chunk** current_lot, t_yoyo_chunk* current_free_chunk, size_t whole_needed) {
-	DEBUGSTR("SEPARATABLE");
+	// DEBUGSTR("SEPARATABLE");
 	t_yoyo_chunk*	rest = (void*)current_free_chunk + whole_needed * BLOCK_UNIT_SIZE;
 	rest->blocks = current_free_chunk->blocks - whole_needed;
 	assert(2 <= rest->blocks);
@@ -275,7 +281,7 @@ void*	yoyo_actual_malloc(size_t n) {
 	t_yoyo_zone_type zone_type = zone_type_for_bytes(n);
 
 	// [アリーナを1つ選択してロックする]
-	t_yoyo_arena* arena = occupy_arena(zone_type);
+	t_yoyo_arena* arena = occupy_arena(zone_type, n);
 	if (arena == NULL) {
 		DEBUGWARN("%s", "failed: couldn't lock any arena");
 		return NULL;
@@ -285,7 +291,10 @@ void*	yoyo_actual_malloc(size_t n) {
 	void*	mem = allocate_from_arena(arena, zone_type, n);
 
 	// [アリーナをアンロックする]
+	unsigned int ai = arena->index;
+	DEBUGOUT("unlocking arenas[%u] (%p) for %zu B", ai, arena, n);
 	unlock_arena(arena, zone_type);
+	DEBUGOUT("unlocked arenas[%u] (%p) for %zu B", ai, arena, n);
 	// [埋め]
 	fill_chunk_by_scribbler(mem, false);
 	return mem;
