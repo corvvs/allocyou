@@ -103,7 +103,6 @@ void	test_multithread_basic(void) {
 static void*	test_multithread_realloc_sub(void* index) {
 	DEBUGWARN("index = %p", index);
 	int idx = *(int*)index;
-	DEBUGWARN("#%d launched", idx);
 
 	int count = 10;
 	char a[] = "0";
@@ -162,7 +161,9 @@ void	test_multithread_realloc(void) {
 	for (int i = 0; i < N_THREADS; ++i) {
 		indexes[i] = i + 1;
 		int* ip = &indexes[i];
-		pthread_create(&basket.threads[i], NULL, test_multithread_realloc_sub, ip);
+		if (pthread_create(&basket.threads[i], NULL, test_multithread_realloc_sub, ip)) {
+			DEBUGFATAL("FAILED to create thread: %d", i);
+		}
 	}
 
 	for (int i = 0; i < N_THREADS; ++i) {

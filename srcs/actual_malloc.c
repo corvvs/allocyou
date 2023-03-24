@@ -75,7 +75,7 @@ static void	insert_large_chunk_to_subarena(
 	// [挿入場所を見つける]
 	while (true) {
 		t_yoyo_large_chunk*	back = *current_lot;
-		DEBUGOUT("front: %p, back: %p", front, back);
+		DEBUGOUT("insert: (%p, %zu), front: %p, back: %p", large_chunk, large_chunk->memory_byte, front, back);
 		if (back == NULL) {
 			DEBUGOUT("PUSH BACK a chunk %p into %p (back of %p)", large_chunk, current_lot, front);
 			break;
@@ -114,23 +114,31 @@ static void	zone_push_front(t_yoyo_zone** list, t_yoyo_zone* zone) {
 	*list = zone;
 }
 
-// blocks_needed 要求されているとき, chunk を分割することで要求に応えられるか?
-static bool	is_separatable(const t_yoyo_chunk* chunk, size_t blocks_needed) {
-	assert(chunk->blocks > 1);
+// 使用可能領域として blocks_needed ブロックが要求されているとき,
+// フリーチャンク chunk_free を分割することで要求に応えられるか?
+static bool	is_separatable(const t_yoyo_chunk* chunk_free, size_t blocks_needed) {
+	assert(chunk_free->blocks > 1);
+	// 必要総ブロック数
 	const size_t	whole_needed = blocks_needed + 1;
-	if (chunk->blocks < whole_needed) {
-		DEBUGOUT("no: not enough blocks: %zu < %zu", chunk->blocks, whole_needed);
+	if (chunk_free->blocks - 1 <= whole_needed) {
+		// NG: chunk_free のブロック数がそもそも必要ブロック数に満たない
+		DEBUGOUT("no: not enough blocks: %zu < %zu", chunk_free->blocks, whole_needed);
 		return false;
 	}
-	const size_t	whole_rest = chunk->blocks - whole_needed;
+	// chunk_free->blocks <= whole_needed + 1
+	// 残留総ブロック数
+	const size_t	whole_rest = chunk_free->blocks - whole_needed;
 	if (whole_rest >= whole_needed) {
+		// OK: 残留総ブロック数が必要総ブロック数以上である(十分に余る)
 		DEBUGOUT("yes : %zu >= %zu", whole_rest, whole_needed);
 		return true;
 	}
+	// 残留総ブロック数があまり多くない場合
 	t_yoyo_zone_type needed_class = zone_type_for_bytes(blocks_needed * BLOCK_UNIT_SIZE);
 	t_yoyo_zone_type needed_rest = zone_type_for_bytes((whole_rest - 1) * BLOCK_UNIT_SIZE);
 	if (needed_class != needed_rest) {
-		DEBUGOUT("no: not enough rest blocks: %zu < %zu", chunk->blocks, whole_needed);
+		// KO: 分割により残留側のゾーン種別が変わってしまう
+		DEBUGOUT("no: not enough rest blocks: %zu < %zu", chunk_free->blocks, whole_needed);
 		return false;
 	}
 	DEBUGOUT("yes: has enough rest blocks: %zu < %zu", whole_rest, whole_needed);
@@ -158,7 +166,11 @@ static void	separate_chunk(t_yoyo_zone* zone, t_yoyo_chunk** current_lot, t_yoyo
 	// DEBUGSTR("SEPARATABLE");
 	t_yoyo_chunk*	rest = (void*)current_free_chunk + whole_needed * BLOCK_UNIT_SIZE;
 	rest->blocks = current_free_chunk->blocks - whole_needed;
+	DEBUGINFO("zone: (%p, %d)", zone, zone->zone_type);
+	DEBUGINFO("current: (%p, %zu, %p)", current_free_chunk, current_free_chunk->blocks, current_free_chunk->next);
+	DEBUGINFO("rest:    (%p, %zu, %p)", rest, rest->blocks, rest->next);
 	assert(2 <= rest->blocks);
+	DEBUGINFO("OK: %p - %p", current_free_chunk, rest);
 	current_free_chunk->blocks = whole_needed;
 	rest->next = current_free_chunk->next;
 	*current_lot = COPY_FLAGS(rest, current_free_chunk->next);
