@@ -372,7 +372,7 @@ int		yoyo_actual_posix_memalign(void **memptr, size_t alignment, size_t size) {
 		return EINVAL;
 	}
 	int init_errno = errno;
-	void*	mem = aligned_alloc(alignment, size);
+	void*	mem = yoyo_actual_aligned_alloc(alignment, size);
 	if (mem == NULL) {
 		int e = errno;
 		errno = init_errno;
