@@ -66,7 +66,7 @@ t_yoyo_zone*	allocate_zone(const t_yoyo_arena* arena, t_yoyo_zone_type zone_type
 		DEBUGERR("failed for class: %d", zone_type);
 		return NULL;
 	}
-	DEBUGOUT("ALLOCATED %zu bytes region at %p", zone_bytes, zone);
+	DEBUGSAY("ALLOCATED (%p, %d, %zx)", zone, zone->zone_type, zone_bytes);
 	if (!init_zone(arena, zone, zone_type)) {
 		yoyo_unmap_memory(zone, zone_bytes);
 		return NULL;

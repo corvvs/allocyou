@@ -181,7 +181,7 @@ void	actual_show_alloc_mem_ex(void) {
 	show_history();
 
 	// [ダンプ付きメモリステータスの表示]
-	for (unsigned int i = 0; i < g_yoyo_realm.arena_count; ++i) {
-		visualize_arena(&g_yoyo_realm.arenas[i], true);
-	}
+	// for (unsigned int i = 0; i < g_yoyo_realm.arena_count; ++i) {
+	// 	visualize_arena(&g_yoyo_realm.arenas[i], true);
+	// }
 }

@@ -22,6 +22,8 @@ size_t	max_chunk_blocks_for_zone_type(t_yoyo_zone_type zone_type) {
 	}
 }
 
+// malloc の要求サイズ n に対応するゾーン種別を求める
+// !! n はチャンクサイズではないことに注意 !!
 t_yoyo_zone_type	zone_type_for_bytes(size_t n) {
 	size_t	blocks_needed = BLOCKS_FOR_SIZE(n);
 	DEBUGOUT("blocks_needed: %zu", blocks_needed);
@@ -60,6 +62,7 @@ t_yoyo_zone*	get_zone_of_chunk(const t_yoyo_chunk* chunk) {
 
 	const uintptr_t zone_addr_mask = ~((zone_type == YOYO_ZONE_TINY ? ZONE_TINY_BYTE : ZONE_SMALL_BYTE) - 1);
 	DEBUGOUT("zone_addr_mask is %lx", zone_addr_mask);
+	// DEBUGSAY("zone_type is %d for (%p, %zu, %p) & %lx -> %p", zone_type, chunk, chunk->blocks, chunk->next, zone_addr_mask, (uintptr_t)chunk & zone_addr_mask);
 	return (t_yoyo_zone*)((uintptr_t)chunk & zone_addr_mask);
 }
 

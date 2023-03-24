@@ -134,8 +134,8 @@ static bool	is_separatable(const t_yoyo_chunk* chunk, size_t blocks_needed) {
 // blocks_needed 要求されているとき, chunk を占有することで要求に応えられるか?
 static bool	is_exhaustible(const t_yoyo_chunk* chunk, size_t blocks_needed) {
 	const bool just_fit = chunk->blocks == blocks_needed + 1;
-	const bool semi_just_fit = chunk->blocks == blocks_needed + 2;
-	return just_fit || semi_just_fit;
+	// const bool semi_just_fit = chunk->blocks == blocks_needed + 2;
+	return just_fit;
 }
 
 // current_free_chunk をすべて使用中にする.
@@ -205,6 +205,11 @@ static void*	try_allocate_chunk_from_zone(t_yoyo_zone* zone, size_t n) {
 		}
 		// チャンクが取れたらここで返す
 		zone->free_prev = zone->frees;
+		// if (zone->zone_type == YOYO_ZONE_SMALL) {
+		// 	head->next = SET_FLAGS(head->next, YOYO_FLAG_SMALL);
+		// } else {
+		// 	head->next = UNSET_FLAGS(head->next, YOYO_FLAG_SMALL);
+		// }
 		return (void*)head + CEILED_CHUNK_SIZE;
 	}
 	DEBUGWARN("FAILED from: %p - %zu B", zone, n);
@@ -217,11 +222,7 @@ static void*	allocate_memory_from_zone_list(t_yoyo_arena* arena, t_yoyo_zone_typ
 	while (current_zone != NULL) {
 		if (try_lock_zone(current_zone)) {
 			// zone ロックが取れた -> アロケートを試みる
-			// print_zone_state(current_zone);
-			// print_zone_bitmap_state(current_zone);
 			void*	mem = try_allocate_chunk_from_zone(current_zone, n);
-			// print_zone_state(current_zone);
-			// print_zone_bitmap_state(current_zone);
 			unlock_zone(current_zone);
 			if (mem != NULL) {
 				return mem;

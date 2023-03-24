@@ -92,6 +92,8 @@ void	test_multithread_basic(void) {
 	}
 	release_memory();
 	show_alloc_mem_ex();
+	release_memory();
+	show_alloc_mem_ex();
 	yoyo_dprintf(STDOUT_FILENO, "done: %d - %d\n", N_THREADS, N_LOCKS);
 }
 
