@@ -27,13 +27,14 @@ FILES	:=	\
 			release.c\
 
 
-SRCS	:=	$(FILES:%.c=$(SRCDIR)/%.c)
-OBJS	:=	$(FILES:%.c=$(OBJDIR)/%.o)
-NAME	:=	libmalloc.a
-LIBFT	:=	libft.a
+SRCS		:=	$(FILES:%.c=$(SRCDIR)/%.c)
+OBJS		:=	$(FILES:%.c=$(OBJDIR)/%.o)
+LIB_NAME	:=	libmalloc.a
+LIBFT		:=	libft.a
 LIBFT_DIR	:=	libft
-RM		:=	rm -rf
+RM			:=	rm -rf
 
+TEST_NAME	:=	malloc
 FILES_TEST	:=\
 			main.c\
 			test_basic.c\
@@ -48,7 +49,7 @@ OBJS_TEST	:=	$(FILES_TEST:%.c=$(OBJDIR)/%.o)
 
 CC			:=	gcc
 CCOREFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR)
-CFLAGS		:=	$(CCOREFLAGS) -D DEBUG -g #-fsanitize=thread
+CFLAGS		:=	$(CCOREFLAGS) -DNDEBUG -g #-fsanitize=thread
 LIBFLAGS	:=	-fPIC -fpic
 
 BASE_LIBNAME	:=	ft_malloc
@@ -57,7 +58,7 @@ BASE_SONAME	:=	libft_malloc.so
 DYLIBNAME	:=	libft_malloc_$(HOSTTYPE).dylib
 BASE_DYLIBNAME	:=	libft_malloc.dylib
 
-all:			malloc
+all:			so
 
 $(OBJDIR)/%.o:	$(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR)
@@ -67,14 +68,19 @@ $(OBJDIR)/%.o:	%.c
 	@mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-.PHONY:			malloc
-malloc:			$(NAME) $(OBJS_TEST) $(LIBFT) #$(BASE_DYLIBNAME)
-	$(CC) $(CFLAGS) -o $@ $(OBJS_TEST) $(LIBFT) $(NAME)
+$(LIB_NAME):	$(OBJS)
+	ar rcs $(LIB_NAME) $(OBJS)
+
+$(TEST_NAME):	$(LIB_NAME) $(OBJS_TEST) $(LIBFT) #$(BASE_DYLIBNAME)
+	$(CC) $(CFLAGS) -o $@ $(OBJS_TEST) $(LIBFT) $(LIB_NAME)
 	./$@
 
-$(NAME):		$(OBJS)
-	ar rcs $(NAME) $(OBJS)
+.PHONY:	t
+t:		$(TEST_NAME)
+	./$^
 
+
+.PHONY:			so
 so:				$(BASE_SONAME)
 
 $(SONAME):		$(OBJS)
@@ -84,6 +90,7 @@ $(BASE_SONAME):	$(SONAME)
 	rm -f $@
 	ln -s $^ $@
 
+.PHONY:			dylib
 dylib:			$(BASE_DYLIBNAME)
 
 $(DYLIBNAME):	$(OBJS)
@@ -99,21 +106,27 @@ $(LIBFT):
 	cp $(LIBFT_DIR)/$(LIBFT) .
 
 
+.PHONY:	clean
 clean:
 	$(RM) $(OBJDIR) $(LIBFT)
 
+.PHONY:	fclean
 fclean:			clean
-	$(RM) $(NAME) $(SONAME) $(DYLIBNAME) $(BASE_SONAME) $(BASE_DYLIBNAME)
+	$(RM) $(LIB_NAME) $(SONAME) $(DYLIBNAME) $(BASE_SONAME) $(BASE_DYLIBNAME)
 	$(MAKE) -C $(LIBFT_DIR) fclean
 
+.PHONY:	re
 re:				fclean all
 
 
+.PHONY:	up
 up:
 	docker-compose up --build -d
 
+.PHONY:	down
 down:
 	docker-compose down
 
+.PHONY:	it
 it:
 	docker-compose exec app bash
