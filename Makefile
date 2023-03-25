@@ -25,6 +25,7 @@ FILES	:=	\
 			printf.c\
 			history.c\
 			release.c\
+			assert.c\
 
 
 SRCS		:=	$(FILES:%.c=$(SRCDIR)/%.c)

@@ -111,4 +111,8 @@ bool	init_history(bool multi_thread);
 void	take_history(t_yoyo_operation_type operation, void* addr, size_t size1, size_t size2);
 void	show_history(void);
 
+// assert.c
+void	yoyo_assert(const char* strexp, bool exp, const char* file, unsigned int line, const char* func);
+#define YOYO_ASSERT(exp) yoyo_assert(#exp, exp, __FILE__, __LINE__, __func__)
+
 #endif

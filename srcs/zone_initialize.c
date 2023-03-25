@@ -32,7 +32,7 @@ static bool	init_zone(const t_yoyo_arena* arena, t_yoyo_zone* zone, t_yoyo_zone_
 	const size_t zone_bytes = zone_bytes_for_zone_type(zone_type);
 	const size_t heap_bytes = heap_bytes_for_zone_bytes(zone_bytes);
 	const size_t bitmap_bytes = bitmap_bytes_for_zone_bytes(zone_bytes);
-	assert(zone_bytes % BLOCK_UNIT_SIZE == 0);
+	YOYO_ASSERT(zone_bytes % BLOCK_UNIT_SIZE == 0);
 	DEBUGOUT("heap: %zu B bitmap: %zu B", heap_bytes, bitmap_bytes);
 	zone->next = NULL;
 	zone->frees = NULL;

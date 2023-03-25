@@ -8,7 +8,7 @@ static void	dump_chunk_body(const t_yoyo_chunk* chunk) {
 	if (g_yoyo_realm.debug.xd_blocks < 1) {
 		return;
 	}
-	assert(chunk->blocks >= 2);
+	YOYO_ASSERT(chunk->blocks >= 2);
 	const size_t			xd_bytes = g_yoyo_realm.debug.xd_blocks * BLOCK_UNIT_SIZE;
 	const size_t			chunk_bytes = (chunk->blocks - 1) * BLOCK_UNIT_SIZE;
 	const size_t			max_bytes = xd_bytes < chunk_bytes ? xd_bytes : chunk_bytes;
@@ -63,7 +63,7 @@ static void	visualize_locked_zone(t_yoyo_zone* zone, bool exec_hexdump) {
 		if (is_used(zone, block_index)) {
 			visualize_chunk(chunk, exec_hexdump);
 		}
-		assert(2 <= chunk->blocks);
+		YOYO_ASSERT(2 <= chunk->blocks);
 		block_index += chunk->blocks;
 	}
 }
@@ -75,7 +75,7 @@ static void	visualize_locked_tiny_small_subarena(
 	t_yoyo_zone_type zone_type,
 	bool exec_hexdump
 ) {
-	assert(zone_type == YOYO_ZONE_TINY || zone_type == YOYO_ZONE_SMALL);
+	YOYO_ASSERT(zone_type == YOYO_ZONE_TINY || zone_type == YOYO_ZONE_SMALL);
 	t_yoyo_normal_arena* subarena = zone_type == YOYO_ZONE_TINY ? &arena->tiny : &arena->small;
 	if (subarena->head == NULL) {
 		return;
@@ -121,7 +121,7 @@ static void	visualize_locked_large_subarena(
 	bool exec_hexdump
 ) {
 	(void)zone_type;
-	assert(zone_type == YOYO_ZONE_LARGE);
+	YOYO_ASSERT(zone_type == YOYO_ZONE_LARGE);
 	t_yoyo_large_arena* subarena = &arena->large;
 	if (subarena->allocated == NULL) {
 		return;

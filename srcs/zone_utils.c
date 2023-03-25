@@ -49,10 +49,10 @@ unsigned int	get_block_index(const t_yoyo_zone* zone, const t_yoyo_chunk* head) 
 t_yoyo_zone*	get_zone_of_chunk(const t_yoyo_chunk* chunk) {
 	const size_t whole_blocks = chunk->blocks;
 	DEBUGOUT("whole_blocks: %zu", whole_blocks);
-	assert(whole_blocks > 0);
+	YOYO_ASSERT(whole_blocks > 0);
 	const size_t usable_blocks = whole_blocks - 1;
 	DEBUGOUT("usable_blocks: %zu", usable_blocks);
-	assert(usable_blocks > 0);
+	YOYO_ASSERT(usable_blocks > 0);
 
 	const t_yoyo_zone_type zone_type = zone_type_for_bytes(usable_blocks * BLOCK_UNIT_SIZE);
 	DEBUGOUT("zone_type is %d", zone_type);
@@ -86,7 +86,7 @@ static t_yoyo_zone*	merge_zone_lists(t_yoyo_zone* top, t_yoyo_zone* bottom) {
 			head = tail;
 		}
 	}
-	assert(tail != NULL);
+	YOYO_ASSERT(tail != NULL);
 	tail->next = NULL;
 	return head;
 }
@@ -116,7 +116,7 @@ static t_yoyo_zone*	divide_and_sort(t_yoyo_zone* list) {
 		// list はソート済みなのでそのまま返してしまう.
 		return list;
 	}
-	assert(prev_top != NULL);
+	YOYO_ASSERT(prev_top != NULL);
 	prev_top->next = NULL;
 	// [分割したものをそれぞれソートする]
 	// [ソートしたものをマージして返す]
@@ -125,13 +125,13 @@ static t_yoyo_zone*	divide_and_sort(t_yoyo_zone* list) {
 
 // zoneリストを破壊的にソートする
 void	sort_zone_list(t_yoyo_zone** list) {
-	assert(list != NULL);
+	YOYO_ASSERT(list != NULL);
 	*list = divide_and_sort(*list);
 	{
 		// ソートされているかチェック
 		t_yoyo_zone* temp = *list;
 		while (temp->next != NULL) {
-			assert((uintptr_t)temp < (uintptr_t)(temp->next));
+			YOYO_ASSERT((uintptr_t)temp < (uintptr_t)(temp->next));
 			temp = temp->next;
 		}
 	}

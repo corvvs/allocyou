@@ -42,16 +42,16 @@ static void*	relocate_chunk(t_yoyo_chunk* chunk, size_t blocks_required) {
 // 残ったブロックからフリーチャンクを生成する.
 static void	shrink_chunk(t_yoyo_chunk* chunk, size_t blocks_required) {
 	DEBUGOUT("chunk: %p, chunk->blocks: %zu", chunk, chunk->blocks);
-	assert(2 <= blocks_required);
-	assert(blocks_required < chunk->blocks);
+	YOYO_ASSERT(2 <= blocks_required);
+	YOYO_ASSERT(blocks_required < chunk->blocks);
 	t_yoyo_zone*	zone_current = get_zone_of_chunk(chunk);
 	if (zone_current == NULL) {
 		return;
 	}
-	assert(zone_current->zone_type != YOYO_ZONE_LARGE);
+	YOYO_ASSERT(zone_current->zone_type != YOYO_ZONE_LARGE);
 	t_yoyo_chunk*	chunk_new_free = (void *)chunk + blocks_required * BLOCK_UNIT_SIZE;
 	chunk_new_free->blocks = chunk->blocks - blocks_required;
-	assert(2 <= chunk_new_free->blocks);
+	YOYO_ASSERT(2 <= chunk_new_free->blocks);
 	chunk_new_free->next = COPY_FLAGS(NULL, chunk->next);
 	// ここからロックが必要
 	if (!lock_zone(zone_current)) {
@@ -71,7 +71,7 @@ void*	yoyo_actual_realloc(void* addr, size_t n) {
 		DEBUGWARN("addr == NULL -> delegate to malloc(%zu)", n);
 		return yoyo_actual_malloc(n);
 	}
-	assert(CEILED_CHUNK_SIZE <= (size_t)addr);
+	YOYO_ASSERT(CEILED_CHUNK_SIZE <= (size_t)addr);
 	if (CEILED_CHUNK_SIZE > (size_t)addr) {
 		DEBUGFATAL("addr is TOO LOW: %p", addr);
 		return NULL;
