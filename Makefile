@@ -49,9 +49,13 @@ FILES_TEST	:=\
 OBJS_TEST	:=	$(FILES_TEST:%.c=$(OBJDIR)/%.o)
 
 CC			:=	gcc
-CCOREFLAGS	:=	-Wall -Wextra -Werror -O2 -I$(INCDIR)
-CFLAGS		:=	$(CCOREFLAGS) -DNDEBUG -g #-fsanitize=thread
+CCOREFLAGS	=	-Wall -Wextra -Werror -O2 -I$(INCDIR)
+CFLAGS		=	$(CCOREFLAGS) -DNDEBUG -g #-fsanitize=thread
 LIBFLAGS	:=	-fPIC -fpic
+
+ifdef WITH_BONUS
+CCOREFLAGS += -D BONUS
+endif
 
 BASE_LIBNAME	:=	ft_malloc
 SONAME		:=	libft_malloc_$(HOSTTYPE).so
@@ -60,6 +64,9 @@ DYLIBNAME	:=	libft_malloc_$(HOSTTYPE).dylib
 BASE_DYLIBNAME	:=	libft_malloc.dylib
 
 all:			so
+
+bonus:
+	$(MAKE) all WITH_BONUS=1
 
 $(OBJDIR)/%.o:	$(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR)

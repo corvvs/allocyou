@@ -10,7 +10,7 @@ bool	init_history(bool multi_thread) {
 	}
 	if (multi_thread) {
 		if (pthread_mutex_init(&history->lock, NULL)) {
-			DEBUGFATAL("failed to init history lock: errno: %d (%s)", errno, strerror(errno));
+			DEBUGFATAL("failed to init history lock: errno: %d", errno);
 			return false;
 		}
 	}
@@ -45,7 +45,7 @@ static bool	extend_items(t_yoyo_history_book* history) {
 	DEBUGOUT("EXTEND items: %zu -> %zu", history->cap_items, new_cap);
 	// デッドロック防止のため一旦ロックを外す
 	pthread_mutex_unlock(&history->lock);
-	t_yoyo_history_item*	extended = malloc(sizeof(t_yoyo_history_item) * new_cap);
+	t_yoyo_history_item*	extended = yoyo_actual_malloc(sizeof(t_yoyo_history_item) * new_cap);
 	if (!extended) {
 		pthread_mutex_lock(&history->lock);
 		return false;
@@ -62,7 +62,7 @@ static bool	extend_items(t_yoyo_history_book* history) {
 	// ロックを離してから(デッドロック防止)古い items を解放
 	DEBUGOUT("DESTROY old items: %p", old_items);
 	pthread_mutex_unlock(&history->lock);
-	free(old_items);
+	yoyo_actual_free(old_items);
 	pthread_mutex_lock(&history->lock);
 	// [拡張終了]
 	// -> 拡張中フラグを外す

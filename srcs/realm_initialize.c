@@ -19,7 +19,7 @@ bool	init_realm(void) {
 	static pthread_mutex_t	init_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 	if (pthread_mutex_lock(&init_mutex)) {
-		DEBUGFATAL("FAILED to lock for init: %d (%s)", errno, strerror(errno));
+		DEBUGFATAL("FAILED to lock for init: %d", errno);
 		return false;
 	}
 
