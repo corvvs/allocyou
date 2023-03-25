@@ -3,16 +3,16 @@
 bool	check_is_free(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
 	unsigned int	bi = get_block_index(zone, chunk);
 	(void)bi;
-	assert(is_head(zone, bi));
-	assert(!is_used(zone, bi));
+	YOYO_ASSERT(is_head(zone, bi));
+	YOYO_ASSERT(!is_used(zone, bi));
 	return is_head(zone, bi) && !is_used(zone, bi);
 }
 
 bool	check_is_used(t_yoyo_zone* zone, t_yoyo_chunk* chunk) {
 	unsigned int	bi = get_block_index(zone, chunk);
 	(void)bi;
-	assert(is_head(zone, bi));
-	assert(is_used(zone, bi));
+	YOYO_ASSERT(is_head(zone, bi));
+	YOYO_ASSERT(is_used(zone, bi));
 	return is_head(zone, bi) && is_used(zone, bi);
 }
 
@@ -34,7 +34,7 @@ bool	is_used(const t_yoyo_zone* zone, unsigned int block_index) {
 
 // block_index に対応する位置に chunk ヘッダなら, それを返す.
 t_yoyo_chunk*	get_chunk_by_index(t_yoyo_zone* zone, unsigned int block_index) {
-	assert(block_index < zone->blocks_heap);
+	YOYO_ASSERT(block_index < zone->blocks_heap);
 	if (!is_head(zone, block_index)) {
 		return NULL;
 	}

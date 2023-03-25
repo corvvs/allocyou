@@ -110,7 +110,7 @@ void	release_memory(void) {
 	DEBUGOUT("** %s end **", __func__);
 }
 
-// __attribute__((destructor))
-// static void	yoyo_exit() {
-// 	show_alloc_mem_ex();
-// }
+__attribute__((destructor))
+static void	yoyo_exit() {
+	show_alloc_mem_ex();
+}

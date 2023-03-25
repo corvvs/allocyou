@@ -59,8 +59,8 @@ void	fill_chunk_by_scribbler(void* mem, bool complement) {
 		return;
 	}
 	t_yoyo_chunk*	chunk = addr_to_actual_header(mem);
-	assert(chunk != NULL);
-	assert(chunk->blocks >= 2);
+	YOYO_ASSERT(chunk != NULL);
+	YOYO_ASSERT(chunk->blocks >= 2);
 	unsigned char	filler = g_yoyo_realm.debug.scribbler;
 	if (complement) {
 		filler = ~filler;

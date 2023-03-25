@@ -109,7 +109,7 @@ static void*	allocate_memory_from_large(t_yoyo_large_arena* subarena, size_t n) 
 }
 
 static void	zone_push_front(t_yoyo_zone** list, t_yoyo_zone* zone) {
-	assert(list != NULL);
+	YOYO_ASSERT(list != NULL);
 	zone->next = *list;
 	*list = zone;
 }
@@ -117,7 +117,7 @@ static void	zone_push_front(t_yoyo_zone** list, t_yoyo_zone* zone) {
 // 使用可能領域として blocks_needed ブロックが要求されているとき,
 // フリーチャンク chunk_free を分割することで要求に応えられるか?
 static bool	is_separatable(const t_yoyo_chunk* chunk_free, size_t blocks_needed) {
-	assert(chunk_free->blocks > 1);
+	YOYO_ASSERT(chunk_free->blocks > 1);
 	// 必要総ブロック数
 	const size_t	whole_needed = blocks_needed + 1;
 	if (chunk_free->blocks - 1 <= whole_needed) {
@@ -169,7 +169,7 @@ static void	separate_chunk(t_yoyo_zone* zone, t_yoyo_chunk** current_lot, t_yoyo
 	DEBUGINFO("zone: (%p, %d)", zone, zone->zone_type);
 	DEBUGINFO("current: (%p, %zu, %p)", current_free_chunk, current_free_chunk->blocks, current_free_chunk->next);
 	DEBUGINFO("rest:    (%p, %zu, %p)", rest, rest->blocks, rest->next);
-	assert(2 <= rest->blocks);
+	YOYO_ASSERT(2 <= rest->blocks);
 	DEBUGINFO("OK: %p - %p", current_free_chunk, rest);
 	current_free_chunk->blocks = whole_needed;
 	rest->next = current_free_chunk->next;
@@ -203,7 +203,7 @@ static void*	try_allocate_chunk_from_zone(t_yoyo_zone* zone, size_t n) {
 	// head がふたたび initial_head に達したら, 使えるフリーチャンクが見つからなかったことにする
 	const t_yoyo_chunk*	initial_head = head;
 	while (true) {
-		assert(check_is_free(zone, head));
+		YOYO_ASSERT(check_is_free(zone, head));
 		t_yoyo_chunk**	current_lot = prev != NULL ? &(prev->next) : &(zone->frees);
 		if (is_exhaustible(head, blocks_needed)) {
 			exhaust_chunk(zone, current_lot, head);
@@ -272,8 +272,8 @@ static void*	allocate_from_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type
 	}
 	// TINY / SMALL からアロケートする
 	t_yoyo_subarena* subarena = get_subarena(arena, zone_type);
-	assert(subarena != NULL);
-	assert((void*)subarena != (void*)&arena->large);
+	YOYO_ASSERT(subarena != NULL);
+	YOYO_ASSERT((void*)subarena != (void*)&arena->large);
 	(void)subarena;
 	return allocate_memory_from_zone_list(arena, zone_type, n);
 }
@@ -368,7 +368,7 @@ void*	yoyo_actual_memalign(size_t alignment, size_t size) {
 	t_yoyo_chunk*	pseudo_header = pseudo_mem - CEILED_CHUNK_SIZE;
 	pseudo_header->blocks = BLOCKS_FOR_SIZE(size) + 1;
 	pseudo_header->next = SET_FLAGS(actual_header, YOYO_FLAG_PSEUDO_HEADER);
-	assert((uintptr_t)pseudo_mem % alignment == 0);
+	YOYO_ASSERT((uintptr_t)pseudo_mem % alignment == 0);
 	return pseudo_mem;
 }
 
@@ -392,7 +392,7 @@ int		yoyo_actual_posix_memalign(void **memptr, size_t alignment, size_t size) {
 		return e;
 	}
 	errno = init_errno;
-	assert((uintptr_t)mem % alignment == 0);
+	YOYO_ASSERT((uintptr_t)mem % alignment == 0);
 	*memptr = mem;
 	return 0;
 }

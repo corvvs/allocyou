@@ -48,7 +48,7 @@ static void insert_chunk_to_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chu
 	*current_lot = chunk;
 	is_unified = try_unite_free_chunks(zone, left);
 	zone->free_prev = is_unified ? left : chunk;
-	assert(zone->free_prev != NULL);
+	YOYO_ASSERT(zone->free_prev != NULL);
 	// [zone のblocks を変更する]
 	zone->blocks_free += chunk_blocks;
 	zone->blocks_used -= chunk_blocks;
@@ -71,7 +71,7 @@ void	yoyo_free_from_locked_tiny_small_zone(t_yoyo_zone* zone, t_yoyo_chunk* chun
 static void	free_from_tiny_small_zone(t_yoyo_chunk* chunk) {
 	// chunk の所属 zone に飛ぶ
 	t_yoyo_zone*	zone = get_zone_of_chunk(chunk);
-	assert(zone != NULL);
+	YOYO_ASSERT(zone != NULL);
 	DEBUGOUT("zone: %p", zone);
 	// [ロックを取る]
 	if (!lock_zone(zone)) {
@@ -81,7 +81,7 @@ static void	free_from_tiny_small_zone(t_yoyo_chunk* chunk) {
 		yoyo_free_from_locked_tiny_small_zone(zone, chunk);
 	} else {
 		DEBUGFATAL("chunk header %p is not an actual header addr or not a using chunk", chunk);
-		assert(false);
+		YOYO_ASSERT(false);
 	}
 	// [zone のロックを離す]
 	unlock_zone(zone);
@@ -167,8 +167,8 @@ size_t	yoyo_actual_malloc_usable_size(void *ptr) {
 	if (ptr == NULL) {
 		return 0;
 	}
-	assert((uintptr_t)ptr >= CEILED_CHUNK_SIZE);
+	YOYO_ASSERT((uintptr_t)ptr >= CEILED_CHUNK_SIZE);
 	t_yoyo_chunk*	chunk = addr_to_nominal_header(ptr);
-	assert(chunk->blocks >= 2);
+	YOYO_ASSERT(chunk->blocks >= 2);
 	return (chunk->blocks - 1) * BLOCK_UNIT_SIZE;
 }
