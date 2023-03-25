@@ -22,7 +22,7 @@ static size_t	bitmap_bytes_for_zone_bytes(size_t zone_bytes) {
 static bool	init_zone(const t_yoyo_arena* arena, t_yoyo_zone* zone, t_yoyo_zone_type zone_type) {
 	if (arena->multi_thread) {
 		if (pthread_mutex_init(&zone->lock, NULL)) {
-			DEBUGFATAL("errno: %d (%s)", errno, strerror(errno));
+			DEBUGFATAL("errno: %d", errno);
 			return false;
 		}
 	}

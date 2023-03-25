@@ -9,16 +9,16 @@ bool	init_arena(unsigned int index, bool multi_thread) {
 	t_yoyo_arena* arena = &g_yoyo_realm.arenas[index];
 	if (multi_thread) {
 		if (pthread_mutex_init(&arena->tiny.lock, NULL)) {
-			DEBUGFATAL("failed to init tiny lock: errno: %d (%s)", errno, strerror(errno));
+			DEBUGFATAL("failed to init tiny lock: errno: %d", errno);
 			return false;
 		}
 		if (pthread_mutex_init(&arena->small.lock, NULL)) {
-			DEBUGFATAL("failed to init small lock: errno: %d (%s)", errno, strerror(errno));
+			DEBUGFATAL("failed to init small lock: errno: %d", errno);
 			pthread_mutex_destroy(&arena->tiny.lock);
 			return false;
 		}
 		if (pthread_mutex_init(&arena->large.lock, NULL)) {
-			DEBUGFATAL("failed to init large lock: errno: %d (%s)", errno, strerror(errno));
+			DEBUGFATAL("failed to init large lock: errno: %d", errno);
 			pthread_mutex_destroy(&arena->tiny.lock);
 			pthread_mutex_destroy(&arena->small.lock);
 			return false;

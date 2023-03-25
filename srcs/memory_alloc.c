@@ -12,7 +12,7 @@ static void	unmap_range(void* begin, void* end) {
 	}
 	int rv = munmap(begin, range_size);
 	if (rv) {
-		DEBUGFATAL("FAILED: errno = %d, %s", errno, strerror(errno));
+		DEBUGFATAL("FAILED: errno = %d", errno);
 		return;
 	}
 	// DEBUGOUT("unmap memory: [%p, %p) - %zx", begin, end, range_size);
@@ -34,7 +34,7 @@ void*	yoyo_map_memory(size_t bytes, bool align) {
 		-1, 0);
 	if (bulk == MAP_FAILED) {
 		if (errno != ENOMEM) {
-			DEBUGFATAL("for bulk_size %zu B, mmap is failed and errno is not ENOMEM. errno: %d %s", bulk_size, errno, strerror(errno));
+			DEBUGFATAL("for bulk_size %zu B, mmap is failed and errno is not ENOMEM. errno: %d", bulk_size, errno);
 		} else {
 			errno = ENOMEM;
 		}

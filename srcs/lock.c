@@ -10,7 +10,7 @@ bool	lock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type) {
 	t_yoyo_subarena*	subarena = get_subarena(arena, zone_type);
 	DEBUGOUT("TRY LOCKING arena: #%u(%p)", arena->index, arena);
 	if (!lock_subarena(subarena)) {
-		DEBUGFATAL("FAILED to lock: %d(%s)", errno, strerror(errno));
+		DEBUGFATAL("FAILED to lock: %d", errno);
 		return false;
 	}
 	DEBUGOUT("TRY LOCKED arena: #%u(%p)", arena->index, arena);
@@ -39,7 +39,7 @@ bool	lock_subarena(t_yoyo_subarena* subarena) {
 	}
 	DEBUGOUT("LOCKING subarena: %p", subarena);
 	if (pthread_mutex_lock(&subarena->lock)) {
-		DEBUGFATAL("FAILED to lock: %d(%s)", errno, strerror(errno));
+		DEBUGFATAL("FAILED to lock: %d", errno);
 		return false;
 	}
 	DEBUGOUT("LOCKED subarena: %p", subarena);
@@ -67,7 +67,7 @@ bool	lock_zone(t_yoyo_zone* zone) {
 	}
 	DEBUGOUT("LOCKING zone: %p", zone);
 	if (pthread_mutex_lock(&zone->lock)) {
-		DEBUGFATAL("FAILED to lock: %d(%s)", errno, strerror(errno));
+		DEBUGFATAL("FAILED to lock: %d", errno);
 		return false;
 	}
 	DEBUGOUT("LOCKED zone: %p", zone);
@@ -96,7 +96,7 @@ bool	unlock_arena(t_yoyo_arena* arena, t_yoyo_zone_type zone_type) {
 	t_yoyo_subarena*	subarena = get_subarena(arena, zone_type);
 	DEBUGOUT("UNLOCKING arena: #%u(%p)", arena->index, arena);
 	if (!unlock_subarena(subarena)) {
-		DEBUGFATAL("FAILED to unlock: %d(%s)", errno, strerror(errno));
+		DEBUGFATAL("FAILED to unlock: %d", errno);
 		return false;
 	}
 	DEBUGOUT("UNLOCKED arena: #%u(%p)", arena->index, arena);
@@ -110,7 +110,7 @@ bool	unlock_subarena(t_yoyo_subarena* subarena) {
 	}
 	DEBUGOUT("UNLOCKING subarena: %p", subarena);
 	if (pthread_mutex_unlock(&subarena->lock)) {
-		DEBUGFATAL("FAILED to unlock: %d(%s)", errno, strerror(errno));
+		DEBUGFATAL("FAILED to unlock: %d", errno);
 		return false;
 	}
 	DEBUGOUT("UNLOCKED subarena: %p", subarena);
@@ -124,7 +124,7 @@ bool	unlock_zone(t_yoyo_zone* zone) {
 	}
 	DEBUGOUT("LOCKED zone: %p", zone);
 	if (pthread_mutex_unlock(&zone->lock)) {
-		DEBUGFATAL("FAILED to unlock: %d(%s)", errno, strerror(errno));
+		DEBUGFATAL("FAILED to unlock: %d", errno);
 		return false;
 	}
 	DEBUGOUT("UNLOCKED zone: %p", zone);
