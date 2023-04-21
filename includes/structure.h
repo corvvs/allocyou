@@ -67,7 +67,7 @@ typedef struct s_yoyo_large_chunk {
 # define LARGE_OFFSET_USABLE (CEILED_LARGE_CHUNK_SIZE + CEILED_CHUNK_SIZE)
 
 // n in PDF
-# define TINY_MAX_CHUNK_BYTE ((size_t)992)
+# define TINY_MAX_CHUNK_BYTE ((size_t)1024)
 // n as blocks
 # define TINY_MAX_CHUNK_BLOCK (BLOCKS_FOR_SIZE(TINY_MAX_CHUNK_BYTE))
 // m in PDF
@@ -76,7 +76,7 @@ typedef struct s_yoyo_large_chunk {
 # define SMALL_MAX_CHUNK_BLOCK (BLOCKS_FOR_SIZE(SMALL_MAX_CHUNK_BYTE))
 
 // N in PDF
-# define ZONE_TINY_BYTE ((size_t)(1024 * 1024))
+# define ZONE_TINY_BYTE ((size_t)(1024 * 1024 / 4))
 // M in PDF
 # define ZONE_SMALL_BYTE ((size_t)(8 * 1024 * 1024))
 
