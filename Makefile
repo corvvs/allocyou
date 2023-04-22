@@ -63,6 +63,9 @@ BASE_SONAME	:=	libft_malloc.so
 DYLIBNAME	:=	libft_malloc_$(HOSTTYPE).dylib
 BASE_DYLIBNAME	:=	libft_malloc.dylib
 
+TIME		:= /usr/bin/time
+TIMEFLAGS	:= -v
+
 all:			so
 
 bonus:
@@ -138,3 +141,32 @@ down:
 .PHONY:	it
 it:
 	docker-compose exec app bash
+
+
+rerv:
+	rm -rf test0 test1 test2
+
+.PHONY:	test0
+test0:	$(BASE_SONAME)
+	$(CC) $@.c -o $@
+	@echo System:
+	$(TIME) $(TIMEFLAGS) ./$@ 2>&1 | grep Minor
+	@echo FT:
+	LD_PRELOAD=./$(BASE_SONAME) $(TIME) $(TIMEFLAGS) ./$@ 2>&1 | grep Minor
+
+.PHONY:	test1
+test1:	$(BASE_SONAME)
+	$(CC) $@.c -o $@
+	@echo System:
+	$(TIME) $(TIMEFLAGS) ./$@ 2>&1 | grep Minor
+	@echo FT:
+	LD_PRELOAD=./$(BASE_SONAME) $(TIME) $(TIMEFLAGS) ./$@ 2>&1 | grep Minor
+
+.PHONY:	test2
+test2:	$(BASE_SONAME)
+	$(CC) $@.c -o $@
+	@echo System:
+	$(TIME) $(TIMEFLAGS) ./$@ 2>&1 | grep Minor
+	@echo FT:
+	LD_PRELOAD=./$(BASE_SONAME) $(TIME) $(TIMEFLAGS) ./$@ 2>&1 | grep Minor
+
